@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Orbo v2 — Solo posti dove mangiare</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+html, body { height: 100%; background: #000; }
+body { font-family: 'Outfit', sans-serif; overscroll-behavior: none; }
+#map > div { background: #050505 !important; }
+.gm-style-cc, .gmnoprint { display: none !important; }
+#sheet { transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); }
+header {
+  background: linear-gradient(to bottom, rgba(0,0,0,0.85) 0%, transparent 100%);
+  padding-bottom: 20px;
+}
+</style>
+</head>
+
+<body class="bg-black text-white">
+
+<div id="map" class="absolute inset-0"></div>
+
+<header class="absolute top-0 left-0 right-0 z-20 p-4">
+  <h1 class="text-[22px] font-semibold">Orbo v2</h1>
+  <p class="text-[12px] text-white/60">Solo ristoranti, bar, gelaterie</p>
+
+  <input id="search" placeholder="Cerca..." 
+    class="w-full h-12 mt-3 px-4 rounded-2xl bg-neutral-900 border border-white/10">
+
+  <div class="mt-3 flex gap-2 overflow-x-auto">
+    <button data-type="all" class="px-4 py-2 rounded-full bg-orange-500 text-black font-semibold text-sm whitespace-nowrap">Tutti</button>
+    <button data-type="ristoranti" class="px-4 py-2 rounded-full bg-neutral-800 text-white/70 text-sm whitespace-nowrap">🍝 Ristoranti</button>
+    <button data-type="bar" class="px-4 py-2 rounded-full bg-neutral-800 text-white/70 text-sm whitespace-nowrap">☕ Bar</button>
+    <button data-type="gelaterie" class="px-4 py-2 rounded-full bg-neutral-800 text-white/70 text-sm whitespace-nowrap">🍦 Gelaterie</button>
+    <button data-type="pasticcerie" class="px-4 py-2 rounded-full bg-neutral-800 text-white/70 text-sm whitespace-nowrap">🧁 Pasticcerie</button>
+  </div>
+</header>
+
+<div id="sheet" class="fixed bottom-0 left-0 right-0 z-30 translate-y-[110%]">
+  <div class="mx-auto max-w-md m-4 p-5 rounded-3xl bg-neutral-900 border border-white/10">
+    <button onclick="closeSheet()" class="float-right text-white/40 text-xl leading-none">X</button>
+    <h2 id="sheet-title" class="text-lg font-semibold"></h2>
+    <p id="sheet-address" class="text-sm text-white/60"></p>
+
+    <div class="flex gap-2 mt-2 text-xs">
+      <span id="sheet-rating"></span>
+      <span id="sheet-price"></span>
+      <span id="sheet-open"></span>
+    </div>
+
+    <a id="sheet-directions" target="_blank"
+      class="block mt-3 text-center py-2 rounded-xl bg-orange-500 text-black font-semibold">
+      Indicazioni
+    </a>
+  </div>
+</div>
+
+<script>
+let map, service, markers = [];
+let seen = new Set();
+let debounceTimeout;
+
+const typeMap = {
+  all: ['restaurant','cafe','bakery'],
+  ristoranti: ['restaurant'],
+  bar: ['cafe','bar'],
+  gelaterie: ['ice_cream_shop'], // FIX
+  pasticcerie: ['bakery']
+};
+
+let activeType = 'all';
+
+function initMap() {
+  map = new google.maps.Map(document.getElementById('map'), {
+    center: { lat: 44.4949, lng: 11.3426 },
+    zoom: 15,
+    disableDefaultUI: true,
+    styles: [
+      { elementType: 'geometry', stylers: [{ color: '#050505' }] },
+      { elementType: 'labels.text.fill', stylers: [{ color: '#888' }] }
+    ]
+  });
+
+  service = new google.maps.places.PlacesService(map);
+
+  map.addListener('click', closeSheet);
+
+  navigator.geolocation?.getCurrentPosition(
+    p => {
+      map.setCenter({ lat: p.coords.latitude, lng: p.coords.longitude });
+      searchNearby();
+    },
+    () => searchNearby()
+  );
+
+  // DEBOUNCE FIX
+  map.addListener('idle', () => {
+    clearTimeout(debounceTimeout);
+    debounceTimeout = setTimeout(searchNearby, 400);
+  });
+}
+
+function clearMarkers() {
+  markers.forEach(m => m.setMap(null));
+  markers = [];
+  seen.clear();
+}
+
+function createMarker(place) {
+  if (seen.has(place.place_id)) return;
+  seen.add(place.place_id);
+
+  const marker = new google.maps.Marker({
+    map,
+    position: place.geometry.location,
+    title: place.name
+  });
+
+  marker.addListener('click', () => showSheet(place));
+  markers.push(marker);
+}
+
+function searchNearby() {
+  clearMarkers();
+  const center = map.getCenter();
+
+  typeMap[activeType].forEach(type => {
+    service.nearbySearch(
+      { location: center, radius: 1500, type },
+      (results, status) => {
+        if (status === 'OK') results.forEach(createMarker);
+      }
+    );
+  });
+}
+
+function showSheet(p) {
+  document.getElementById('sheet-title').textContent = p.name;
+  document.getElementById('sheet-address').textContent = p.vicinity || '';
+  document.getElementById('sheet-rating').textContent = p.rating ? '★ ' + p.rating : '';
+  document.getElementById('sheet-price').textContent = p.price_level ? '€'.repeat(p.price_level) : '';
+  document.getElementById('sheet-open').textContent =
+    p.opening_hours ? (p.opening_hours.open_now ? '🟢 Aperto' : '🔴 Chiuso') : '';
+
+  document.getElementById('sheet-directions').href =
+    `https://www.google.com/maps/dir/?api=1&destination_place_id=${p.place_id}`;
+
+  document.getElementById('sheet').style.transform = 'translateY(0)';
+}
+
+function closeSheet() {
+  document.getElementById('sheet').style.transform = 'translateY(110%)';
+}
+
+document.querySelectorAll('[data-type]').forEach(button => {
+  button.onclick = () => {
+    activeType = button.dataset.type;
+
+    document.querySelectorAll('[data-type]').forEach(b => {
+      b.className = 'px-4 py-2 rounded-full bg-neutral-800 text-white/70 text-sm whitespace-nowrap';
+    });
+
+    button.className = 'px-4 py-2 rounded-full bg-orange-500 text-black font-semibold text-sm whitespace-nowrap';
+
+    searchNearby();
+  };
+});
+
+document.getElementById('search').oninput = e => {
+  const q = e.target.value;
+
+  if (q.length > 2) {
+    service.textSearch(
+      { query: q, location: map.getCenter(), radius: 3000 },
+      (results, status) => {
+        if (status === 'OK') {
+          clearMarkers();
+          results.forEach(createMarker);
+        }
+      }
+    );
+  } else {
+    searchNearby(); // FIX reset
+  }
+};
+</script>
+
+<!-- ⚠️ CAMBIA QUESTA API KEY -->
+<script async defer
+  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC6wAI6R6WztfmYzimz0wFew_ItgzPc-QU&libraries=places&callback=initMap&language=it&region=IT">
+</script>
+
+</body>
+</html>
