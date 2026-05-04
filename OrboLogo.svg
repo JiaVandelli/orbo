@@ -22,12 +22,13 @@
     <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
       <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="rgba(180,60,0,0.35)"/>
     </filter>
+    <path id="orbitPath" d="M60,12 C82,12 96,30 96,55 C96,80 82,98 60,98 C38,98 24,80 24,55 C24,30 38,12 60,12 Z"/>
   </defs>
 
   <!-- Ombra sotto -->
   <ellipse cx="60" cy="108" rx="28" ry="6" fill="rgba(180,80,0,0.18)"/>
 
-  <!-- Cubo 3D fisso -->
+  <!-- Cubo 3D -->
   <g filter="url(#shadow)">
     <polygon points="60,25 90,40 60,55 30,40" fill="url(#topFace)"/>
     <polygon points="30,40 60,55 60,85 30,70" fill="url(#leftFace)"/>
@@ -35,50 +36,40 @@
   </g>
 
   <!-- Bordi cubo -->
-  <polyline points="60,25 90,40 90,70 60,85 30,70 30,40 60,25"
-    fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="0.5"/>
+  <polyline points="60,25 90,40 90,70 60,85 30,70 30,40 60,25" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="0.5"/>
   <line x1="60" y1="55" x2="60" y2="85" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/>
   <line x1="60" y1="55" x2="30" y2="40" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/>
   <line x1="60" y1="55" x2="90" y2="40" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/>
 
-  <!-- O - parte da 0° (cima) -->
-  <text font-family="Arial Black, sans-serif" font-size="14" font-weight="900"
-        text-anchor="middle" dominant-baseline="middle" fill="#FFE4A3" filter="url(#glow)">
+  <!-- O - cima -->
+  <text font-family="Arial Black, sans-serif" font-size="14" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="#FFE4A3" filter="url(#glow)">
     <animateMotion dur="8s" repeatCount="indefinite" rotate="auto">
       <mpath href="#orbitPath"/>
     </animateMotion>
     O
   </text>
 
-  <!-- R - parte da 90° (destra) -->
-  <text font-family="Arial Black, sans-serif" font-size="14" font-weight="900"
-        text-anchor="middle" dominant-baseline="middle" fill="#FFD080" filter="url(#glow)">
+  <!-- R - destra -->
+  <text font-family="Arial Black, sans-serif" font-size="14" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="#FFD080" filter="url(#glow)">
     <animateMotion dur="8s" repeatCount="indefinite" rotate="auto" begin="-2s">
       <mpath href="#orbitPath"/>
     </animateMotion>
     R
   </text>
 
-  <!-- B - parte da 180° (basso) -->
-  <text font-family="Arial Black, sans-serif" font-size="14" font-weight="900"
-        text-anchor="middle" dominant-baseline="middle" fill="#FFB347" filter="url(#glow)">
+  <!-- B - basso -->
+  <text font-family="Arial Black, sans-serif" font-size="14" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="#FFB347" filter="url(#glow)">
     <animateMotion dur="8s" repeatCount="indefinite" rotate="auto" begin="-4s">
       <mpath href="#orbitPath"/>
     </animateMotion>
     B
   </text>
 
-  <!-- O - parte da 270° (sinistra) -->
-  <text font-family="Arial Black, sans-serif" font-size="14" font-weight="900"
-        text-anchor="middle" dominant-baseline="middle" fill="#FFE4A3" filter="url(#glow)">
+  <!-- O - sinistra -->
+  <text font-family="Arial Black, sans-serif" font-size="14" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="#FFE4A3" filter="url(#glow)">
     <animateMotion dur="8s" repeatCount="indefinite" rotate="auto" begin="-6s">
       <mpath href="#orbitPath"/>
     </animateMotion>
     O
   </text>
-
-  <!-- Percorso ellittico attorno al cubo -->
-  <defs>
-    <path id="orbitPath" d="M60,12 C82,12 96,30 96,55 C96,80 82,98 60,98 C38,98 24,80 24,55 C24,30 38,12 60,12 Z"/>
-  </defs>
 </svg>
