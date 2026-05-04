@@ -11,21 +11,30 @@ body{font-family:"Inter",system-ui,sans-serif;background:linear-gradient(180deg,
 button,input{font:inherit;border:0;cursor:pointer;background:none}
 img{display:block;width:100%;height:100%;object-fit:cover}
 .hidden{display:none!important}
-
 .topbar{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:14px;padding:11px 18px;background:linear-gradient(135deg,#1a0b2e 0%,#2d1b4e 60%,#3d1b80 100%);border-bottom:1px solid rgba(255,179,71,.2);box-shadow:0 4px 24px rgba(255,140,0,.18)}
 .topbar-logo{height:44px;width:44px;flex-shrink:0;filter:drop-shadow(0 0 10px rgba(255,180,71,.6))}
 .topbar-slogan{flex:1;font-family:'Arial Black',Arial,sans-serif;font-size:16px;font-weight:900;letter-spacing:.5px;text-transform:uppercase;background:linear-gradient(180deg,#FFB347 0%,#FF8C00 60%,#E06500 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;filter:drop-shadow(1px 1px 0 #7a3000)}
-
 .view{display:none;animation:fadeUp .28s ease}
 .view.active{display:block}
 @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-
 .hero{min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden;padding:80px 20px 48px;background:radial-gradient(ellipse at center,#2d1b4e 0%,#1a0b2e 65%,#0f051a 100%)}
 .hero::before{content:"";position:absolute;inset:0;background-image:radial-gradient(circle,rgba(255,255,255,.7)1px,transparent 1px),radial-gradient(circle,rgba(255,255,255,.3)1px,transparent 1px);background-size:90px 90px,45px 45px;background-position:0 0,22px 22px;opacity:.13}
 .hero::after{content:"";position:absolute;width:600px;height:600px;background:radial-gradient(circle,rgba(255,140,0,0.15),transparent 70%);top:50%;left:50%;transform:translate(-50%,-50%);animation:pulseGlow 4s ease-in-out infinite;pointer-events:none;z-index:0}
 @keyframes pulseGlow{0%,100%{opacity:0.4;transform:translate(-50%,-50%) scale(1)}50%{opacity:0.7;transform:translate(-50%,-50%) scale(1.2)}}
 .hero-logo{position:relative;z-index:2;width:180px;height:180px;filter:drop-shadow(0 0 32px rgba(255,140,0,.7));animation:pulse-logo 3.5s ease-in-out infinite}
 @keyframes pulse-logo{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+.food-orbits{position:absolute;top:50%;left:50%;width:420px;height:420px;margin:-210px 0 0 -210px;pointer-events:none;z-index:1}
+.food-orbits span{position:absolute;top:50%;left:50%;font-size:22px;animation:orbitFood 18s linear infinite;filter:drop-shadow(0 0 8px rgba(255,140,0,0.7))}
+.food-orbits span:nth-child(1){animation-delay:0s}
+.food-orbits span:nth-child(2){animation-delay:-3s}
+.food-orbits span:nth-child(3){animation-delay:-6s}
+.food-orbits span:nth-child(4){animation-delay:-9s}
+.food-orbits span:nth-child(5){animation-delay:-12s}
+.food-orbits span:nth-child(6){animation-delay:-15s}
+@keyframes orbitFood{from{transform:rotate(0deg) translate(200px) rotate(0deg)}to{transform:rotate(360deg) translate(200px) rotate(-360deg)}}
+.particles{position:absolute;inset:0;pointer-events:none;z-index:1}
+.particles span{position:absolute;width:4px;height:4px;background:#FFB347;border-radius:50%;opacity:0.6;animation:floatUp 8s linear infinite}
+@keyframes floatUp{from{transform:translateY(0);opacity:0}30%{opacity:1}to{transform:translateY(-800px);opacity:0}}
 .hero-text{position:relative;z-index:2;text-align:center;margin-top:36px;max-width:540px}
 .hero-kicker{font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#FFB347;margin-bottom:12px}
 .hero-title{font-family:'Arial Black',Arial,sans-serif;font-size:clamp(24px,5vw,42px);font-weight:900;line-height:1.15;margin-bottom:14px;background:linear-gradient(180deg,#FFB347 0%,#FF8C00 55%,#E06500 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;filter:drop-shadow(2px 2px 0 #7a3000)}
@@ -36,11 +45,9 @@ img{display:block;width:100%;height:100%;object-fit:cover}
 .btn-primary:hover{transform:translateY(-3px)}
 .btn-primary:active{transform:scale(0.95)}
 .btn-ghost{background:rgba(255,140,0,.08);border:2px solid rgba(255,140,0,.45);padding:15px 36px;border-radius:999px;font-family:'Arial Black',sans-serif;font-size:14px;font-weight:900;color:#FFB347;text-transform:uppercase}
-
 .quick-sections{background:#0a0318;padding:40px 16px 48px;display:flex;flex-direction:column;gap:14px;align-items:center}
 .quick-card{width:100%;max-width:560px;display:flex;align-items:center;gap:18px;background:linear-gradient(135deg,#2d1b4e,#1a0b2e);border:1px solid rgba(255,140,0,.3);border-radius:20px;padding:22px 24px;cursor:pointer;transition:all .25s ease}
 .quick-card:hover{transform:translateY(-5px) scale(1.02);box-shadow:0 10px 28px rgba(255,140,0,.22)}
-
 .view-inner{padding:20px 16px 48px;max-width:760px;margin:0 auto}
 .view-title{font-size:22px;font-weight:800;color:#FFB347;margin-bottom:16px}
 .search-bar{display:flex;align-items:center;gap:10px;background:rgba(45,27,78,.85);border:1px solid rgba(255,140,0,.3);border-radius:16px;padding:0 16px;margin-bottom:14px}
@@ -58,20 +65,10 @@ img{display:block;width:100%;height:100%;object-fit:cover}
 .rc-cuisine{font-size:.82rem;color:rgba(255,179,71,.55);margin-top:2px}
 .rc-desc{font-size:.85rem;color:rgba(200,184,232,.75);line-height:1.55;margin:6px 0 10px}
 .rc-footer{display:flex;justify-content:space-between;align-items:center}
-.rc-status{font-size:.75rem;padding:4px 8px;border-radius:999px;background:rgba(255,
-.food-orbits{position:absolute;top:50%;left:50%;width:420px;height:420px;margin:-210px 0 0 -210px;pointer-events:none;z-index:1}
-.food-orbits span{position:absolute;font-size:22px;animation:orbitFood 18s linear infinite;filter:drop-shadow(0 0 8px rgba(255,140,0,0.7))}
-.food-orbits span:nth-child(1){transform:rotate(0deg) translate(200px) rotate(0deg)}
-.food-orbits span:nth-child(2){transform:rotate(60deg) translate(200px) rotate(-60deg)}
-.food-orbits span:nth-child(3){transform:rotate(120deg) translate(200px) rotate(-120deg)}
-.food-orbits span:nth-child(4){transform:rotate(180deg) translate(200px) rotate(-180deg)}
-.food-orbits span:nth-child(5){transform:rotate(240deg) translate(200px) rotate(-240deg)}
-.food-orbits span:nth-child(6){transform:rotate(300deg) translate(200px) rotate(-300deg)}
-@keyframes orbitFood{from{transform:rotate(0deg) translate(200px) rotate(0deg)}to{transform:rotate(360deg) translate(200px) rotate(-360deg)}}
-
-.particles span{position:absolute;width:4px;height:4px;background:#FFB347;border-radius:50%;opacity:0.6;animation:floatUp 8s linear infinite}
-@keyframes floatUp{from{transform:translateY(0);opacity:0}30%{opacity:1}to{transform:translateY(-800px);opacity:0}}
-
+.rc-status{font-size:.75rem;padding:4px 8px;border-radius:999px;background:rgba(255,140,0,.15);color:#FFB347}
+.rc-status.open{background:rgba(46,213,115,.15);color:#9CF0C0}
+.fav-btn{background:none;border:none;font-size:1.2rem;opacity:.7}
+.fav-btn.active{opacity:1}
 .empty-state{text-align:center;padding:40px;color:rgba(255,179,71,.5);display:none}
 #gmap{position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#1A120B;border:1px solid rgba(255,140,0,.3);color:#FFE4B8;padding:10px 14px;border-radius:12px;opacity:0;transition:.25s;z-index:100}
@@ -83,7 +80,6 @@ img{display:block;width:100%;height:100%;object-fit:cover}
   <img src="OrboLogo.svg" alt="Orbo" class="topbar-logo" />
   <span class="topbar-slogan">Il gusto ti orbita</span>
 </header>
-
 <main>
 <section class="view active" id="view-home">
   <div class="hero">
@@ -107,7 +103,6 @@ img{display:block;width:100%;height:100%;object-fit:cover}
     <div class="quick-card" onclick="navigate('search')"><span style="font-size:1.9rem">💡</span><div><p style="font-size:9px;color:#FF8C00;font-weight:900;letter-spacing:2px">ISPIRAZIONE</p><h3 style="font-size:18px;font-weight:900;background:linear-gradient(180deg,#FFB347,#FF8C00);-webkit-background-clip:text;-webkit-text-fill-color:transparent">Idee per oggi</h3></div></div>
   </div>
 </section>
-
 <section class="view" id="view-search">
   <div class="view-inner">
     <h2 class="view-title">🔍 Cerca</h2>
@@ -119,10 +114,8 @@ img{display:block;width:100%;height:100%;object-fit:cover}
   </div>
 </section>
 </main>
-
 <div id="gmap"></div>
 <div class="toast" id="toast"></div>
-
 <script>
 let placesService, map, userLoc=null, VENUES=[], debounceTimer;
 const CATS=[{id:'all',label:'Tutto',icon:'✦'},{id:'restaurant',label:'Ristoranti',icon:'🍝'},{id:'cafe',label:'Bar',icon:'☕'},{id:'bakery',label:'Pasticcerie',icon:'🧁'},{id:'store',label:'Gelaterie',icon:'🍨'}];
@@ -130,7 +123,6 @@ const state={favs:JSON.parse(localStorage.getItem('orbo_favs')||'[]')};
 const $=id=>document.getElementById(id);
 const toast=m=>{const t=$('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)};
 const navigate=v=>{document.querySelectorAll('.view').forEach(s=>s.classList.toggle('active',s.id==='view-'+v));if(v==='search')$('search-input').focus()};
-
 function initMap(){
   map=new google.maps.Map($('gmap'),{center:{lat:44.4949,lng:11.3426},zoom:15});
   placesService=new google.maps.places.PlacesService(map);
