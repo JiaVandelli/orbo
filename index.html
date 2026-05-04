@@ -22,10 +22,10 @@ img{display:block;width:100%;height:100%;object-fit:cover}
 
 .hero{min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden;padding:80px 20px 48px;background:radial-gradient(ellipse at center,#2d1b4e 0%,#1a0b2e 65%,#0f051a 100%)}
 .hero::before{content:"";position:absolute;inset:0;background-image:radial-gradient(circle,rgba(255,255,255,.7)1px,transparent 1px),radial-gradient(circle,rgba(255,255,255,.3)1px,transparent 1px);background-size:90px 90px,45px 45px;background-position:0 0,22px 22px;opacity:.13}
+.hero::after{content:"";position:absolute;width:600px;height:600px;background:radial-gradient(circle,rgba(255,140,0,0.15),transparent 70%);top:50%;left:50%;transform:translate(-50%,-50%);animation:pulseGlow 4s ease-in-out infinite;pointer-events:none;z-index:0}
+@keyframes pulseGlow{0%,100%{opacity:0.4;transform:translate(-50%,-50%) scale(1)}50%{opacity:0.7;transform:translate(-50%,-50%) scale(1.2)}}
 .hero-logo{position:relative;z-index:2;width:180px;height:180px;filter:drop-shadow(0 0 32px rgba(255,140,0,.7));animation:pulse-logo 3.5s ease-in-out infinite}
 @keyframes pulse-logo{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
-.orbit{position:absolute;top:50%;left:50%;width:400px;height:400px;margin:-200px 0 0 -200px;animation:spin 26s linear infinite;pointer-events:none;z-index:1}
-@keyframes spin{to{transform:rotate(360deg)}}
 .hero-text{position:relative;z-index:2;text-align:center;margin-top:36px;max-width:540px}
 .hero-kicker{font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#FFB347;margin-bottom:12px}
 .hero-title{font-family:'Arial Black',Arial,sans-serif;font-size:clamp(24px,5vw,42px);font-weight:900;line-height:1.15;margin-bottom:14px;background:linear-gradient(180deg,#FFB347 0%,#FF8C00 55%,#E06500 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;filter:drop-shadow(2px 2px 0 #7a3000)}
@@ -34,11 +34,12 @@ img{display:block;width:100%;height:100%;object-fit:cover}
 .hero-cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
 .btn-primary{background:linear-gradient(135deg,#FF8C00,#FFB347);padding:15px 36px;border-radius:999px;font-family:'Arial Black',sans-serif;font-size:14px;font-weight:900;color:#1a0b2e;text-transform:uppercase;letter-spacing:.5px;box-shadow:0 6px 24px rgba(255,140,0,.5);transition:transform .18s}
 .btn-primary:hover{transform:translateY(-3px)}
+.btn-primary:active{transform:scale(0.95)}
 .btn-ghost{background:rgba(255,140,0,.08);border:2px solid rgba(255,140,0,.45);padding:15px 36px;border-radius:999px;font-family:'Arial Black',sans-serif;font-size:14px;font-weight:900;color:#FFB347;text-transform:uppercase}
 
 .quick-sections{background:#0a0318;padding:40px 16px 48px;display:flex;flex-direction:column;gap:14px;align-items:center}
-.quick-card{width:100%;max-width:560px;display:flex;align-items:center;gap:18px;background:linear-gradient(135deg,#2d1b4e,#1a0b2e);border:1px solid rgba(255,140,0,.3);border-radius:20px;padding:22px 24px;cursor:pointer;transition:transform .18s}
-.quick-card:hover{transform:translateY(-3px);box-shadow:0 10px 28px rgba(255,140,0,.22)}
+.quick-card{width:100%;max-width:560px;display:flex;align-items:center;gap:18px;background:linear-gradient(135deg,#2d1b4e,#1a0b2e);border:1px solid rgba(255,140,0,.3);border-radius:20px;padding:22px 24px;cursor:pointer;transition:all .25s ease}
+.quick-card:hover{transform:translateY(-5px) scale(1.02);box-shadow:0 10px 28px rgba(255,140,0,.22)}
 
 .view-inner{padding:20px 16px 48px;max-width:760px;margin:0 auto}
 .view-title{font-size:22px;font-weight:800;color:#FFB347;margin-bottom:16px}
@@ -48,7 +49,8 @@ img{display:block;width:100%;height:100%;object-fit:cover}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
 .chip{padding:7px 14px;border-radius:999px;border:1px solid rgba(255,140,0,.3);background:rgba(45,27,78,.8);color:rgba(255,179,71,.7);font-size:.88rem;font-weight:600;cursor:pointer}
 .chip.active{background:#FF8C00;color:#1a0b2e;border-color:#FF8C00}
-.result-card{background:linear-gradient(135deg,#2d1b4e,#1a0b2e);border:1px solid rgba(255,140,0,.22);border-radius:20px;overflow:hidden;margin-bottom:14px;display:grid;grid-template-columns:120px 1fr;cursor:pointer}
+.result-card{background:linear-gradient(135deg,#2d1b4e,#1a0b2e);border:1px solid rgba(255,140,0,.22);border-radius:20px;overflow:hidden;margin-bottom:14px;display:grid;grid-template-columns:120px 1fr;cursor:pointer;transition:transform .18s}
+.result-card:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(255,140,0,.2)}
 .rc-img{position:relative;height:100%;min-height:120px}
 .rc-badge{position:absolute;top:8px;left:8px;padding:3px 8px;border-radius:999px;font-size:.75rem;font-weight:700;background:rgba(255,140,0,.85);color:#1a0b2e}
 .rc-body{padding:14px 16px}
@@ -56,10 +58,20 @@ img{display:block;width:100%;height:100%;object-fit:cover}
 .rc-cuisine{font-size:.82rem;color:rgba(255,179,71,.55);margin-top:2px}
 .rc-desc{font-size:.85rem;color:rgba(200,184,232,.75);line-height:1.55;margin:6px 0 10px}
 .rc-footer{display:flex;justify-content:space-between;align-items:center}
-.rc-status{font-size:.75rem;padding:4px 8px;border-radius:999px;background:rgba(255,140,0,.15);color:#FFB347}
-.rc-status.open{background:rgba(46,213,115,.15);color:#9CF0C0}
-.fav-btn{background:none;border:none;font-size:1.2rem;opacity:.7}
-.fav-btn.active{opacity:1}
+.rc-status{font-size:.75rem;padding:4px 8px;border-radius:999px;background:rgba(255,
+.food-orbits{position:absolute;top:50%;left:50%;width:420px;height:420px;margin:-210px 0 0 -210px;pointer-events:none;z-index:1}
+.food-orbits span{position:absolute;font-size:22px;animation:orbitFood 18s linear infinite;filter:drop-shadow(0 0 8px rgba(255,140,0,0.7))}
+.food-orbits span:nth-child(1){transform:rotate(0deg) translate(200px) rotate(0deg)}
+.food-orbits span:nth-child(2){transform:rotate(60deg) translate(200px) rotate(-60deg)}
+.food-orbits span:nth-child(3){transform:rotate(120deg) translate(200px) rotate(-120deg)}
+.food-orbits span:nth-child(4){transform:rotate(180deg) translate(200px) rotate(-180deg)}
+.food-orbits span:nth-child(5){transform:rotate(240deg) translate(200px) rotate(-240deg)}
+.food-orbits span:nth-child(6){transform:rotate(300deg) translate(200px) rotate(-300deg)}
+@keyframes orbitFood{from{transform:rotate(0deg) translate(200px) rotate(0deg)}to{transform:rotate(360deg) translate(200px) rotate(-360deg)}}
+
+.particles span{position:absolute;width:4px;height:4px;background:#FFB347;border-radius:50%;opacity:0.6;animation:floatUp 8s linear infinite}
+@keyframes floatUp{from{transform:translateY(0);opacity:0}30%{opacity:1}to{transform:translateY(-800px);opacity:0}}
+
 .empty-state{text-align:center;padding:40px;color:rgba(255,179,71,.5);display:none}
 #gmap{position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#1A120B;border:1px solid rgba(255,140,0,.3);color:#FFE4B8;padding:10px 14px;border-radius:12px;opacity:0;transition:.25s;z-index:100}
@@ -68,31 +80,18 @@ img{display:block;width:100%;height:100%;object-fit:cover}
 </head>
 <body>
 <header class="topbar">
-  <svg class="topbar-logo" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><polygon points="50,15 75,30 75,60 50,75 25,60 25,30" fill="#FF8C00"/></svg>
+  <img src="OrboLogo.svg" alt="Orbo" class="topbar-logo" />
   <span class="topbar-slogan">Il gusto ti orbita</span>
 </header>
 
 <main>
 <section class="view active" id="view-home">
   <div class="hero">
-    <div class="orbit"></div>
-    <div class="hero-logo">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="180" height="180">
-        <defs>
-          <linearGradient id="topFace" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ffb347"/><stop offset="100%" stop-color="#ff8c00"/></linearGradient>
-          <linearGradient id="leftFace" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#cc5500"/><stop offset="100%" stop-color="#e06500"/></linearGradient>
-          <linearGradient id="rightFace" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#ff7c20"/><stop offset="100%" stop-color="#ff9a40"/></linearGradient>
-          <filter id="glow"><feGaussianBlur stdDeviation="1.5" result="coloredBlur"/><feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-          <path id="orbitPath" d="M60,12 C82,12 96,30 96,55 C96,80 82,98 60,98 C38,98 24,80 24,55 C24,30 38,12 60,12 Z"/>
-        </defs>
-        <ellipse cx="60" cy="108" rx="28" ry="6" fill="rgba(180,80,0,0.18)"/>
-        <g><polygon points="60,25 90,40 60,55 30,40" fill="url(#topFace)"/><polygon points="30,40 60,55 60,85 30,70" fill="url(#leftFace)"/><polygon points="60,55 90,40 90,70 60,85" fill="url(#rightFace)"/></g>
-        <text font-family="Arial Black" font-size="14" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="#FFE4A3" filter="url(#glow)"><animateMotion dur="8s" repeatCount="indefinite"><mpath href="#orbitPath"/></animateMotion>O</text>
-        <text font-family="Arial Black" font-size="14" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="#FFD080" filter="url(#glow)"><animateMotion dur="8s" repeatCount="indefinite" begin="-2s"><mpath href="#orbitPath"/></animateMotion>R</text>
-        <text font-family="Arial Black" font-size="14" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="#FFB347" filter="url(#glow)"><animateMotion dur="8s" repeatCount="indefinite" begin="-4s"><mpath href="#orbitPath"/></animateMotion>B</text>
-        <text font-family="Arial Black" font-size="14" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="#FFE4A3" filter="url(#glow)"><animateMotion dur="8s" repeatCount="indefinite" begin="-6s"><mpath href="#orbitPath"/></animateMotion>O</text>
-      </svg>
+    <div class="food-orbits">
+      <span>🍕</span><span>🍣</span><span>🍔</span><span>🍜</span><span>🍩</span><span>🌮</span>
     </div>
+    <div class="particles"></div>
+    <img src="OrboLogo.svg" alt="Orbo" class="hero-logo" />
     <div class="hero-text">
       <p class="hero-kicker">Scopri il gusto</p>
       <h1 class="hero-title">Il locale perfetto,<br>a portata di tap</h1>
@@ -125,7 +124,7 @@ img{display:block;width:100%;height:100%;object-fit:cover}
 <div class="toast" id="toast"></div>
 
 <script>
-let placesService, map, userLoc=null, VENUES=[];
+let placesService, map, userLoc=null, VENUES=[], debounceTimer;
 const CATS=[{id:'all',label:'Tutto',icon:'✦'},{id:'restaurant',label:'Ristoranti',icon:'🍝'},{id:'cafe',label:'Bar',icon:'☕'},{id:'bakery',label:'Pasticcerie',icon:'🧁'},{id:'store',label:'Gelaterie',icon:'🍨'}];
 const state={favs:JSON.parse(localStorage.getItem('orbo_favs')||'[]')};
 const $=id=>document.getElementById(id);
@@ -136,7 +135,20 @@ function initMap(){
   map=new google.maps.Map($('gmap'),{center:{lat:44.4949,lng:11.3426},zoom:15});
   placesService=new google.maps.places.PlacesService(map);
   renderChips();
+  spawnParticles();
   if(navigator.geolocation){navigator.geolocation.getCurrentPosition(p=>{userLoc={lat:p.coords.latitude,lng:p.coords.longitude};map.setCenter(userLoc)},()=>{})}
+}
+function spawnParticles(){
+  const particlesContainer = document.querySelector('.particles');
+  if(particlesContainer){
+    for (let i = 0; i < 25; i++) {
+      const p = document.createElement('span');
+      p.style.left = Math.random() * 100 + '%';
+      p.style.animationDelay = Math.random() * 8 + 's';
+      p.style.animationDuration = (6 + Math.random() * 6) + 's';
+      particlesContainer.appendChild(p);
+    }
+  }
 }
 function doNearby(){navigate('search');getNearby()}
 function getNearby(){
@@ -146,7 +158,10 @@ function getNearby(){
 }
 function searchAPI(q){
   if(!q){$('empty-state').style.display='block';return}
-  placesService.textSearch({query:q,location:map.getCenter(),radius:5000},(res,st)=>{if(st==='OK')updateVenues(res)})
+  clearTimeout(debounceTimer);
+  debounceTimer=setTimeout(()=>{
+    placesService.textSearch({query:q,location:map.getCenter(),radius:5000},(res,st)=>{if(st==='OK')updateVenues(res)})
+  },300);
 }
 function updateVenues(places){
   VENUES=places.slice(0,20).map(p=>({id:p.place_id,name:p.name,address:p.vicinity||'',rating:p.rating||4.2,price:'€'.repeat(p.price_level||2),openNow:p.opening_hours?.isOpen?.()??p.opening_hours?.open_now,photo:p.photos?.[0]?.getUrl({maxWidth:400})||'https://images.unsplash.com/photo-1414235077428?w=600',lat:p.geometry.location.lat(),lng:p.geometry.location.lng()}));
@@ -157,7 +172,7 @@ function filterCat(id,el){document.querySelectorAll('.chip').forEach(c=>c.classL
 function renderResults(){const list=$('results-list'),count=$('results-count'),empty=$('empty-state');if(!VENUES.length){empty.style.display='block';list.innerHTML='';count.textContent='';return}empty.style.display='none';count.textContent=`${VENUES.length} locali trovati 🔥`;list.innerHTML=VENUES.map(v=>`<article class="result-card" onclick="openMaps('${v.lat}','${v.lng}')"><div class="rc-img"><img src="${v.photo}" loading="lazy"><span class="rc-badge">${v.price}</span></div><div class="rc-body"><div class="rc-name">${v.name}</div><div class="rc-cuisine">${v.address}</div><div class="rc-desc">⭐ ${v.rating} · ${v.openNow?'Aperto':'Chiuso'}</div><div class="rc-footer"><span class="rc-status ${v.openNow?'open':''}">${v.openNow?'Aperto ora':'Chiuso'}</span><button class="fav-btn ${state.favs.includes(v.id)?'active':''}" onclick="event.stopPropagation();toggleFav('${v.id}')">❤️</button></div></div></article>`).join('')}
 function toggleFav(id){const i=state.favs.indexOf(id);if(i>-1)state.favs.splice(i,1);else state.favs.push(id);localStorage.setItem('orbo_favs',JSON.stringify(state.favs));toast(i>-1?'💔 Rimosso':'❤️ Salvato');renderResults()}
 function openMaps(lat,lng){window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`,'_blank')}
-$('search-input').addEventListener('input',e=>{const q=e.target.value.trim();if(q.length>2)searchAPI(q)})
+$('search-input').addEventListener('input',e=>{const q=e.target.value.trim();if(q.length>1)searchAPI(q)})
 </script>
 <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC6wAI6R6WztfmYzimz0wFew_ItgzPc-QU&libraries=places&callback=initMap&language=it&region=IT"></script>
 </body>
