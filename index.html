@@ -1,1436 +1,243 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Orbo - Il gusto ti orbita</title>
-  <meta name="description" content="Il gusto ti orbita intorno. Scopri ristoranti, bar, gelaterie con Orbo." />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
-  <style>
-    /* ===== RESET ===== */
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html { scroll-behavior: smooth; }
-
-    body {
-      font-family: "Inter", system-ui, sans-serif;
-      background: linear-gradient(180deg, #1a0b2e 0%, #0f051a 100%);
-      color: #fff;
-      min-height: 100vh;
-    }
-
-    body.no-scroll { overflow: hidden; }
-
-    button, input, select { font: inherit; border: 0; cursor: pointer; background: none; }
-    button:focus-visible, input:focus-visible { outline: 2px solid #FFB347; outline-offset: 2px; }
-
-    img { display: block; width: 100%; height: 100%; object-fit: cover; }
-
-    .visually-hidden {
-      position: absolute; width: 1px; height: 1px;
-      overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap;
-    }
-
-    /* ===== TOPBAR ===== */
-    .topbar {
-      position: sticky; top: 0; z-index: 30;
-      display: flex; align-items: center; gap: 14px;
-      padding: 11px 18px;
-      background: linear-gradient(135deg, #1a0b2e 0%, #2d1b4e 60%, #3d1b80 100%);
-      border-bottom: 1px solid rgba(255,179,71,0.2);
-      box-shadow: 0 4px 24px rgba(255,140,0,0.18);
-    }
-
-    .topbar-logo {
-      height: 44px; width: 44px; flex-shrink: 0;
-      filter: drop-shadow(0 0 10px rgba(255,180,71,0.6));
-      transition: transform 250ms cubic-bezier(.34,1.56,.64,1);
-    }
-    .topbar-logo:hover { transform: rotate(-6deg) scale(1.1); }
-
-    .topbar-slogan {
-      flex: 1;
-      font-family: 'Arial Black', Arial, sans-serif;
-      font-size: 16px; font-weight: 900;
-      letter-spacing: 0.5px; text-transform: uppercase;
-      background: linear-gradient(180deg, #FFB347 0%, #FF8C00 60%, #E06500 100%);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-      filter: drop-shadow(1px 1px 0 #7a3000) drop-shadow(2px 2px 4px rgba(0,0,0,0.5));
-    }
-
-    .topbar-btn {
-      width: 46px; height: 46px;
-      display: grid; place-items: center;
-      background: linear-gradient(135deg, #2d1b4e, #1a0b2e);
-      border: 2px solid rgba(255,140,0,0.45);
-      border-radius: 13px;
-      box-shadow: 0 4px 16px rgba(255,140,0,0.2);
-      flex-shrink: 0;
-      transition: transform 180ms ease, box-shadow 180ms ease;
-    }
-    .topbar-btn:hover { transform: scale(1.08); box-shadow: 0 8px 24px rgba(255,140,0,0.4); }
-
-    /* ===== MOBILE NAV ===== */
-    .mobile-nav {
-      display: none;
-      position: fixed; inset: 0 0 auto 0; z-index: 40;
-      padding: 68px 16px 20px;
-      background: rgba(15, 5, 26, 0.97);
-      backdrop-filter: blur(20px);
-      border-bottom: 1px solid rgba(255,140,0,0.18);
-      flex-direction: column; gap: 4px;
-      transform: translateY(-100%);
-      transition: transform 280ms ease;
-      box-shadow: 0 12px 40px rgba(255,140,0,0.12);
-    }
-    .mobile-nav.open { transform: translateY(0); display: flex; }
-
-    .nav-item {
-      padding: 13px 16px;
-      border-radius: 12px;
-      color: rgba(255,179,71,0.7);
-      font-size: 0.97rem; font-weight: 600;
-      text-align: left;
-      transition: color 160ms, background 160ms;
-    }
-    .nav-item:hover, .nav-item.active { color: #FFB347; background: rgba(255,140,0,0.1); }
-
-    /* ===== VIEWS ===== */
-    .view { display: none; animation: fadeUp 280ms ease; }
-    .view.active { display: block; }
-
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(10px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    /* ===== HERO ===== */
-    .hero {
-      min-height: 100svh;
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      position: relative; overflow: hidden;
-      padding: 80px 20px 48px;
-      background: radial-gradient(ellipse at center, #2d1b4e 0%, #1a0b2e 65%, #0f051a 100%);
-    }
-
-    /* stelle */
-    .hero::before {
-      content: "";
-      position: absolute; inset: 0;
-      background-image:
-        radial-gradient(circle, rgba(255,255,255,0.7) 1px, transparent 1px),
-        radial-gradient(circle, rgba(255,255,255,0.3) 1px, transparent 1px);
-      background-size: 90px 90px, 45px 45px;
-      background-position: 0 0, 22px 22px;
-      opacity: 0.13; pointer-events: none;
-    }
-
-    /* alone centrale */
-    .hero::after {
-      content: "";
-      position: absolute; top: 42%; left: 50%;
-      transform: translate(-50%, -50%);
-      width: 480px; height: 480px; border-radius: 50%;
-      background: radial-gradient(circle, rgba(255,140,0,0.11) 0%, transparent 70%);
-      pointer-events: none;
-    }
-
-    /* ── ORBITA ── */
-    .orbit {
-      position: absolute; top: 50%; left: 50%;
-      width: 400px; height: 400px;
-      margin: -200px 0 0 -200px;
-      animation: spin 26s linear infinite;
-      pointer-events: none; z-index: 1;
-    }
-
-    .orbit-emoji {
-      position: absolute;
-      font-size: 38px;
-      filter: drop-shadow(0 0 12px rgba(255,140,0,0.85));
-      animation: unspin 26s linear infinite;
-    }
-
-    @keyframes spin   { to { transform: rotate(360deg); } }
-    @keyframes unspin { to { transform: rotate(-360deg); } }
-
-    @keyframes pulse-logo {
-      0%,100% { transform: scale(1);    filter: drop-shadow(0 0 32px rgba(255,140,0,0.7)); }
-      50%      { transform: scale(1.08); filter: drop-shadow(0 0 56px rgba(255,140,0,1)); }
-    }
-
-    .hero-logo {
-      position: relative; z-index: 2;
-      width: 150px; height: 150px;
-      animation: pulse-logo 3.5s ease-in-out infinite;
-    }
-
-    /* ── TESTO HERO ── */
-    .hero-text {
-      position: relative; z-index: 2;
-      text-align: center; margin-top: 36px;
-      max-width: 540px;
-    }
-
-    .hero-kicker {
-      font-size: 10px; font-weight: 700;
-      letter-spacing: 3px; text-transform: uppercase;
-      color: #FFB347; margin-bottom: 12px;
-      text-shadow: 0 0 10px rgba(255,140,0,0.5);
-    }
-
-    .hero-title {
-      font-family: 'Arial Black', Arial, sans-serif;
-      font-size: clamp(24px, 5vw, 42px); font-weight: 900;
-      line-height: 1.15; margin-bottom: 14px;
-      background: linear-gradient(180deg, #FFB347 0%, #FF8C00 55%, #E06500 100%);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-      filter: drop-shadow(2px 2px 0 #7a3000) drop-shadow(0 0 18px rgba(255,140,0,0.35));
-    }
-
-    .hero-sub {
-      font-size: 14px; color: #c0aee0; line-height: 1.75; margin-bottom: 28px;
-    }
-    .hero-sub strong { color: #FFB347; }
-
-    .hero-cta {
-      display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
-    }
-
-    .btn-primary {
-      background: linear-gradient(135deg, #FF8C00, #FFB347);
-      padding: 15px 36px; border-radius: 999px;
-      font-family: 'Arial Black', sans-serif;
-      font-size: 14px; font-weight: 900; color: #1a0b2e;
-      text-transform: uppercase; letter-spacing: 0.5px;
-      box-shadow: 0 6px 24px rgba(255,140,0,0.5);
-      transition: transform 180ms ease, box-shadow 180ms ease;
-    }
-    .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 10px 32px rgba(255,140,0,0.65); }
-
-    .btn-ghost {
-      background: rgba(255,140,0,0.08);
-      border: 2px solid rgba(255,140,0,0.45);
-      padding: 15px 36px; border-radius: 999px;
-      font-family: 'Arial Black', sans-serif;
-      font-size: 14px; font-weight: 900; color: #FFB347;
-      text-transform: uppercase; letter-spacing: 0.5px;
-      backdrop-filter: blur(10px);
-      transition: transform 180ms ease, background 180ms ease;
-    }
-    .btn-ghost:hover { transform: translateY(-3px); background: rgba(255,140,0,0.16); }
-
-    /* ===== QUICK SECTIONS ===== */
-    .quick-sections {
-      background: #0a0318; padding: 40px 16px 48px;
-      display: flex; flex-direction: column; gap: 14px;
-      align-items: center;
-    }
-
-    .quick-card {
-      width: 100%; max-width: 560px;
-      display: flex; align-items: center; gap: 18px;
-      background: linear-gradient(135deg, #2d1b4e, #1a0b2e);
-      border: 1px solid rgba(255,140,0,0.3);
-      border-radius: 20px; padding: 22px 24px;
-      transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
-      cursor: pointer;
-    }
-    .quick-card:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 10px 28px rgba(255,140,0,0.22);
-      border-color: rgba(255,140,0,0.55);
-    }
-
-    .quick-icon { font-size: 1.9rem; flex-shrink: 0; }
-
-    .quick-kicker {
-      font-size: 9px; font-weight: 900;
-      color: #FF8C00; letter-spacing: 2px;
-      text-transform: uppercase; margin-bottom: 3px;
-    }
-
-    .quick-title {
-      font-size: 18px; font-weight: 900;
-      background: linear-gradient(180deg, #FFB347, #FF8C00);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-      filter: drop-shadow(1px 1px 0 #7a3000);
-    }
-
-    /* ===== SEARCH VIEW ===== */
-    .view-inner { padding: 20px 16px 48px; max-width: 760px; margin: 0 auto; }
-
-    .view-title {
-      font-size: 22px; font-weight: 800;
-      color: #FFB347; margin-bottom: 16px;
-    }
-
-    .search-bar {
-      display: flex; align-items: center; gap: 10px;
-      background: rgba(45,27,78,0.85);
-      border: 1px solid rgba(255,140,0,0.3);
-      border-radius: 16px; padding: 0 16px;
-      margin-bottom: 14px;
-      transition: border-color 160ms;
-    }
-    .search-bar:focus-within { border-color: rgba(255,140,0,0.6); }
-
-    .search-bar input {
-      flex: 1; height: 54px; background: transparent;
-      color: #fff; font-size: 0.97rem;
-    }
-    .search-bar input::placeholder { color: rgba(255,179,71,0.4); }
-
-    .search-clear {
-      color: rgba(255,179,71,0.5); font-size: 1.1rem;
-      transition: color 160ms;
-    }
-    .search-clear:hover { color: #FFB347; }
-
-    /* chips categorie */
-    .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
-
-    .chip {
-      padding: 7px 14px; border-radius: 999px;
-      border: 1px solid rgba(255,140,0,0.3);
-      background: rgba(45,27,78,0.8);
-      color: rgba(255,179,71,0.7);
-      font-size: 0.88rem; font-weight: 600;
-      transition: all 160ms ease;
-    }
-    .chip:hover { border-color: rgba(255,140,0,0.6); color: #FFB347; }
-    .chip.active { background: #FF8C00; color: #1a0b2e; border-color: #FF8C00; }
-
-    /* filtri prezzo/rating */
-    .filters { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
-
-    .filter-select {
-      display: flex; align-items: center; gap: 6px;
-      background: rgba(45,27,78,0.85);
-      border: 1px solid rgba(255,140,0,0.25);
-      border-radius: 12px; padding: 0 12px; height: 40px;
-    }
-    .filter-select span { font-size: 0.82rem; color: rgba(255,179,71,0.55); }
-    .filter-select select {
-      background: transparent; color: #FFB347;
-      font-size: 0.9rem; font-weight: 600;
-    }
-
-    .results-count {
-      font-size: 0.88rem; color: rgba(255,179,71,0.5);
-      margin-bottom: 14px;
-    }
-
-    /* ===== RESULT CARD ===== */
-    .result-card {
-      background: linear-gradient(135deg, #2d1b4e, #1a0b2e);
-      border: 1px solid rgba(255,140,0,0.22);
-      border-radius: 20px; overflow: hidden;
-      margin-bottom: 14px;
-      display: grid; grid-template-columns: 120px 1fr;
-      transition: transform 180ms ease, box-shadow 180ms ease;
-      cursor: pointer;
-    }
-    .result-card:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(255,140,0,0.2); }
-
-    .rc-img {
-      position: relative; height: 100%; min-height: 120px;
-    }
-
-    .rc-badge {
-      position: absolute; top: 8px; left: 8px;
-      padding: 3px 8px; border-radius: 999px;
-      font-size: 0.75rem; font-weight: 700;
-      background: rgba(255,140,0,0.85); color: #1a0b2e;
-    }
-
-    .rc-body { padding: 14px 16px; }
-
-    .rc-top {
-      display: flex; justify-content: space-between; align-items: flex-start;
-      margin-bottom: 6px;
-    }
-
-    .rc-name { font-size: 1rem; font-weight: 800; color: #FFD580; }
-    .rc-cuisine { font-size: 0.82rem; color: rgba(255,179,71,0.55); margin-top: 2px; }
-
-    .rc-rating {
-      display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex-shrink: 0;
-    }
-    .rc-stars { color: #FFB347; font-size: 0.85rem; }
-    .rc-num { font-size: 0.82rem; color: rgba(255,179,71,0.6); }
-
-    .rc-desc { font-size: 0.85rem; color: rgba(200,184,232,0.75); line-height: 1.55; margin-bottom: 10px; }
-
-    .rc-footer { display: flex; justify-content: space-between; align-items: center; }
-
-    .rc-status {
-      font-size: 0.78rem; font-weight: 700; padding: 3px 10px;
-      border-radius: 999px;
-    }
-    .rc-status.open  { background: rgba(0,200,100,0.15); color: #4ade80; }
-    .rc-status.closed{ background: rgba(255,80,80,0.15);  color: #f87171; }
-
-    .fav-btn {
-      width: 32px; height: 32px; display: grid; place-items: center;
-      border-radius: 50%; font-size: 1rem;
-      background: rgba(255,140,0,0.1);
-      border: 1px solid rgba(255,140,0,0.25);
-      transition: transform 180ms ease, background 180ms ease;
-    }
-    .fav-btn:hover { transform: scale(1.15); background: rgba(255,140,0,0.2); }
-    .fav-btn.active { background: rgba(255,100,100,0.2); border-color: rgba(255,100,100,0.4); }
-
-    /* ===== EMPTY STATE ===== */
-    .empty-state {
-      text-align: center; padding: 40px 20px;
-      color: rgba(255,179,71,0.45);
-      border: 1px dashed rgba(255,140,0,0.2);
-      border-radius: 20px;
-    }
-    .empty-state p { margin-top: 8px; font-size: 0.9rem; }
-
-    /* ===== IDEAS GRID ===== */
-    .ideas-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
-    }
-
-    .idea-card {
-      display: flex; flex-direction: column; align-items: center; gap: 6px;
-      padding: 18px 12px; border-radius: 18px;
-      border: 1px solid rgba(255,140,0,0.15);
-      background: linear-gradient(135deg, #2d1b4e, #1a0b2e);
-      text-align: center; cursor: pointer;
-      transition: transform 180ms ease, box-shadow 180ms ease;
-    }
-    .idea-card:hover { transform: translateY(-3px); box-shadow: 0 8px 22px rgba(255,140,0,0.2); }
-
-    .idea-icon { font-size: 1.9rem; }
-    .idea-label { font-size: 0.82rem; font-weight: 700; color: #FFB347; }
-    .idea-sub   { font-size: 0.74rem; color: rgba(255,179,71,0.5); }
-
-    /* ===== CATEGORY CARDS ===== */
-    .cat-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 12px; margin-bottom: 20px;
-    }
-
-    .cat-card {
-      display: flex; align-items: center; gap: 12px;
-      padding: 16px 18px; border-radius: 16px;
-      background: linear-gradient(135deg, #2d1b4e, #1a0b2e);
-      border: 1px solid rgba(255,140,0,0.18);
-      cursor: pointer;
-      transition: transform 180ms ease, border-color 180ms ease;
-    }
-    .cat-card:hover { transform: translateY(-2px); border-color: rgba(255,140,0,0.45); }
-    .cat-card.active { border-color: #FF8C00; background: linear-gradient(135deg, #3d2566, #2d1b4e); }
-
-    .cat-icon { font-size: 1.6rem; flex-shrink: 0; }
-    .cat-name { font-size: 0.95rem; font-weight: 700; color: #FFB347; }
-    .cat-sub  { font-size: 0.78rem; color: rgba(255,179,71,0.5); }
-
-    /* ===== APP MENU OVERLAY ===== */
-    .app-overlay {
-      position: fixed; inset: 0; z-index: 50;
-      display: none; align-items: center; justify-content: center;
-      background: rgba(8,2,18,0.72);
-      backdrop-filter: blur(10px);
-      animation: fadeIn 200ms ease;
-    }
-    .app-overlay.open { display: flex; }
-
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    @keyframes riseUp {
-      from { opacity: 0; transform: translateY(20px) scale(0.97); }
-      to   { opacity: 1; transform: translateY(0) scale(1); }
-    }
-
-    .app-panel {
-      width: min(calc(100% - 32px), 640px);
-      max-height: 82vh; overflow-y: auto;
-      padding: 24px;
-      border-radius: 28px;
-      background: linear-gradient(135deg, #2d1b4e, #1a0b2e);
-      border: 1px solid rgba(255,140,0,0.3);
-      box-shadow: 0 24px 56px rgba(255,140,0,0.25);
-      animation: riseUp 260ms ease;
-    }
-
-    .app-panel-header {
-      display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: 20px;
-    }
-    .app-panel-header h2 { font-size: 1.3rem; font-weight: 800; color: #FFB347; }
-
-    .close-btn {
-      width: 38px; height: 38px; display: grid; place-items: center;
-      border-radius: 50%; background: rgba(255,140,0,0.12);
-      color: #FFB347; font-size: 1rem;
-      transition: transform 180ms ease;
-    }
-    .close-btn:hover { transform: scale(1.1); }
-
-    .app-grid {
-      display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
-    }
-
-    .app-tile {
-      display: flex; flex-direction: column; align-items: center; gap: 5px;
-      padding: 18px 10px; border-radius: 18px;
-      background: linear-gradient(135deg, #3d2566, #2d1b4e);
-      border: 1px solid rgba(255,140,0,0.15);
-      cursor: pointer;
-      transition: transform 180ms ease, border-color 180ms ease;
-    }
-    .app-tile:hover { transform: translateY(-3px); border-color: rgba(255,140,0,0.45); }
-    .app-tile:disabled { opacity: 0.4; cursor: default; }
-    .app-tile:disabled:hover { transform: none; }
-
-    .app-tile .ti { font-size: 1.7rem; }
-    .app-tile strong { font-size: 0.88rem; color: #FFB347; font-weight: 700; }
-    .app-tile span   { font-size: 0.74rem; color: rgba(255,179,71,0.5); }
-
-    .app-tile.soon { position: relative; }
-    .app-tile.soon::after {
-      content: "Presto";
-      position: absolute; top: 7px; right: 9px;
-      font-size: 0.6rem; font-weight: 700;
-      color: #FF8C00; background: rgba(255,140,0,0.1);
-      padding: 1px 6px; border-radius: 999px;
-    }
-
-    /* ===== DETAIL MODAL ===== */
-    .detail-modal {
-      position: fixed; inset: 0; z-index: 60;
-      display: none; align-items: flex-end; justify-content: center;
-      background: rgba(8,2,18,0.75);
-      backdrop-filter: blur(8px);
-    }
-    .detail-modal.open { display: flex; animation: fadeIn 200ms ease; }
-
-    .detail-sheet {
-      width: 100%; max-width: 640px;
-      max-height: 90svh; overflow-y: auto;
-      border-radius: 28px 28px 0 0;
-      background: linear-gradient(180deg, #2d1b4e, #1a0b2e);
-      border-top: 1px solid rgba(255,140,0,0.25);
-      box-shadow: 0 -10px 40px rgba(255,140,0,0.15);
-      animation: slideUp 280ms ease;
-    }
-
-    @keyframes slideUp {
-      from { transform: translateY(40px); opacity: 0; }
-      to   { transform: translateY(0);    opacity: 1; }
-    }
-
-    .detail-img {
-      position: relative; height: 220px; border-radius: 20px 20px 0 0; overflow: hidden;
-    }
-
-    .detail-close {
-      position: absolute; top: 14px; right: 14px;
-      width: 38px; height: 38px; display: grid; place-items: center;
-      border-radius: 50%; background: rgba(15,5,26,0.8);
-      color: #FFB347; font-size: 1rem; font-weight: 700;
-      backdrop-filter: blur(6px);
-      transition: transform 180ms ease;
-    }
-    .detail-close:hover { transform: scale(1.1); }
-
-    .detail-body { padding: 20px; }
-
-    .detail-header {
-      display: flex; justify-content: space-between; align-items: flex-start;
-      gap: 12px; margin-bottom: 14px;
-    }
-
-    .detail-name { font-size: 1.3rem; font-weight: 900; color: #FFD580; }
-    .detail-meta { font-size: 0.85rem; color: rgba(255,179,71,0.55); margin-top: 4px; }
-
-    .detail-rating { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
-    .detail-rating .stars { color: #FFB347; font-size: 0.9rem; }
-    .detail-rating .num   { font-size: 0.88rem; color: rgba(255,179,71,0.6); }
-
-    .detail-desc {
-      font-size: 0.9rem; color: #c0aee0; line-height: 1.7;
-      margin-bottom: 18px;
-    }
-
-    .detail-info { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 18px; }
-
-    .detail-info-item {
-      background: rgba(45,27,78,0.5); border: 1px solid rgba(255,140,0,0.12);
-      border-radius: 14px; padding: 12px 14px;
-    }
-    .detail-info-item .label { font-size: 0.75rem; font-weight: 700; color: #FF8C00; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; }
-    .detail-info-item .value { font-size: 0.88rem; color: #c0aee0; }
-
-    .detail-actions { display: flex; gap: 10px; flex-wrap: wrap; }
-
-    .da-btn {
-      flex: 1; min-width: 120px;
-      padding: 13px 18px; border-radius: 14px;
-      font-size: 0.88rem; font-weight: 700;
-      transition: transform 160ms ease;
-    }
-    .da-btn:hover { transform: translateY(-2px); }
-
-    .da-primary {
-      background: linear-gradient(135deg, #FF8C00, #FFB347);
-      color: #1a0b2e;
-      box-shadow: 0 4px 18px rgba(255,140,0,0.4);
-    }
-    .da-secondary {
-      background: rgba(255,140,0,0.08);
-      border: 1px solid rgba(255,140,0,0.35);
-      color: #FFB347;
-    }
-
-    .detail-reviews { margin-top: 18px; }
-    .detail-reviews h3 { font-size: 1rem; color: #FFB347; font-weight: 700; margin-bottom: 10px; }
-
-    .review-item {
-      background: rgba(45,27,78,0.4); border: 1px solid rgba(255,140,0,0.1);
-      border-radius: 14px; padding: 13px 15px; margin-bottom: 8px;
-    }
-    .review-item .rauthor { font-size: 0.88rem; font-weight: 700; color: #FFD580; }
-    .review-item .rtext   { font-size: 0.85rem; color: #c0aee0; margin-top: 4px; line-height: 1.55; }
-
-    /* ===== TOAST ===== */
-    .toast {
-      position: fixed; bottom: 24px; left: 50%;
-      transform: translateX(-50%) translateY(80px);
-      z-index: 99; padding: 11px 22px;
-      border-radius: 999px;
-      background: #2d1b4e; border: 1px solid rgba(255,140,0,0.4);
-      color: #FFB347; font-size: 0.9rem; font-weight: 600;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
-      transition: transform 300ms cubic-bezier(.34,1.56,.64,1), opacity 300ms ease;
-      opacity: 0; pointer-events: none; white-space: nowrap;
-    }
-    .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
-
-    /* ===== RESPONSIVE ===== */
-    @media (max-width: 480px) {
-      .orbit { width: 290px; height: 290px; margin: -145px 0 0 -145px; }
-      .orbit-emoji { font-size: 28px; }
-      .hero-logo { width: 110px; height: 110px; }
-      .ideas-grid { grid-template-columns: repeat(2, 1fr); }
-      .cat-grid { grid-template-columns: 1fr; }
-      .detail-info { grid-template-columns: 1fr; }
-      .detail-sheet { border-radius: 20px 20px 0 0; }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orbo - Il gusto ti orbita</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0a0a;
+            color: #fff;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .logo img {
+            width: 40px;
+            height: 40px;
+        }
+        .hero {
+            text-align: center;
+            padding: 80px 20px;
+        }
+        
+        .hero h1 {
+            font-size: 48px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, #FF6600, #FF8533);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .hero p {
+            font-size: 20px;
+            color: #aaa;
+            margin-bottom: 40px;
+        }
+        
+        .btn-primary {
+            background: #FF6600;
+            color: white;
+            border: none;
+            padding: 16px 32px;
+            font-size: 18px;
+            font-weight: 600;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary:hover {
+            background: #FF8533;
+            transform: translateY(-2px);
+        }
+        
+        #map {
+            height: 600px;
+            width: 100%;
+            border-radius: 16px;
+            margin-top: 40px;
+            display: none;
+        }
+        
+        .category-filters {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            display: none;
+        }
+        
+        .category-btn {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .category-btn.active {
+            background: #FF6600;
+            border-color: #FF6600;
+        }
+    </style>
 </head>
 <body>
-
-  <!-- ── TOPBAR ── -->
-  <header class="topbar">
-    <img src="src/assets/branding/OrboLogo.svg" alt="Orbo" class="topbar-logo" id="logo-btn" />
-    <span class="topbar-slogan">Il gusto ti orbita</span>
-    <button class="topbar-btn" id="menu-btn" aria-label="Apri menu">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="#FFB347">
-        <circle cx="5"  cy="5"  r="2.1"/><circle cx="12" cy="5"  r="2.1"/><circle cx="19" cy="5"  r="2.1"/>
-        <circle cx="5"  cy="12" r="2.1"/><circle cx="12" cy="12" r="2.1"/><circle cx="19" cy="12" r="2.1"/>
-        <circle cx="5"  cy="19" r="2.1"/><circle cx="12" cy="19" r="2.1"/><circle cx="19" cy="19" r="2.1"/>
-      </svg>
-    </button>
-  </header>
-
-  <!-- ── MOBILE NAV ── -->
-  <nav class="mobile-nav" id="mobile-nav">
-    <button class="nav-item active" data-view="home">🏠 Home</button>
-    <button class="nav-item" data-view="search">🔍 Cerca</button>
-    <button class="nav-item" data-view="favorites">❤️ Preferiti</button>
-    <button class="nav-item" data-view="nearby">📍 Vicino a te</button>
-    <button class="nav-item" data-view="toprated">⭐ Top Rated</button>
-    <button class="nav-item" data-view="categories">🍝 Categorie</button>
-    <button class="nav-item" data-view="ideas">💡 Idee</button>
-  </nav>
-
-  <!-- ── VIEWS ── -->
-  <main>
-
-    <!-- HOME -->
-    <section class="view active" id="view-home">
-      <div class="hero">
-        <div class="orbit" id="orbit"></div>
-        <img src="src/assets/branding/OrboLogo.svg" alt="Orbo" class="hero-logo" />
-        <div class="hero-text">
-          <p class="hero-kicker">Scopri il gusto</p>
-          <h1 class="hero-title">Il locale perfetto,<br>a portata di tap</h1>
-          <p class="hero-sub">Cerca per atmosfera, cucina o occasione.<br><strong>Orbo ti porta dove vuoi essere.</strong></p>
-          <div class="hero-cta">
-            <button class="btn-primary" data-view="search">Inizia la ricerca →</button>
-            <button class="btn-ghost"    data-view="nearby">📍 Vicino a me</button>
-          </div>
-        </div>
-      </div>
-      <div class="quick-sections" id="quick-sections"></div>
-    </section>
-
-    <!-- SEARCH -->
-    <section class="view" id="view-search">
-      <div class="view-inner">
-        <h2 class="view-title">🔍 Cerca</h2>
-        <div class="search-bar">
-          <span style="font-size:1.1rem">🔍</span>
-          <input type="text" id="search-input" placeholder="Romantico, brunch, gelato..." autocomplete="off" />
-          <button class="search-clear hidden" id="search-clear">✕</button>
-        </div>
-        <div class="chips" id="chips"></div>
-        <div class="filters">
-          <div class="filter-select">
-            <span>Prezzo</span>
-            <select id="price-filter">
-              <option value="all">Tutti</option>
-              <option value="E">€</option>
-              <option value="EE">€€</option>
-              <option value="EEE">€€€</option>
-            </select>
-          </div>
-          <div class="filter-select">
-            <span>Rating</span>
-            <select id="rating-filter">
-              <option value="0">Tutti</option>
-              <option value="4">4.0+</option>
-              <option value="4.5">4.5+</option>
-            </select>
-          </div>
-        </div>
-        <p class="results-count" id="results-count"></p>
-        <div id="results-list"></div>
-        <div class="empty-state hidden" id="empty-state">
-          <div style="font-size:2rem">🍽️</div>
-          <p>Nessun locale trovato.<br>Prova con "romantico", "brunch" o una città.</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- FAVORITES -->
-    <section class="view" id="view-favorites">
-      <div class="view-inner">
-        <h2 class="view-title">❤️ Preferiti</h2>
-        <div id="favorites-list"></div>
-        <div class="empty-state hidden" id="fav-empty">
-          <div style="font-size:2rem">🤍</div>
-          <p>Nessun preferito ancora.<br>Clicca 🤍 sui locali che ti piacciono.</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- NEARBY -->
-    <section class="view" id="view-nearby">
-      <div class="view-inner">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-          <h2 class="view-title" style="margin:0">📍 Vicino a te</h2>
-          <button class="btn-ghost" id="refresh-loc" style="padding:10px 18px;font-size:0.85rem;">🔄 Aggiorna</button>
-        </div>
-        <div id="nearby-list"></div>
-      </div>
-    </section>
-
-    <!-- TOP RATED -->
-    <section class="view" id="view-toprated">
-      <div class="view-inner">
-        <h2 class="view-title">⭐ Top Rated</h2>
-        <div id="toprated-list"></div>
-      </div>
-    </section>
-
-    <!-- CATEGORIES -->
-    <section class="view" id="view-categories">
-      <div class="view-inner">
-        <h2 class="view-title">🍝 Categorie</h2>
-        <div class="cat-grid" id="cat-grid"></div>
-        <div id="cat-results"></div>
-      </div>
-    </section>
-
-    <!-- IDEAS -->
-    <section class="view" id="view-ideas">
-      <div class="view-inner">
-        <h2 class="view-title">💡 Idee per stasera</h2>
-        <div class="ideas-grid" id="ideas-grid"></div>
-      </div>
-    </section>
-
-  </main>
-
-  <!-- ── APP MENU OVERLAY ── -->
-  <div class="app-overlay" id="app-overlay">
-    <div class="app-panel">
-      <div class="app-panel-header">
-        <h2>Orbo</h2>
-        <button class="close-btn" id="overlay-close">✕</button>
-      </div>
-      <div class="app-grid" id="app-grid"></div>
-    </div>
-  </div>
-
-  <!-- ── DETAIL MODAL ── -->
-  <div class="detail-modal" id="detail-modal">
-    <div class="detail-sheet" id="detail-sheet"></div>
-  </div>
-
-  <!-- ── TOAST ── -->
-  <div class="toast" id="toast"></div>
-
-  <script>
-  // ===================================================
-  // ORBO — app.js inline unificato
-  // ===================================================
-
-  // ── DATA ──────────────────────────────────────────
-  const CATS = [
-    { id:"all",         label:"Tutto",       icon:"✦",  sub:"Ogni occasione" },
-    { id:"ristorante",  label:"Ristoranti",  icon:"🍝", sub:"Pranzo e cena" },
-    { id:"bar",         label:"Bar",         icon:"☕", sub:"Drink e pause" },
-    { id:"gelateria",   label:"Gelaterie",   icon:"🍨", sub:"Fresco e goloso" },
-    { id:"pasticceria", label:"Pasticcerie", icon:"🧁", sub:"Dolci e colazioni" }
-  ];
-
-  const IDEA_CFG = {
-    romantico: { icon:"💕", label:"Romantico",  sub:"Cena a due" },
-    veloce:    { icon:"⚡", label:"Veloce",     sub:"Pausa rapida" },
-    gelato:    { icon:"🍨", label:"Gelato",     sub:"Dolce fresco" },
-    brunch:    { icon:"🥐", label:"Brunch",     sub:"Colazione tardiva" },
-    gruppo:    { icon:"👥", label:"Gruppo",     sub:"Con gli amici" },
-    economico: { icon:"💰", label:"Economico",  sub:"Low cost" },
-    vicino:    { icon:"📍", label:"Vicino",     sub:"Intorno a te" }
-  };
-
-  const IDEA_MAP = {
-    romantico: ["romantico","coppia","cena romantica"],
-    veloce:    ["veloce","rapido","al volo"],
-    gelato:    ["gelato","dolce","dessert"],
-    brunch:    ["brunch","colazione","caffè"],
-    gruppo:    ["gruppo","amici","conviviale"],
-    economico: ["economico","low cost","cheap"],
-    vicino:    ["vicino","near"]
-  };
-
-  const VENUES = [
-    { id:1, name:"Osteria Francescana", category:"ristorante", city:"Modena",
-      address:"Via Stella 22, Modena", phone:"+39 059 223912",
-      hours:"19:30–22:30 · Chiuso Dom/Lun", price:"EEE", rating:4.9, reviews:2847,
-      atmosphere:"romantico", openNow:false, distance:null,
-      coords:{ lat:44.6488, lng:10.9294 },
-      website:"https://osteriafrancescana.it", menuUrl:null,
-      description:"Tre stelle Michelin. Massimo Bottura reinterpreta la tradizione emiliana.",
-      fullDescription:"La cucina di Massimo Bottura trasforma ingredienti della tradizione emiliana in esperienze sensoriali uniche. Menu degustazione che cambia ogni stagione. Prenotazione con mesi di anticipo consigliata.",
-      favoritesCount:312, views:980,
-      image:"https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=600&q=70",
-      accent:["#8B5A3C","#D2A679"],
-      galleryEmoji:["🍽️","🍷","✨"],
-      reviewsList:[
-        { author:"Marco R.", text:"Esperienza indimenticabile. Arte nel piatto." },
-        { author:"Sarah L.", text:"Ogni portata è un capolavoro. Vale ogni euro." }
-      ]
-    },
-    { id:2, name:"Trattoria Aldina", category:"ristorante", city:"Modena",
-      address:"Via Albinelli 40, Modena", phone:"+39 059 223001",
-      hours:"12:00–14:30 · 19:30–22:00 · Chiuso Dom", price:"EE", rating:4.7, reviews:1523,
-      atmosphere:"informale", openNow:true, distance:null,
-      coords:{ lat:44.6474, lng:10.9307 },
-      website:"https://www.google.com/search?q=Trattoria+Aldina+Modena", menuUrl:null,
-      description:"Tortellini fatti a mano sopra il mercato Albinelli. Dal 1960.",
-      fullDescription:"Dal 1960 la famiglia Aldina serve la vera cucina modenese. Tortellini in brodo, tagliatelle al ragù e lambrusco della casa. Ambiente semplice, familiare e autentico.",
-      favoritesCount:187, views:540,
-      image:"https://images.unsplash.com/photo-1563379926898-05f4575a45d8?w=600&q=70",
-      accent:["#D2691E","#F0B080"],
-      galleryEmoji:["🍝","🥂","🏡"],
-      reviewsList:[
-        { author:"Giulia M.", text:"Come a casa della nonna. Tortellini perfetti." },
-        { author:"Luca P.",   text:"Prezzi onesti e porzioni generose." }
-      ]
-    },
-    { id:3, name:"Caffè Concerto", category:"bar", city:"Modena",
-      address:"Piazza Grande 26, Modena", phone:"+39 059 222232",
-      hours:"07:00–01:00", price:"E", rating:4.5, reviews:892,
-      atmosphere:"veloce", openNow:true, distance:null,
-      coords:{ lat:44.6467, lng:10.9260 },
-      website:"https://www.google.com/search?q=Caffè+Concerto+Modena", menuUrl:null,
-      description:"Storico caffè in Piazza Grande. Vista Duomo, aperitivi e colazioni.",
-      fullDescription:"Dal 1886 sotto i portici di Piazza Grande. Colazioni, pranzi veloci e aperitivi con vista Duomo. Tavolini all'aperto in estate.",
-      favoritesCount:98, views:320,
-      image:"https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=600&q=70",
-      accent:["#6B4423","#C8935A"],
-      galleryEmoji:["☕","🌇","🏛️"],
-      reviewsList:[
-        { author:"Luca B.", text:"Location top, aperitivo buonissimo." }
-      ]
-    },
-    { id:4, name:"Bloom Cocktail Bar", category:"bar", city:"Modena",
-      address:"Via Carteria 12, Modena", phone:"+39 059 123456",
-      hours:"19:00–02:00 · Chiuso Lun", price:"EE", rating:4.6, reviews:445,
-      atmosphere:"informale", openNow:false, distance:null,
-      coords:{ lat:44.6491, lng:10.9331 },
-      website:"https://www.google.com/search?q=Bloom+Modena", menuUrl:null,
-      description:"Mixology creativa in ambiente industriale-chic. Serate tra amici.",
-      fullDescription:"Cocktail signature e piatti fusion in un ambiente giovane. Perfetto per serate tra amici, DJ set nel weekend e aperitivi creativi.",
-      favoritesCount:74, views:210,
-      image:"https://images.unsplash.com/photo-1470337458703-46ad1756a187?w=600&q=70",
-      accent:["#4A5568","#9AA5B8"],
-      galleryEmoji:["🍹","🎶","✨"],
-      reviewsList:[
-        { author:"Anna P.", text:"Cocktail fantastici, atmosfera unica." }
-      ]
-    },
-    { id:5, name:"Gelateria Serafini", category:"gelateria", city:"Modena",
-      address:"Corso Duomo 15, Modena", phone:"+39 059 234567",
-      hours:"11:00–23:00", price:"E", rating:4.8, reviews:2103,
-      atmosphere:"veloce", openNow:true, distance:null,
-      coords:{ lat:44.6470, lng:10.9271 },
-      website:"https://www.google.com/search?q=Gelateria+Serafini+Modena", menuUrl:null,
-      description:"Gelato artigianale dal 1978. Crema di Modena all'aceto balsamico da non perdere.",
-      fullDescription:"Ingredienti naturali e ricette tradizionali tramandate. La Crema di Modena all'aceto balsamico è il gusto signature. Pistacchio di Bronte e nocciola del Piemonte.",
-      favoritesCount:256, views:720,
-      image:"https://images.unsplash.com/photo-1497034825429-c343d7c6a68f?w=600&q=70",
-      accent:["#F6AD55","#FCD38A"],
-      galleryEmoji:["🍦","🍨","🌸"],
-      reviewsList:[
-        { author:"Paolo T.", text:"Miglior gelato in città. La crema balsamica è unica." }
-      ]
-    },
-    { id:6, name:"Pasticceria Gollini", category:"pasticceria", city:"Modena",
-      address:"Via Nazionale 12, Vignola (MO)", phone:"+39 059 771234",
-      hours:"07:00–19:30 · Chiuso Lun", price:"E", rating:4.7, reviews:756,
-      atmosphere:"colazione", openNow:false, distance:null,
-      coords:{ lat:44.4773, lng:11.0072 },
-      website:"https://www.gollini.it", menuUrl:null,
-      description:"Dal 1888. Inventori della Torta Barozzi. Colazioni eccellenti.",
-      fullDescription:"Storica pasticceria di Vignola, dal 1888. Inventori della celebre Torta Barozzi al cioccolato. Colazioni tra le migliori della provincia.",
-      favoritesCount:143, views:390,
-      image:"https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=600&q=70",
-      accent:["#9C4221","#C87A50"],
-      galleryEmoji:["🧁","☕","🍰"],
-      reviewsList:[
-        { author:"Elena S.", text:"Torta Barozzi da sogno. Vale il viaggio." }
-      ]
-    },
-    { id:7, name:"Trattoria da Mario", category:"ristorante", city:"Milano",
-      address:"Via Savona 18, Milano", phone:"02 5551 2044",
-      hours:"12:00–15:00 · 19:00–23:30", price:"EE", rating:4.8, reviews:1840,
-      atmosphere:"romantico", openNow:true, distance:null,
-      coords:{ lat:45.4559, lng:9.1685 },
-      website:"https://www.google.com/search?q=Trattoria+da+Mario+Milano", menuUrl:null,
-      description:"Cucina italiana tradizionale con paste fresche e atmosfera calda.",
-      fullDescription:"Trattoria da Mario è il classico posto dove torni per un piatto ben fatto. Menu di ricette italiane senza fronzoli, porzioni generose e materie prime curate.",
-      favoritesCount:87, views:320,
-      image:"https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=600&q=70",
-      accent:["#ff6b00","#ffb067"],
-      galleryEmoji:["🍝","🍷","🏡"],
-      reviewsList:[
-        { author:"Giulia",  text:"Pasta fresca e tiramisù da ricordare." },
-        { author:"Lorenzo", text:"Porzioni abbondanti e ottima carta dei vini." }
-      ]
-    },
-    { id:8, name:"Gelateria Dolce Vita", category:"gelateria", city:"Roma",
-      address:"Via Cola di Rienzo 112, Roma", phone:"06 9023 7741",
-      hours:"11:00–00:30", price:"E", rating:4.9, reviews:2200,
-      atmosphere:"veloce", openNow:true, distance:null,
-      coords:{ lat:41.9098, lng:12.4624 },
-      website:"https://www.google.com/search?q=Gelateria+Dolce+Vita+Roma", menuUrl:null,
-      description:"Gelato artigianale dai gusti classici e stagionali, cremoso e bilanciato.",
-      fullDescription:"Punta su consistenze pulite, ingredienti italiani e gusti leggibili. Pistacchio, nocciola e fondente i protagonisti.",
-      favoritesCount:115, views:410,
-      image:"https://images.unsplash.com/photo-1497034825429-c343d7c6a68f?w=600&q=70",
-      accent:["#ff6b00","#ffe0c2"],
-      galleryEmoji:["🍦","🍨","🌸"],
-      reviewsList:[
-        { author:"Elena", text:"Gelato setoso, ingredienti davvero percepibili." }
-      ]
-    }
-  ];
-
-  // ── STATE ─────────────────────────────────────────
-  const state = {
-    view:        "home",
-    category:    "all",
-    search:      "",
-    price:       "all",
-    minRating:   0,
-    favorites:   JSON.parse(localStorage.getItem("orbo_favs") || "[]"),
-    userLocation:null,
-    currentId:   null
-  };
-
-  // ── UTILS ─────────────────────────────────────────
-  const $  = id => document.getElementById(id);
-  const el = sel => document.querySelector(sel);
-
-  const stars = r => "★".repeat(Math.floor(r)) + (r % 1 >= 0.5 ? "½" : "");
-
-  const priceLabel = p => ({ E:"€", EE:"€€", EEE:"€€€" }[p] || p);
-
-  let toastTimer;
-  function toast(msg) {
-    const t = $("toast");
-    clearTimeout(toastTimer);
-    t.textContent = msg;
-    t.classList.add("show");
-    toastTimer = setTimeout(() => t.classList.remove("show"), 2600);
-  }
-
-  // ── GEOLOCATION ───────────────────────────────────
-  function getLocation() {
-    if (!navigator.geolocation) { toast("⚠️ GPS non supportato"); return; }
-    toast("📍 Rilevo posizione...");
-    navigator.geolocation.getCurrentPosition(
-      pos => {
-        state.userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-        toast("✅ Posizione aggiornata!");
-        if (state.view === "nearby") renderNearby();
-        if (state.view === "search")  renderSearch();
-      },
-      err => {
-        const msgs = { 1:"Permesso negato", 2:"Posizione non disponibile", 3:"Timeout" };
-        toast("⚠️ " + (msgs[err.code] || "Errore GPS"));
-      }
-    );
-  }
-
-  function haversine(lat1, lon1, lat2, lon2) {
-    const R = 6371, r = x => x * Math.PI / 180;
-    const dLat = r(lat2-lat1), dLon = r(lon2-lon1);
-    const a = Math.sin(dLat/2)**2 + Math.cos(r(lat1)) * Math.cos(r(lat2)) * Math.sin(dLon/2)**2;
-    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  }
-
-  // ── SEARCH ENGINE ─────────────────────────────────
-  function searchVenues() {
-    const norm = state.search.toLowerCase().trim();
-    const normCity = "";
-
-    let kw = norm ? [norm] : [];
-    Object.entries(IDEA_MAP).forEach(([k, vals]) => {
-      if (norm.includes(k)) kw = kw.concat(vals);
-    });
-
-    return VENUES.map(v => {
-      const name  = v.name.toLowerCase();
-      const desc  = (v.description + " " + v.fullDescription).toLowerCase();
-      const atm   = (v.atmosphere || "").toLowerCase();
-      const vCat  = v.category;
-
-      const matchSearch = !norm || kw.some(k =>
-        name.includes(k) || desc.includes(k) || atm.includes(k) || v.city.toLowerCase().includes(k)
-      );
-      const matchCat    = state.category === "all" || vCat === state.category;
-      const matchPrice  = state.price === "all" || v.price === state.price;
-      const matchRating = v.rating >= state.minRating;
-
-      if (!matchSearch || !matchCat || !matchPrice || !matchRating) return null;
-
-      let score = 0;
-      kw.forEach(k => {
-        if (name.startsWith(k)) score += 15;
-        else if (name.includes(k)) score += 8;
-        if (atm.includes(k))  score += 8;
-        if (desc.includes(k)) score += 3;
-      });
-      if (kw.some(k => atm.includes(k))) score += 12;
-      score += v.rating * 5 + Math.log1p(v.favoritesCount) * 2;
-      if (v.price === "E") score += 2;
-
-      let distance = null;
-      if (state.userLocation && v.coords) {
-        distance = haversine(state.userLocation.lat, state.userLocation.lng, v.coords.lat, v.coords.lng);
-        score += Math.max(0, 18 - distance);
-      }
-
-      return { ...v, score, distance: distance !== null ? +distance.toFixed(1) : null };
-    }).filter(Boolean).sort((a, b) => b.score - a.score);
-  }
-
-  // ── TEMPLATES ─────────────────────────────────────
-  function ResultCard(v) {
-    const isFav = state.favorites.includes(v.id);
-    const dist  = v.distance !== null ? `<span style="font-size:.78rem;color:rgba(255,179,71,0.55)">📍 ${v.distance} km</span>` : "";
-    return `
-    <article class="result-card" data-id="${v.id}">
-      <div class="rc-img">
-        <img src="${v.image}" alt="${v.name}" loading="lazy" />
-        <span class="rc-badge">${priceLabel(v.price)}</span>
-      </div>
-      <div class="rc-body">
-        <div class="rc-top">
-          <div>
-            <div class="rc-name">${v.name}</div>
-            <div class="rc-cuisine">${v.city} · ${v.category}</div>
-          </div>
-          <div class="rc-rating">
-            <div class="rc-stars">${stars(v.rating)}</div>
-            <div class="rc-num">${v.rating}</div>
-          </div>
-        </div>
-        <div class="rc-desc">${v.description}</div>
-        <div class="rc-footer">
-          <div style="display:flex;gap:8px;align-items:center;">
-            <span class="rc-status ${v.openNow ? 'open' : 'closed'}">${v.openNow ? "Aperto" : "Chiuso"}</span>
-            ${dist}
-          </div>
-          <button class="fav-btn ${isFav ? 'active' : ''}" data-fav="${v.id}" aria-label="Preferito">
-            ${isFav ? "❤️" : "🤍"}
-          </button>
-        </div>
-      </div>
-    </article>`;
-  }
-
-  // ── RENDERS ───────────────────────────────────────
-  function renderHome() {
-    // orbita emoji
-    const orbit = $("orbit");
-    const emojis = ["🍕","🍣","🍔","🍝","🍰","☕","🥂","🍜"];
-    const positions = [
-      "top:0;left:50%;transform:translateX(-50%)",
-      "top:50%;right:0;transform:translateY(-50%)",
-      "bottom:0;left:50%;transform:translateX(-50%)",
-      "top:50%;left:0;transform:translateY(-50%)",
-      "top:13%;right:13%","bottom:13%;left:13%",
-      "top:13%;left:13%","bottom:13%;right:13%"
-    ];
-    orbit.innerHTML = emojis.map((e,i) =>
-      `<span class="orbit-emoji" style="${positions[i]}">${e}</span>`
-    ).join("");
-
-    // quick sections
-    $("quick-sections").innerHTML = [
-      { icon:"🍝", kicker:"Esplora",    title:"Categorie popolari", view:"categories" },
-      { icon:"💡", kicker:"Ispirazione",title:"Idee per oggi",       view:"ideas" },
-      { icon:"⭐", kicker:"Consigliati",title:"Top Rated",           view:"toprated" }
-    ].map(s => `
-      <div class="quick-card" data-view="${s.view}">
-        <span class="quick-icon">${s.icon}</span>
-        <div>
-          <p class="quick-kicker">${s.kicker}</p>
-          <h3 class="quick-title">${s.title}</h3>
-        </div>
-      </div>`).join("");
-  }
-
-  function renderSearch() {
-    // chips
-    $("chips").innerHTML = CATS.map(c =>
-      `<button class="chip ${state.category === c.id ? 'active' : ''}" data-cat="${c.id}">${c.icon} ${c.label}</button>`
-    ).join("");
-
-    const results = searchVenues();
-    $("results-count").textContent = results.length
-      ? `${results.length} locali trovati 🔥`
-      : "";
-
-    if (results.length === 0) {
-      $("results-list").innerHTML = "";
-      $("empty-state").classList.remove("hidden");
-    } else {
-      $("empty-state").classList.add("hidden");
-      $("results-list").innerHTML = results.map(ResultCard).join("");
-    }
-  }
-
-  function renderFavorites() {
-    const favs = VENUES.filter(v => state.favorites.includes(v.id));
-    if (favs.length === 0) {
-      $("favorites-list").innerHTML = "";
-      $("fav-empty").classList.remove("hidden");
-    } else {
-      $("fav-empty").classList.add("hidden");
-      $("favorites-list").innerHTML = favs
-        .map(v => ({ ...v, distance: null, score: 0 }))
-        .map(ResultCard).join("");
-    }
-  }
-
-  function renderNearby() {
-    let venues = VENUES.map(v => {
-      if (state.userLocation && v.coords) {
-        const d = haversine(state.userLocation.lat, state.userLocation.lng, v.coords.lat, v.coords.lng);
-        return { ...v, distance: +d.toFixed(1), score: 0 };
-      }
-      return { ...v, distance: null, score: 0 };
-    });
-    if (state.userLocation) venues.sort((a, b) => (a.distance ?? 999) - (b.distance ?? 999));
-    $("nearby-list").innerHTML = venues.map(ResultCard).join("");
-  }
-
-  function renderTopRated() {
-    $("toprated-list").innerHTML = [...VENUES]
-      .sort((a, b) => b.rating - a.rating)
-      .map(v => ({ ...v, distance: null, score: 0 }))
-      .map(ResultCard).join("");
-  }
-
-  function renderCategories() {
-    $("cat-grid").innerHTML = CATS.filter(c => c.id !== "all").map(c => `
-      <div class="cat-card ${state.category === c.id ? 'active' : ''}" data-cat="${c.id}">
-        <span class="cat-icon">${c.icon}</span>
-        <div>
-          <div class="cat-name">${c.label}</div>
-          <div class="cat-sub">${c.sub}</div>
-        </div>
-      </div>`).join("");
-
-    const filtered = state.category === "all"
-      ? VENUES
-      : VENUES.filter(v => v.category === state.category);
-    $("cat-results").innerHTML = filtered
-      .map(v => ({ ...v, distance: null, score: 0 }))
-      .map(ResultCard).join("");
-  }
-
-  function renderIdeas() {
-    $("ideas-grid").innerHTML = Object.entries(IDEA_CFG).map(([k, c]) => `
-      <button class="idea-card" data-idea="${k}">
-        <span class="idea-icon">${c.icon}</span>
-        <span class="idea-label">${c.label}</span>
-        <span class="idea-sub">${c.sub}</span>
-      </button>`).join("");
-  }
-
-  // App grid overlay
-  function renderAppGrid() {
-    const tiles = [
-      { icon:"🏠", label:"Home",      sub:"Scopri",   view:"home" },
-      { icon:"🔍", label:"Cerca",     sub:"Trova",    view:"search" },
-      { icon:"❤️", label:"Preferiti", sub:"Salvati",  view:"favorites" },
-      { icon:"📍", label:"Vicino",    sub:"GPS",      view:"nearby" },
-      { icon:"⭐", label:"Top Rated", sub:"Migliori", view:"toprated" },
-      { icon:"🍝", label:"Categorie", sub:"Tutte",    view:"categories" },
-      { icon:"💡", label:"Idee",      sub:"Ispirati", view:"ideas" },
-      { icon:"🗺️", label:"Mappa",    sub:"Presto",   soon:true },
-      { icon:"👤", label:"Profilo",   sub:"Presto",   soon:true }
-    ];
-    $("app-grid").innerHTML = tiles.map(t => `
-      <button class="app-tile ${t.soon ? 'soon' : ''}" ${t.soon ? 'disabled' : `data-view="${t.view}"`}>
-        <span class="ti">${t.icon}</span>
-        <strong>${t.label}</strong>
-        <span>${t.sub}</span>
-      </button>`).join("");
-  }
-
-  // ── DETAIL ────────────────────────────────────────
-  function openDetail(id) {
-    const v = VENUES.find(x => x.id === id);
-    if (!v) return;
-    state.currentId = id;
-
-    const isFav = state.favorites.includes(id);
-    $("detail-sheet").innerHTML = `
-      <div class="detail-img">
-        <img src="${v.image}" alt="${v.name}" />
-        <button class="detail-close" id="detail-close">✕</button>
-      </div>
-      <div class="detail-body">
-        <div class="detail-header">
-          <div>
-            <div class="detail-name">${v.name}</div>
-            <div class="detail-meta">${v.city} · ${priceLabel(v.price)}</div>
-            <div class="detail-rating">
-              <span class="stars">${stars(v.rating)}</span>
-              <span class="num">${v.rating} (${v.reviews} recensioni)</span>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <img src="OrboLogo.svg" alt="Orbo">
+                <span style="font-size: 24px; font-weight: 700;">Orbo</span>
             </div>
-          </div>
-          <button class="fav-btn ${isFav ? 'active' : ''}" data-fav="${id}" style="width:42px;height:42px;font-size:1.3rem">
-            ${isFav ? "❤️" : "🤍"}
-          </button>
+        </header>
+        
+        <div class="hero" id="hero">
+            <img src="OrboLogo.svg" alt="Orbo" style="width: 120px; height: 120px; margin-bottom: 24px;">
+            <h1>Il gusto ti orbita</h1>
+            <p>Trova i migliori ristoranti vicino a te</p>
+            <button class="btn-primary" onclick="startSearch()">INIZIA LA RICERCA</button>
         </div>
-        <p class="detail-desc">${v.fullDescription}</p>
-        <div class="detail-info">
-          <div class="detail-info-item"><div class="label">📍 Indirizzo</div><div class="value">${v.address}</div></div>
-          <div class="detail-info-item"><div class="label">🕐 Orari</div><div class="value">${v.hours}</div></div>
-          <div class="detail-info-item"><div class="label">📞 Telefono</div><div class="value">${v.phone}</div></div>
-          <div class="detail-info-item"><div class="label">🌡️ Atmosfera</div><div class="value">${v.atmosphere}</div></div>
+        
+        <div class="category-filters" id="filters">
+            <button class="category-btn active" data-type="restaurant">Ristoranti</button>
+            <button class="category-btn" data-type="cafe">Bar</button>
+            <button class="category-btn" data-type="bakery">Pasticcerie</button>
+            <button class="category-btn" data-type="ice_cream">Gelaterie</button>
         </div>
-        <div class="detail-actions">
-          ${v.menuUrl
-            ? `<button class="da-btn da-primary" onclick="window.open('${v.menuUrl}','_blank')">🍽️ Menu</button>`
-            : `<button class="da-btn da-secondary" onclick="window.orbo.toast('📋 Menu non disponibile')">🍽️ Menu</button>`}
-          <button class="da-btn da-secondary" onclick="window.open('${v.website}','_blank','noopener')">🌐 Sito</button>
-          <button class="da-btn da-secondary" id="share-btn">📤 Condividi</button>
-        </div>
-        ${v.reviewsList.length ? `
-        <div class="detail-reviews">
-          <h3>Recensioni</h3>
-          ${v.reviewsList.map(r => `
-            <div class="review-item">
-              <div class="rauthor">${r.author}</div>
-              <div class="rtext">${r.text}</div>
-            </div>`).join("")}
-        </div>` : ""}
-      </div>`;
-
-    $("detail-modal").classList.add("open");
-    document.body.classList.add("no-scroll");
-
-    $("detail-close").addEventListener("click", closeDetail);
-    $("share-btn")?.addEventListener("click", () => {
-      const text = `🍽️ ${v.name} — ${v.city}\n${v.description}\nScoperto con Orbo!`;
-      if (navigator.share) navigator.share({ title: v.name, text }).catch(() => {});
-      else navigator.clipboard.writeText(text).then(() => toast("✅ Copiato!")).catch(() => {});
-    });
-  }
-
-  function closeDetail() {
-    $("detail-modal").classList.remove("open");
-    document.body.classList.remove("no-scroll");
-    state.currentId = null;
-  }
-
-  // ── FAVORITES ─────────────────────────────────────
-  function toggleFav(id) {
-    const i = state.favorites.indexOf(id);
-    const was = i > -1;
-    if (was) state.favorites.splice(i, 1);
-    else state.favorites.push(id);
-    localStorage.setItem("orbo_favs", JSON.stringify(state.favorites));
-    toast(was ? "💔 Rimosso dai preferiti" : "❤️ Aggiunto ai preferiti!");
-    renderCurrentView();
-    if (state.currentId === id) openDetail(id); // aggiorna modal se aperto
-  }
-
-  // ── NAVIGATE ──────────────────────────────────────
-  function navigate(viewId) {
-    state.view = viewId;
-    document.querySelectorAll(".view").forEach(v =>
-      v.classList.toggle("active", v.id === "view-" + viewId)
-    );
-    document.querySelectorAll(".nav-item").forEach(b =>
-      b.classList.toggle("active", b.dataset.view === viewId)
-    );
-    // chiudi nav mobile
-    $("mobile-nav").classList.remove("open");
-    // chiudi overlay
-    $("app-overlay").classList.remove("open");
-    document.body.classList.remove("no-scroll");
-    window.scrollTo({ top: 0, behavior: "smooth" });
-    renderCurrentView();
-  }
-
-  function renderCurrentView() {
-    const map = {
-      home:       renderHome,
-      search:     renderSearch,
-      favorites:  renderFavorites,
-      nearby:     renderNearby,
-      toprated:   renderTopRated,
-      categories: renderCategories,
-      ideas:      renderIdeas
-    };
-    map[state.view]?.();
-  }
-
-  // ── EVENTS (event delegation) ──────────────────────
-  document.body.addEventListener("click", e => {
-    // navigazione da data-view
-    const vBtn = e.target.closest("[data-view]");
-    if (vBtn && !vBtn.disabled) { navigate(vBtn.dataset.view); return; }
-
-    // categoria chip
-    const catChip = e.target.closest("[data-cat]");
-    if (catChip) {
-      state.category = catChip.dataset.cat;
-      if (state.view === "categories") renderCategories();
-      else { navigate("search"); }
-      return;
-    }
-
-    // idea card
-    const ideaBtn = e.target.closest("[data-idea]");
-    if (ideaBtn) {
-      const kw = IDEA_MAP[ideaBtn.dataset.idea];
-      state.search = kw ? kw[0] : ideaBtn.dataset.idea;
-      state.category = "all";
-      navigate("search");
-      const si = $("search-input");
-      if (si) si.value = state.search;
-      return;
-    }
-
-    // apri dettaglio (card)
-    const card = e.target.closest(".result-card");
-    if (card && !e.target.closest(".fav-btn")) {
-      openDetail(Number(card.dataset.id));
-      return;
-    }
-
-    // preferiti
-    const favBtn = e.target.closest("[data-fav]");
-    if (favBtn) { e.stopPropagation(); toggleFav(Number(favBtn.dataset.fav)); return; }
-
-    // chiudi detail cliccando sfondo
-    if (e.target.id === "detail-modal") { closeDetail(); return; }
-  });
-
-  // search input
-  const si = $("search-input");
-  const sc = $("search-clear");
-  si?.addEventListener("input", e => {
-    state.search = e.target.value;
-    sc?.classList.toggle("hidden", !state.search);
-    if (state.view === "search") renderSearch();
-  });
-  sc?.addEventListener("click", () => {
-    state.search = ""; si.value = "";
-    sc.classList.add("hidden");
-    renderSearch();
-  });
-
-  // price / rating filter
-  $("price-filter")?.addEventListener("change", e => { state.price = e.target.value; renderSearch(); });
-  $("rating-filter")?.addEventListener("change", e => { state.minRating = Number(e.target.value); renderSearch(); });
-
-  // menu btn → apri overlay
-  $("menu-btn")?.addEventListener("click", () => {
-    $("app-overlay").classList.add("open");
-    document.body.classList.add("no-scroll");
-  });
-
-  // chiudi overlay
-  $("overlay-close")?.addEventListener("click", () => {
-    $("app-overlay").classList.remove("open");
-    document.body.classList.remove("no-scroll");
-  });
-  $("app-overlay")?.addEventListener("click", e => {
-    if (e.target.id === "app-overlay") {
-      $("app-overlay").classList.remove("open");
-      document.body.classList.remove("no-scroll");
-    }
-  });
-
-  // mobile nav hamburger — topbar logo lo apre
-  $("logo-btn")?.addEventListener("click", () => {
-    $("mobile-nav").classList.toggle("open");
-  });
-
-  // ESC
-  document.addEventListener("keydown", e => {
-    if (e.key === "Escape") {
-      closeDetail();
-      $("app-overlay").classList.remove("open");
-      $("mobile-nav").classList.remove("open");
-      document.body.classList.remove("no-scroll");
-    }
-  });
-
-  // refresh posizione
-  $("refresh-loc")?.addEventListener("click", getLocation);
-
-  // ── BOOT ──────────────────────────────────────────
-  renderAppGrid();
-  navigate("home");
-  getLocation();
-
-  // esponi per debug
-  window.orbo = { toast, navigate, state };
-  </script>
+        
+        <div id="map"></div>
+    </div>
+    
+    <script>
+        let map;
+        let service;
+        let markers = [];
+        let userLocation;
+        let searchTimeout;
+        
+        // TUA API KEY - GIÀ MESSA
+        const API_KEY = "AIzaSyDgzLR7vP74d9N-Buj_1Lana3g8nBRWyEg";
+        
+        function startSearch() {
+            document.getElementById('hero').style.display = 'none';
+            document.getElementById('filters').style.display = 'flex';
+            document.getElementById('map').style.display = 'block';
+            
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(pos => {
+                    userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                    initMap();
+                }, () => {
+                    userLocation = { lat: 44.698, lng: 10.631 }; // Reggio Emilia fallback
+                    initMap();
+                });
+            } else {
+                userLocation = { lat: 44.698, lng: 10.631 };
+                initMap();
+            }
+        }
+        
+        function initMap() {
+            map = new google.maps.Map(document.getElementById('map'), {
+                center: userLocation,
+                zoom: 14,
+                styles: [{ "elementType": "geometry", "stylers": [{ "color": "#212121" }] }]
+            });
+            
+            service = new google.maps.places.PlacesService(map);
+            
+            // Marker utente
+            new google.maps.Marker({
+                position: userLocation,
+                map: map,
+                icon: { path: google.maps.SymbolPath.CIRCLE, scale: 8, fillColor: '#FF6600', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2 }
+            });
+            
+            searchPlaces('restaurant');
+            setupFilters();
+        }
+        
+        function searchPlaces(type) {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                clearMarkers();
+                
+                const request = {
+                    location: userLocation,
+                    radius: 5000,
+                    type: type === 'ice_cream' ? 'store' : type,
+                    keyword: type === 'ice
+'ice_cream' ? 'gelateria' : undefined
+                };
+                
+                service.nearbySearch(request, (results, status) => {
+                    if (status === google.maps.places.PlacesServiceStatus.OK) {
+                        results.forEach(place => createMarker(place));
+                    }
+                });
+            }, 300);
+        }
+        
+        function createMarker(place) {
+            const marker = new google.maps.Marker({
+                position: place.geometry.location,
+                map: map,
+                title: place.name
+            });
+            
+            const infowindow = new google.maps.InfoWindow({
+                content: `<div style="color:#000"><b>${place.name}</b><br>${place.vicinity}</div>`
+            });
+            
+            marker.addListener('click', () => infowindow.open(map, marker));
+            markers.push(marker);
+        }
+        
+        function clearMarkers() {
+            markers.forEach(m => m.setMap(null));
+            markers = [];
+        }
+        
+        function setupFilters() {
+            document.querySelectorAll('.category-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    searchPlaces(this.dataset.type);
+                });
+            });
+        }
+    </script>
+    
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDgzLR7vP74d9N-Buj_1Lana3g8nBRWyEg&libraries=places&callback=initMap"></script>
 </body>
 </html>
