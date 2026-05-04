@@ -1,49 +1,40 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Orbo - Il gusto ti orbita</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Orbo — Il gusto ti orbita</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{font-family:"Inter",system-ui,sans-serif;background:linear-gradient(180deg,#1a0b2e 0%,#0f051a 100%);color:#fff;min-height:100vh}
-button,input{font:inherit;border:0;cursor:pointer;background:none}
+button,input{font:inherit;border:0;background:none;cursor:pointer}
 img{display:block;width:100%;height:100%;object-fit:cover}
-.hidden{display:none!important}
 .topbar{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:14px;padding:11px 18px;background:linear-gradient(135deg,#1a0b2e 0%,#2d1b4e 60%,#3d1b80 100%);border-bottom:1px solid rgba(255,179,71,.2);box-shadow:0 4px 24px rgba(255,140,0,.18)}
-.topbar-logo{height:44px;width:44px;flex-shrink:0;filter:drop-shadow(0 0 10px rgba(255,180,71,.6))}
-.topbar-slogan{flex:1;font-family:'Arial Black',Arial,sans-serif;font-size:16px;font-weight:900;letter-spacing:.5px;text-transform:uppercase;background:linear-gradient(180deg,#FFB347 0%,#FF8C00 60%,#E06500 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;filter:drop-shadow(1px 1px 0 #7a3000)}
-.view{display:none;animation:fadeUp .28s ease}
-.view.active{display:block}
-@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-.hero{min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden;padding:80px 20px 48px;background:radial-gradient(ellipse at center,#2d1b4e 0%,#1a0b2e 65%,#0f051a 100%)}
+.topbar-logo{height:44px;width:44px;filter:drop-shadow(0 0 10px rgba(255,180,71,.6))}
+.topbar-slogan{flex:1;font-family:'Arial Black',Arial,sans-serif;font-size:16px;font-weight:900;letter-spacing:.5px;text-transform:uppercase;background:linear-gradient(180deg,#FFB347 0%,#FF8C00 60%,#E06500 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.view{display:none;animation:fadeUp .28s ease}.view.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.hero{min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden;padding:80px 20px 40px;background:radial-gradient(ellipse at center,#2d1b4e 0%,#1a0b2e 65%,#0f051a 100%)}
 .hero::before{content:"";position:absolute;inset:0;background-image:radial-gradient(circle,rgba(255,255,255,.7)1px,transparent 1px),radial-gradient(circle,rgba(255,255,255,.3)1px,transparent 1px);background-size:90px 90px,45px 45px;background-position:0 0,22px 22px;opacity:.13}
-.hero::after{content:"";position:absolute;width:600px;height:600px;background:radial-gradient(circle,rgba(255,140,0,0.15),transparent 70%);top:50%;left:50%;transform:translate(-50%,-50%);animation:pulseGlow 4s ease-in-out infinite;pointer-events:none;z-index:0}
-@keyframes pulseGlow{0%,100%{opacity:0.4;transform:translate(-50%,-50%) scale(1)}50%{opacity:0.7;transform:translate(-50%,-50%) scale(1.2)}}
-.hero-logo{position:relative;z-index:2;width:180px;height:180px;filter:drop-shadow(0 0 32px rgba(255,140,0,.7));animation:pulse-logo 3.5s ease-in-out infinite}
-@keyframes pulse-logo{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+.hero::after{content:"";position:absolute;width:600px;height:600px;background:radial-gradient(circle,rgba(255,140,0,.15),transparent 70%);top:50%;left:50%;transform:translate(-50%,-50%);animation:pulseGlow 4s ease-in-out infinite;pointer-events:none}
+@keyframes pulseGlow{0%,100%{opacity:.4;transform:translate(-50%,-50%) scale(1)}50%{opacity:.7;transform:translate(-50%,-50%) scale(1.2)}}
+.hero-logo{position:relative;z-index:2;width:180px;height:180px;filter:drop-shadow(0 0 32px rgba(255,140,0,.7));animation:pulse 3.5s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
 .food-orbits{position:absolute;top:50%;left:50%;width:420px;height:420px;margin:-210px 0 0 -210px;pointer-events:none;z-index:1}
-.food-orbits span{position:absolute;top:50%;left:50%;font-size:22px;animation:orbitFood 18s linear infinite;filter:drop-shadow(0 0 8px rgba(255,140,0,0.7))}
-.food-orbits span:nth-child(1){animation-delay:0s}
-.food-orbits span:nth-child(2){animation-delay:-3s}
-.food-orbits span:nth-child(3){animation-delay:-6s}
-.food-orbits span:nth-child(4){animation-delay:-9s}
-.food-orbits span:nth-child(5){animation-delay:-12s}
-.food-orbits span:nth-child(6){animation-delay:-15s}
-@keyframes orbitFood{from{transform:rotate(0deg) translate(200px) rotate(0deg)}to{transform:rotate(360deg) translate(200px) rotate(-360deg)}}
+.food-orbits span{position:absolute;top:50%;left:50%;font-size:22px;animation:orbit 18s linear infinite;filter:drop-shadow(0 0 8px rgba(255,140,0,.7))}
+.food-orbits span:nth-child(2){animation-delay:-3s}.food-orbits span:nth-child(3){animation-delay:-6s}.food-orbits span:nth-child(4){animation-delay:-9s}.food-orbits span:nth-child(5){animation-delay:-12s}.food-orbits span:nth-child(6){animation-delay:-15s}
+@keyframes orbit{from{transform:rotate(0) translate(200px) rotate(0)}to{transform:rotate(360deg) translate(200px) rotate(-360deg)}}
 .particles{position:absolute;inset:0;pointer-events:none;z-index:1}
-.particles span{position:absolute;width:4px;height:4px;background:#FFB347;border-radius:50%;opacity:0.6;animation:floatUp 8s linear infinite}
-@keyframes floatUp{from{transform:translateY(0);opacity:0}30%{opacity:1}to{transform:translateY(-800px);opacity:0}}
+.particles span{position:absolute;width:4px;height:4px;background:#FFB347;border-radius:50%;opacity:.6;animation:float 8s linear infinite}
+@keyframes float{0%{transform:translateY(0);opacity:0}30%{opacity:1}100%{transform:translateY(-800px);opacity:0}}
 .hero-text{position:relative;z-index:2;text-align:center;margin-top:36px;max-width:540px}
 .hero-kicker{font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#FFB347;margin-bottom:12px}
 .hero-title{font-family:'Arial Black',Arial,sans-serif;font-size:clamp(24px,5vw,42px);font-weight:900;line-height:1.15;margin-bottom:14px;background:linear-gradient(180deg,#FFB347 0%,#FF8C00 55%,#E06500 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;filter:drop-shadow(2px 2px 0 #7a3000)}
-.hero-sub{font-size:14px;color:#c0aee0;line-height:1.75;margin-bottom:28px}
-.hero-sub strong{color:#FFB347}
+.hero-sub{font-size:14px;color:#c0aee0;line-height:1.75;margin-bottom:28px}.hero-sub strong{color:#FFB347}
 .hero-cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
-.btn-primary{background:linear-gradient(135deg,#FF8C00,#FFB347);padding:15px 36px;border-radius:999px;font-family:'Arial Black',sans-serif;font-size:14px;font-weight:900;color:#1a0b2e;text-transform:uppercase;letter-spacing:.5px;box-shadow:0 6px 24px rgba(255,140,0,.5);transition:transform .18s}
-.btn-primary:hover{transform:translateY(-3px)}
-.btn-primary:active{transform:scale(0.95)}
+.btn-primary{background:linear-gradient(135deg,#FF8C00,#FFB347);padding:15px 36px;border-radius:999px;font-family:'Arial Black',sans-serif;font-size:14px;font-weight:900;color:#1a0b2e;text-transform:uppercase;letter-spacing:.5px;box-shadow:0 6px 24px rgba(255,140,0,.5);transition:.18s}
+.btn-primary:hover{transform:translateY(-3px)}.btn-primary:active{transform:scale(.95)}
 .btn-ghost{background:rgba(255,140,0,.08);border:2px solid rgba(255,140,0,.45);padding:15px 36px;border-radius:999px;font-family:'Arial Black',sans-serif;font-size:14px;font-weight:900;color:#FFB347;text-transform:uppercase}
 .social-proof{position:relative;z-index:2;background:rgba(26,11,46,.6);backdrop-filter:blur(12px);border-top:1px solid rgba(255,140,0,.2);border-bottom:1px solid rgba(255,140,0,.2);padding:24px 16px}
 .stats-row{display:flex;justify-content:space-around;max-width:560px;margin:0 auto 20px}
@@ -52,11 +43,11 @@ img{display:block;width:100%;height:100%;object-fit:cover}
 .stat span:last-child{font-size:11px;color:rgba(255,179,71,.6);text-transform:uppercase;letter-spacing:1px}
 .trending-bar{display:flex;align-items:center;gap:12px;max-width:560px;margin:0 auto;overflow:hidden}
 .trending-label{font-size:10px;font-weight:800;color:#FF8C00;letter-spacing:1.5px;flex-shrink:0}
-.trending-scroll{display:flex;gap:16px;animation:scrollLeft 20s linear infinite}
+.trending-scroll{display:flex;gap:16px;animation:scroll 20s linear infinite}
 .trending-scroll span{padding:6px 14px;background:rgba(255,140,0,.12);border:1px solid rgba(255,140,0,.3);border-radius:999px;font-size:13px;font-weight:600;color:#FFB347;white-space:nowrap}
-@keyframes scrollLeft{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@keyframes scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 .quick-sections{background:#0a0318;padding:40px 16px 48px;display:flex;flex-direction:column;gap:14px;align-items:center}
-.quick-card{width:100%;max-width:560px;display:flex;align-items:center;gap:18px;background:linear-gradient(135deg,#2d1b4e,#1a0b2e);border:1px solid rgba(255,140,0,.3);border-radius:20px;padding:22px 24px;cursor:pointer;transition:all .25s ease}
+.quick-card{width:100%;max-width:560px;display:flex;align-items:center;gap:18px;background:linear-gradient(135deg,#2d1b4e,#1a0b2e);border:1px solid rgba(255,140,0,.3);border-radius:20px;padding:22px 24px;cursor:pointer;transition:.25s}
 .quick-card:hover{transform:translateY(-5px) scale(1.02);box-shadow:0 10px 28px rgba(255,140,0,.22)}
 .view-inner{padding:20px 16px 48px;max-width:760px;margin:0 auto}
 .view-title{font-size:22px;font-weight:800;color:#FFB347;margin-bottom:16px}
@@ -66,7 +57,7 @@ img{display:block;width:100%;height:100%;object-fit:cover}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
 .chip{padding:7px 14px;border-radius:999px;border:1px solid rgba(255,140,0,.3);background:rgba(45,27,78,.8);color:rgba(255,179,71,.7);font-size:.88rem;font-weight:600;cursor:pointer}
 .chip.active{background:#FF8C00;color:#1a0b2e;border-color:#FF8C00}
-.result-card{background:linear-gradient(135deg,#2d1b4e,#1a0b2e);border:1px solid rgba(255,140,0,.22);border-radius:20px;overflow:hidden;margin-bottom:14px;display:grid;grid-template-columns:120px 1fr;cursor:pointer;transition:transform .18s}
+.result-card{background:linear-gradient(135deg,#2d1b4e,#1a0b2e);border:1px solid rgba(255,140,0,.22);border-radius:20px;overflow:hidden;margin-bottom:14px;display:grid;grid-template-columns:120px 1fr;cursor:pointer;transition:.18s}
 .result-card:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(255,140,0,.2)}
 .rc-img{position:relative;height:100%;min-height:120px}
 .rc-badge{position:absolute;top:8px;left:8px;padding:3px 8px;border-radius:999px;font-size:.75rem;font-weight:700;background:rgba(255,140,0,.85);color:#1a0b2e}
@@ -77,8 +68,7 @@ img{display:block;width:100%;height:100%;object-fit:cover}
 .rc-footer{display:flex;justify-content:space-between;align-items:center}
 .rc-status{font-size:.75rem;padding:4px 8px;border-radius:999px;background:rgba(255,140,0,.15);color:#FFB347}
 .rc-status.open{background:rgba(46,213,115,.15);color:#9CF0C0}
-.fav-btn{background:none;border:none;font-size:1.2rem;opacity:.7}
-.fav-btn.active{opacity:1}
+.fav-btn{background:none;border:none;font-size:1.2rem;opacity:.7}.fav-btn.active{opacity:1}
 .empty-state{text-align:center;padding:40px;color:rgba(255,179,71,.5);display:none}
 #gmap{position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#1A120B;border:1px solid rgba(255,140,0,.3);color:#FFE4B8;padding:10px 14px;border-radius:12px;opacity:0;transition:.25s;z-index:100}
@@ -87,17 +77,31 @@ img{display:block;width:100%;height:100%;object-fit:cover}
 </head>
 <body>
 <header class="topbar">
-  <img src="OrboLogo.svg" alt="Orbo" class="topbar-logo" />
+  <svg class="topbar-logo" viewBox="0 0 100 100"><polygon points="50,15 75,30 75,60 50,75 25,60 25,30" fill="#FF8C00"/></svg>
   <span class="topbar-slogan">Il gusto ti orbita</span>
 </header>
 <main>
 <section class="view active" id="view-home">
   <div class="hero">
-    <div class="food-orbits">
-      <span>🍕</span><span>🍣</span><span>🍔</span><span>🍜</span><span>🍩</span><span>🌮</span>
-    </div>
+    <div class="food-orbits"><span>🍕</span><span>🍣</span><span>🍔</span><span>🍜</span><span>🍩</span><span>🌮</span></div>
     <div class="particles"></div>
-    <img src="OrboLogo.svg" alt="Orbo" class="hero-logo" />
+    <div class="hero-logo">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="180" height="180">
+        <defs>
+          <linearGradient id="t" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ffb347"/><stop offset="100%" stop-color="#ff8c00"/></linearGradient>
+          <linearGradient id="l" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#cc5500"/><stop offset="100%" stop-color="#e06500"/></linearGradient>
+          <linearGradient id="r" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#ff7c20"/><stop offset="100%" stop-color="#ff9a40"/></linearGradient>
+          <filter id="g"><feGaussianBlur stdDeviation="1.5"/><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          <path id="p" d="M60,12 C82,12 96,30 96,55 C96,80 82,98 60,98 C38,98 24,80 24,55 C24,30 38,12 60,12 Z"/>
+        </defs>
+        <ellipse cx="60" cy="108" rx="28" ry="6" fill="rgba(180,80,0,.18)"/>
+        <g><polygon points="60,25 90,40 60,55 30,40" fill="url(#t)"/><polygon points="30,40 60,55 60,85 30,70" fill="url(#l)"/><polygon points="60,55 90,40 90,70 60,85" fill="url(#r)"/></g>
+        <text font-family="Arial Black" font-size="14" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="#FFE4A3" filter="url(#g)"><animateMotion dur="8s" repeatCount="indefinite"><mpath href="#p"/></animateMotion>O</text>
+        <text font-family="Arial Black" font-size="14" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="#FFD080" filter="url(#g)"><animateMotion dur="8s" repeatCount="indefinite" begin="-2s"><mpath href="#p"/></animateMotion>R</text>
+        <text font-family="Arial Black" font-size="14" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="#FFB347" filter="url(#g)"><animateMotion dur="8s" repeatCount="indefinite" begin="-4s"><mpath href="#p"/></animateMotion>B</text>
+        <text font-family="Arial Black" font-size="14" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="#FFE4A3" filter="url(#g)"><animateMotion dur="8s" repeatCount="indefinite" begin="-6s"><mpath href="#p"/></animateMotion>O</text>
+      </svg>
+    </div>
     <div class="hero-text">
       <p class="hero-kicker">Scopri il gusto</p>
       <h1 class="hero-title">Il locale perfetto,<br>a portata di tap</h1>
@@ -114,12 +118,7 @@ img{display:block;width:100%;height:100%;object-fit:cover}
       <div class="stat"><span class="stat-num" data-count="89">0</span><span>Città</span></div>
       <div class="stat"><span class="stat-num" data-count="15">0</span><span>k Utenti</span></div>
     </div>
-    <div class="trending-bar">
-      <span class="trending-label">🔥 TRENDING ORA:</span>
-      <div class="trending-scroll">
-        <span>Pizza Gourmet</span><span>Ramen</span><span>Brunch</span><span>Gelato Artigianale</span><span>Tacos</span><span>Pizza Gourmet</span><span>Ramen</span><span>Brunch</span>
-      </div>
-    </div>
+    <div class="trending-bar"><span class="trending-label">🔥 TRENDING ORA:</span><div class="trending-scroll"><span>Pizza Gourmet</span><span>Ramen</span><span>Brunch</span><span>Gelato Artigianale</span><span>Tacos</span><span>Pizza Gourmet</span><span>Ramen</span><span>Brunch</span></div></div>
   </div>
   <div class="quick-sections">
     <div class="quick-card" onclick="navigate('search')"><span style="font-size:1.9rem">🍝</span><div><p style="font-size:9px;color:#FF8C00;font-weight:900;letter-spacing:2px">ESPLORA</p><h3 style="font-size:18px;font-weight:900;background:linear-gradient(180deg,#FFB347,#FF8C00);-webkit-background-clip:text;-webkit-text-fill-color:transparent">Categorie popolari</h3></div></div>
@@ -129,7 +128,7 @@ img{display:block;width:100%;height:100%;object-fit:cover}
 <section class="view" id="view-search">
   <div class="view-inner">
     <h2 class="view-title">🔍 Cerca</h2>
-    <div class="search-bar"><span>🔍</span><input type="text" id="search-input" placeholder="Pizza, sushi, romantico..." autocomplete="off" /></div>
+    <div class="search-bar"><span>🔍</span><input id="search-input" placeholder="Pizza, sushi, romantico..."></div>
     <div class="chips" id="chips"></div>
     <p id="results-count" style="font-size:.88rem;color:rgba(255,179,71,.5);margin-bottom:14px"></p>
     <div id="results-list"></div>
@@ -140,70 +139,18 @@ img{display:block;width:100%;height:100%;object-fit:cover}
 <div id="gmap"></div>
 <div class="toast" id="toast"></div>
 <script>
-let placesService, map, userLoc=null, VENUES=[], debounceTimer;
-const CATS=[{id:'all',label:'Tutto',icon:'✦'},{id:'restaurant',label:'Ristoranti',icon:'🍝'},{id:'cafe',label:'Bar',icon:'☕'},{id:'bakery',label:'Pasticcerie',icon:'🧁'},{id:'store',label:'Gelaterie',icon:'🍨'}];
-const state={favs:JSON.parse(localStorage.getItem('orbo_favs')||'[]')};
-const $=id=>document.getElementById(id);
-const toast=m=>{const t=$('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)};
-const navigate=v=>{document.querySelectorAll('.view').forEach(s=>s.classList.toggle('active',s.id==='view-'+v));if(v==='search')$('search-input').focus()};
-function initMap(){
-  map=new google.maps.Map($('gmap'),{center:{lat:44.4949,lng:11.3426},zoom:15});
-  placesService=new google.maps.places.PlacesService(map);
-  renderChips();
-  spawnParticles();
-  setTimeout(animateStats, 500);
-  if(navigator.geolocation){navigator.geolocation.getCurrentPosition(p=>{userLoc={lat:p.coords.latitude,lng:p.coords.longitude};map.setCenter(userLoc)},()=>{})}
-}
-function spawnParticles(){
-  const particlesContainer = document.querySelector('.particles');
-  if(particlesContainer && !particlesContainer.hasChildNodes()){
-    for (let i = 0; i < 25; i++) {
-      const p = document.createElement('span');
-      p.style.left = Math.random() * 100 + '%';
-      p.style.animationDelay = Math.random() * 8 + 's';
-      p.style.animationDuration = (6 + Math.random() * 6) + 's';
-      particlesContainer.appendChild(p);
-    }
-  }
-}
-function animateStats(){
-  document.querySelectorAll('.stat-num').forEach(el=>{
-    const target = +el.dataset.count;
-    let count = 0;
-    const inc = target / 60;
-    const update = () => {
-      count += inc;
-      if(count < target){
-        el.textContent = Math.ceil(count);
-        requestAnimationFrame(update);
-      } else {
-        el.textContent = target;
-      }
-    };
-    update();
-  });
-}
+let map,placesService,userLoc=null,VENUES=[],t;const CATS=[{id:'all',label:'Tutto',icon:'✦'},{id:'restaurant',label:'Ristoranti',icon:'🍝'},{id:'cafe',label:'Bar',icon:'☕'},{id:'bakery',label:'Pasticcerie',icon:'🧁'},{id:'store',label:'Gelaterie',icon:'🍨'}];const state={favs:JSON.parse(localStorage.getItem('orbo_favs')||'[]')};const $=id=>document.getElementById(id);const toast=m=>{const el=$('toast');el.textContent=m;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2300)};const navigate=v=>{document.querySelectorAll('.view').forEach(s=>s.classList.toggle('active',s.id==='view-'+v));if(v==='search')$('search-input').focus()};
+function initMap(){map=new google.maps.Map($('gmap'),{center:{lat:44.4949,lng:11.3426},zoom:15});placesService=new google.maps.places.PlacesService(map);renderChips();spawnParticles();setTimeout(animateStats,400);if(navigator.geolocation)navigator.geolocation.getCurrentPosition(p=>{userLoc={lat:p.coords.latitude,lng:p.coords.longitude};map.setCenter(userLoc)})}
+function spawnParticles(){const c=document.querySelector('.particles');if(c&&!c.childElementCount){for(let i=0;i<20;i++){const s=document.createElement('span');s.style.left=Math.random()*100+'%';s.style.animationDelay=Math.random()*8+'s';s.style.animationDuration=6+Math.random()*6+'s';c.appendChild(s)}}}
+function animateStats(){document.querySelectorAll('.stat-num').forEach(el=>{const tgt=+el.dataset.count;let n=0;const step=tgt/50;const up=()=>{n+=step;if(n<tgt){el.textContent=Math.ceil(n);requestAnimationFrame(up)}else el.textContent=tgt};up()})}
 function doNearby(){navigate('search');getNearby()}
-function getNearby(){
-  toast('📍 Cerco vicino a te...');
-  const loc=userLoc||map.getCenter();
-  placesService.nearbySearch({location:loc,radius:2000,type:'restaurant'},(res,st)=>{if(st==='OK')updateVenues(res)})
-}
-function searchAPI(q){
-  if(!q){$('empty-state').style.display='block';return}
-  clearTimeout(debounceTimer);
-  debounceTimer=setTimeout(()=>{
-    placesService.textSearch({query:q,location:map.getCenter(),radius:5000},(res,st)=>{if(st==='OK')updateVenues(res)})
-  },300);
-}
-function updateVenues(places){
-  VENUES=places.slice(0,20).map(p=>({id:p.place_id,name:p.name,address:p.vicinity||'',rating:p.rating||4.2,price:'€'.repeat(p.price_level||2),openNow:p.opening_hours?.isOpen?.()??p.opening_hours?.open_now,photo:p.photos?.[0]?.getUrl({maxWidth:400})||'https://images.unsplash.com/photo-1414235077428?w=600',lat:p.geometry.location.lat(),lng:p.geometry.location.lng()}));
-  renderResults()
-}
+function getNearby(){toast('📍 Cerco vicino a te...');const loc=userLoc||map.getCenter();placesService.nearbySearch({location:loc,radius:2000,type:'restaurant'},(r,s)=>{if(s==='OK')updateVenues(r)})}
+function searchAPI(q){clearTimeout(t);t=setTimeout(()=>{placesService.textSearch({query:q,location:map.getCenter(),radius:5000},(r,s)=>{if(s==='OK')updateVenues(r)})},280)}
+function updateVenues(p){VENUES=p.slice(0,20).map(v=>({id:v.place_id,name:v.name,address:v.vicinity||'',rating:v.rating||4.2,price:'€'.repeat(v.price_level||2),openNow:v.opening_hours?.isOpen?.()??v.opening_hours?.open_now,photo:v.photos?.[0]?.getUrl({maxWidth:400})||'https://images.unsplash.com/photo-1414235077428?w=600',lat:v.geometry.location.lat(),lng:v.geometry.location.lng()}));renderResults()}
 function renderChips(){$('chips').innerHTML=CATS.map(c=>`<button class="chip ${c.id==='all'?'active':''}" onclick="filterCat('${c.id}',this)">${c.icon} ${c.label}</button>`).join('')}
-function filterCat(id,el){document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));el.classList.add('active');if(id==='all'){getNearby();return}placesService.nearbySearch({location:userLoc||map.getCenter(),radius:2000,type:id},(res,st)=>{if(st==='OK')updateVenues(res)})}
-function renderResults(){const list=$('results-list'),count=$('results-count'),empty=$('empty-state');if(!VENUES.length){empty.style.display='block';list.innerHTML='';count.textContent='';return}empty.style.display='none';count.textContent=`${VENUES.length} locali trovati 🔥`;list.innerHTML=VENUES.map(v=>`<article class="result-card" onclick="openMaps('${v.lat}','${v.lng}')"><div class="rc-img"><img src="${v.photo}" loading="lazy"><span class="rc-badge">${v.price}</span></div><div class="rc-body"><div class="rc-name">${v.name}</div><div class="rc-cuisine">${v.address}</div><div class="rc-desc">⭐ ${v.rating} · ${v.openNow?'Aperto':'Chiuso'}</div><div class="rc-footer"><span class="rc-status ${v.openNow?'open':''}">${v.openNow?'Aperto ora':'Chiuso'}</span><button class="fav-btn ${state.favs.includes(v.id)?'active':''}" onclick="event.stopPropagation();toggleFav('${v.id}')">❤️</button></div></div></article>`).join('')}
-function toggleFav(id){const i=state.favs.indexOf(id);if(i>-1)state.favs.splice(i,1);else state.favs.push(id);localStorage.setItem('orbo_favs',JSON.stringify(state.favs));toast(i>-1?'💔 Rimosso':'❤️ Salvato');renderResults()}
+function filterCat(id,el){document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));el.classList.add('active');if(id==='all'){getNearby();return}const kw=id==='store'?'gelateria':null;placesService.nearbySearch({location:userLoc||map.getCenter(),radius:2000,type:id,keyword:kw},(r,s)=>{if(s==='OK')updateVenues(r)})}
+function renderResults(){const l=$('results-list'),c=$('results-count'),e=$('empty-state');if(!VENUES.length){e.style.display='block';l.innerHTML='';c.textContent='';return}e.style.display='none';c.textContent=`${VENUES.length} locali trovati 🔥`;l.innerHTML=VENUES.map(v=>`<article class="result-card" onclick="openMaps(${v.lat},${v.lng})"><div class="rc-img"><img src="${v.photo}" loading="lazy"><span class="rc-badge">${v.price}</span></div><div class="rc-body"><div class="rc-name">${v.name}</div><div class="rc-cuisine">${v.address}</div><div class="rc-desc">⭐ ${v.rating} · ${v.openNow?'Aperto':'Chiuso'}</div><div class="rc-footer"><span class="rc-status ${v.openNow?'open':''}">${v.openNow?'Aperto ora':'Chiuso'}</span><button class="fav-btn ${state.favs.includes(v.id)?'active':''}" onclick="event.stopPropagation();toggleFav('${v.id}')">❤️</button></div></div></article>`).join('')}
+function toggleFav(id){const i=state.favs.indexOf(id);i>-1?state.favs.splice(i,1):state.favs.push(id);localStorage.setItem('orbo_favs',JSON.stringify(state.favs));toast(i>-1?'💔 Rimosso':'❤️ Salvato');renderResults()}
 function openMaps(lat,lng){window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`,'_blank')}
 $('search-input').addEventListener('input',e=>{const q=e.target.value.trim();if(q.length>1)searchAPI(q)})
 </script>
