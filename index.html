@@ -21,11 +21,17 @@ button,input{font:inherit;border:0;background:none;cursor:pointer}
 .search-box{width:100%;max-width:600px;margin:20px auto;position:relative}
 .search-box input{width:100%;padding:16px 20px;background:rgba(26,11,46,0.9);border:1.5px solid rgba(168,85,247,0.3);border-radius:16px;color:#E9D5FF;font-size:16px;outline:none}
 .search-box input:focus{border-color:#A855F7;box-shadow:0 0 0 3px rgba(168,85,247,0.2)}
-.result-card{background:linear-gradient(135deg,rgba(45,27,78,0.85),rgba(20,8,38,0.85));border:1px solid rgba(168,85,247,0.2);border-radius:16px;padding:16px;margin-bottom:12px;display:flex;gap:14px;align-items:center}
-.result-card img{width:80px;height:80px;border-radius:12px;object-fit:cover}
+.filters{display:flex;gap:8px;flex-wrap:wrap;max-width:600px;margin:0 auto 16px}
+.chip{padding:8px 14px;border-radius:999px;border:1px solid rgba(168,85,247,0.3);font-size:13px;font-weight:600;opacity:.8}
+.chip.active{background:rgba(168,85,247,0.25);border-color:#A855F7;opacity:1}
+.result-card{background:linear-gradient(135deg,rgba(45,27,78,0.85),rgba(20,8,38,0.85));border:1px solid rgba(168,85,247,0.2);border-radius:16px;padding:14px;margin-bottom:12px;display:flex;gap:14px;align-items:center}
+.result-card img{width:80px;height:80px;border-radius:12px;object-fit:cover;background:#2d1b4e}
 .rc-name{font-weight:800;font-size:17px;margin-bottom:4px}
-.rc-addr{font-size:13px;opacity:0.6}
-.pac-container{background:#1A0B2E!important;border:1px solid rgba(168,85,247,0.4)!important;border-radius:12px!important;margin-top:4px}
+.rc-meta{font-size:13px;opacity:.7;display:flex;gap:10px;flex-wrap:wrap}
+.badge{padding:2px 8px;border-radius:6px;background:rgba(34,211,238,0.15);color:#22D3EE;font-size:11px;font-weight:700}
+.skeleton{animation:pulse 1.5s infinite;background:rgba(168,85,247,0.1);border-radius:12px;height:108px;margin-bottom:12px}
+@keyframes pulse{0%,100%{opacity:.4}50%{opacity:.8}}
+.pac-container{background:#1A0B2E!important;border:1px solid rgba(168,85,247,0.4)!important;border-radius:12px!important;margin-top:4px;z-index:9999!important}
 .pac-item{color:#E9D5FF!important;padding:10px!important;border-top:1px solid rgba(168,85,247,0.1)!important}
 .pac-item:hover{background:rgba(168,85,247,0.2)!important}
 .pac-item-query{color:#22D3EE!important}
@@ -49,7 +55,14 @@ button,input{font:inherit;border:0;background:none;cursor:pointer}
 
   <section class="view" id="view-search">
     <div class="search-box">
-      <input id="search-input" placeholder="Scrivi città o pizza, sushi..." autocomplete="off">
+      <input id="search-input" placeholder="Città, poi pizza, sushi, cocktail..." autocomplete="off">
+    </div>
+    <div class="filters" id="filters">
+      <button class="chip" data-price="1">€</button>
+      <button class="chip" data-price="2">€€</button>
+      <button class="chip" data-price="3">€€€</button>
+      <button class="chip" data-price="4">€€€€</button>
+      <button class="chip" id="open-now">Aperto ora</button>
     </div>
     <div id="results-list"></div>
   </section>
@@ -58,72 +71,152 @@ button,input{font:inherit;border:0;background:none;cursor:pointer}
 <div id="gmap" style="display:none"></div>
 
 <script>
-// STELLE
 (function(){const c=document.getElementById('bg-canvas'),x=c.getContext('2d');let W,H;function r(){W=c.width=innerWidth;H=c.height=innerHeight}r();addEventListener('resize',r);const s=Array(40).fill().map(()=>({x:Math.random()*W,y:Math.random()*H,a:Math.random()}));(function d(){x.clearRect(0,0,W,H);s.forEach(p=>{p.a+=.002;if(p.a>1)p.a=0;x.beginPath();x.arc(p.x,p.y,1.2,0,7);x.fillStyle=`rgba(180,150,255,${p.a*.4})`;x.fill()});requestAnimationFrame(d)})()})();
 
-let map,placesService,autocomplete,userLoc=null;
+let map,placesService,autocomplete,userLoc=null,currentLocation=null,lastQuery='',searchTimeout;
+let filters = {price:null, openNow:false};
 const $=id=>document.getElementById(id);
 const navigate=v=>document.querySelectorAll('.view').forEach(s=>s.classList.toggle('active',s.id==='view-'+v));
 
+function safeLocation(){
+  return currentLocation || (userLoc ? new google.maps.LatLng(userLoc.lat,userLoc.lng) : map.getCenter());
+}
+
 function initMap(){
-  map=new google.maps.Map($('gmap'),{center:{lat:44.5,lng:11.3},zoom:13});
+  map=new google.maps.Map($('gmap'),{center:{lat:44.546, lng:10.946},zoom:13}); // San Cesario
   placesService=new google.maps.places.PlacesService(map);
-  
-  // *** QUESTO È IL PEZZO NUOVO - AUTOCOMPLETE CITTÀ ***
+
+  const emiliaBounds = new google.maps.LatLngBounds({lat:43.7,lng:9.2},{lat:45.1,lng:12.8});
   autocomplete = new google.maps.places.Autocomplete($('search-input'), {
-    types: ['(cities)'],
-    componentRestrictions: {country: 'it'}
+    componentRestrictions:{country:'it'},
+    bounds: emiliaBounds,
+    strictBounds:false,
+    fields:['geometry','name','formatted_address','place_id','types']
   });
-  
+
   autocomplete.addListener('place_changed', ()=>{
     const place = autocomplete.getPlace();
-    if(place.geometry){
-      map.setCenter(place.geometry.location);
-      cercaLocali('ristoranti', place.geometry.location, place.name);
+    if(!place.geometry) return;
+    currentLocation = place.geometry.location;
+    map.setCenter(currentLocation);
+    $('search-input').blur();
+    if(place.types?.includes('locality') || place.types?.includes('administrative_area_level_3')){
+      cercaLocali('ristoranti', currentLocation, place.name);
+    } else {
+      mostraSingoloPlace(place);
     }
   });
-  
-  if(navigator.geolocation) navigator.geolocation.getCurrentPosition(p=>userLoc={lat:p.coords.latitude,lng:p.coords.longitude});
+
+  if(navigator.geolocation) navigator.geolocation.getCurrentPosition(p=>{
+    userLoc={lat:p.coords.latitude,lng:p.coords.longitude};
+    currentLocation = new google.maps.LatLng(userLoc.lat,userLoc.lng);
+  },()=>{}, {enableHighAccuracy:true, timeout:5000});
+}
+
+function distanza(lat1,lng1,lat2,lng2){
+  if(!lat2) return null;
+  const R=6371, dLat=(lat2-lat1)*Math.PI/180, dLng=(lng2-lng1)*Math.PI/180;
+  const a=Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+  return (R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a))).toFixed(1)+' km';
+}
+
+function showSkeleton(){
+  $('results-list').innerHTML = Array(4).fill('<div class="skeleton"></div>').join('');
 }
 
 function cercaLocali(query, location, cityName){
-  $('results-list').innerHTML='<div style="text-align:center;padding:40px;opacity:.6">Cerco a '+cityName+'...</div>';
-  placesService.textSearch({query: query, location: location, radius: 5000}, (results, status)=>{
-    if(status==='OK' && results.length){
-      $('results-list').innerHTML = results.slice(0,15).map(v=>`
-        <div class="result-card" onclick="window.open('https://www.google.com/maps/place/?q=place_id:${v.place_id}','_blank')">
-          <img src="${v.photos?.[0]?.getUrl({maxWidth:200})||'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=200'}" alt="">
-          <div>
-            <div class="rc-name">${v.name}</div>
-            <div class="rc-addr">${v.formatted_address||''} • ⭐ ${v.rating||'–'}</div>
-          </div>
-        </div>`).join('');
-    } else {
-      $('results-list').innerHTML='<div style="text-align:center;padding:40px">Nessun risultato</div>';
+  const loc = location || safeLocation();
+  if(!loc) return;
+  const cacheKey = `${query}-${loc.lat().toFixed(3)}-${filters.price}-${filters.openNow}`;
+  const cached = sessionStorage.getItem(cacheKey);
+  if(cached && Date.now() - JSON.parse(cached).t < 300000){
+    renderResults(JSON.parse(cached).data, cityName);
+    return;
+  }
+  if(query === lastQuery) return;
+  lastQuery = query;
+  showSkeleton();
+
+  const request = { location:loc, radius:5000, keyword:query, type:'restaurant' };
+  placesService.nearbySearch(request, (results,status)=>{
+    if(status!=='OK' || !results.length){
+      $('results-list').innerHTML=`<div style="text-align:center;padding:40px">Nessun risultato per ${query}</div>`;
+      return;
     }
+    let filtered = results;
+    if(filters.price) filtered = filtered.filter(r=>r.price_level==filters.price);
+    if(filters.openNow) filtered = filtered.filter(r=>r.opening_hours?.open_now);
+    sessionStorage.setItem(cacheKey, JSON.stringify({t:Date.now(), data:filtered}));
+    renderResults(filtered, cityName);
+  });
+}
+
+function renderResults(results, cityName){
+  $('results-list').innerHTML = results.slice(0,15).map(v=>{
+    const photo = v.photos?.[0]?.getUrl({maxWidth:400}) || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400';
+    const dist = userLoc ? distanza(userLoc.lat,userLoc.lng,v.geometry.location.lat(),v.geometry.location.lng()) : '';
+    const aperto = v.opening_hours ? (v.opening_hours.open_now ? 'Aperto' : 'Chiuso') : '';
+    const price = '€'.repeat(v.price_level||1);
+    return `<div class="result-card" onclick="window.open('https://www.google.com/maps/place/?q=place_id:${v.place_id}','_blank')">
+      <img src="${photo}" alt="" loading="lazy">
+      <div style="flex:1">
+        <div class="rc-name">${v.name}</div>
+        <div class="rc-meta">
+          <span>⭐ ${v.rating||'–'}</span>
+          <span>${price}</span>
+          ${dist?`<span>${dist}</span>`:''}
+          ${aperto?`<span class="badge">${aperto}</span>`:''}
+        </div>
+        <div class="rc-meta" style="opacity:.5;margin-top:4px">${v.vicinity||''}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function mostraSingoloPlace(place){
+  showSkeleton();
+  placesService.getDetails({placeId:place.place_id, fields:['name','photos','formatted_address','geometry','rating','price_level','opening_hours']}, (p)=>{
+    renderResults([p], '');
   });
 }
 
 function doNearby(){
   navigate('search');
-  const loc = userLoc ? new google.maps.LatLng(userLoc.lat,userLoc.lng) : map.getCenter();
+  const loc = safeLocation();
+  currentLocation = loc;
   cercaLocali('ristoranti', loc, 'qui vicino');
 }
 
-// ricerca normale per cibo
-$('search-input').addEventListener('input', e=>{
-  const q = e.target.value.trim();
-  if(q.length>2 && !q.includes(',')){ // se non è una città
-    clearTimeout(window.t); window.t=setTimeout(()=>{
-      placesService.textSearch({query:q, location:map.getCenter(), radius:8000}, (r,s)=>{
-        if(s==='OK') $('results-list').innerHTML = r.slice(0,10).map(v=>`<div class="result-card"><div class="rc-name">${v.name}</div></div>`).join('');
-      });
-    },400);
+$('search-input').addEventListener('keydown', e=>{
+  if(e.key==='Enter'){
+    e.preventDefault();
+    const q = e.target.value.trim();
+    if(q.length>2){
+      $('search-input').blur();
+      cercaLocali(q, safeLocation(), 'zona');
+    }
   }
 });
 
+document.querySelectorAll('.chip[data-price]').forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll('.chip[data-price]').forEach(x=>x.classList.remove('active'));
+    if(filters.price == b.dataset.price){filters.price=null}else{filters.price=Number(b.dataset.price);b.classList.add('active')}
+    lastQuery=''; // forza refresh
+    const q = $('search-input').value.trim() || 'ristoranti';
+    cercaLocali(q, safeLocation(), '');
+  }
+});
+$('open-now').onclick=e=>{
+  filters.openNow=!filters.openNow;
+  e.target.classList.toggle('active');
+  lastQuery='';
+  const q = $('search-input').value.trim() || 'ristoranti';
+  cercaLocali(q, safeLocation(), '');
+};
+
 $('logo-btn').onclick=()=>navigate('home');
 </script>
-<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC6wAI6R6WztfmYzimz0wFew_ItgzPc-QU&libraries=places&callback=initMap&language=it&region=IT"></script>
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=LA_TUA_API_KEY&libraries=places&callback=initMap&language=it&region=IT"></script>
 </body>
 </html>
