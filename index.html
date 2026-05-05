@@ -138,7 +138,7 @@ function cercaLocali(q,loc){
       const img=v.photos?.[0]?.getUrl({maxWidth:400})||'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400';
       const dist=userLoc?distanza(userLoc.lat,userLoc.lng,v.geometry.location.lat(),v.geometry.location.lng()):'';
       const price='€'.repeat(v.price_level||1);
-      return `<div class="result-card" onclick="window.open('https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(v.name)}&query_place_id=${v.place_id}')"><img src="${img}"><div style="flex:1"><div class="rc-name">${v.name}</div><div class="rc-meta"><span>⭐ ${v.rating||'-'}</span><span>${price}</span>${dist?`<span>${dist}</span>`:''}</div><div class="rc-meta" style="opacity:.5">${v.vicinity||''}</div></div></div>`;
+      return `<div class="result-card" onclick="window.open('https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(v.name)}&query_place_id=${v.place_id}')"><img src="${img}"><div style="flex:1"><div class="rc-name">${v.name}</div><div class="rc-meta"><span>⭐ ${v.rating||'-'}</span><span>${price}</span>${dist?`<span>${dist}</span>`:''}</div><div class="rc-meta" style="opacity:.5">${v.vicinity||''}</div></div>`;
     }).join('');
   });
 }
@@ -156,6 +156,6 @@ $('open-now').onclick=e=>{ filters.openNow=!filters.openNow; e.target.classList.
 $('logo-btn').onclick=()=>navigate('home');
 </script>
 
-<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC1234567890abcdefghijk&libraries=places&callback=initMap&language=it&region=IT"></script>
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC6wAI6R6WztfmYzimz0wFew_ItgzPc-QU&libraries=places&callback=initMap&language=it&region=IT"></script>
 </body>
 </html>
