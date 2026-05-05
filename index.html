@@ -167,22 +167,24 @@ img{display:block;width:100%;height:100%;object-fit:cover}
   <svg class="topbar-logo" id="logo-btn" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
     <defs>
       <linearGradient id="t" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#A855F7"/><stop offset="100%" stop-color="#22D3EE"/></linearGradient>
-<linearGradient id="l" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#7C3AED"/><stop offset="100%" stop-color="#A855F7"/></linearGradient>
-<linearGradient id="r" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#22D3EE"/><stop offset="100%" stop-color="#67E8F9"/></linearGradient>
+      <linearGradient id="l" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#7C3AED"/><stop offset="100%" stop-color="#A855F7"/></linearGradient>
+      <linearGradient id="r" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#22D3EE"/><stop offset="100%" stop-color="#67E8F9"/></linearGradient>
+      <linearGradient id="orboText" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#A855F7"/><stop offset="100%" stop-color="#22D3EE"/></linearGradient>
       <filter id="g"><feGaussianBlur stdDeviation="1.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
       <path id="p" d="M60,12 C82,12 96,30 96,55 C96,80 82,98 60,98 C38,98 24,80 24,55 C24,30 38,12 60,12 Z"/>
     </defs>
-    <ellipse cx="60" cy="108" rx="28" ry="6" <ellipse cx="60" cy="108" rx="28" ry="6" fill="rgba(168,85,247,.18)"/>" fill="url(#t)"/>
+    <ellipse cx="60" cy="108" rx="28" ry="6" fill="rgba(168,85,247,.18)"/>
     <polygon points="30,40 60,55 60,85 30,70" fill="url(#l)"/>
     <polygon points="60,55 90,40 90,70 60,85" fill="url(#r)"/>
-    <text font-family="Arial Black" font-size="14" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="#FFE4A3" filter="url(#g)"><animateMotion dur="8s" repeatCount="indefinite"><mpath href="#p"/></animateMotion>O</text>
-    <text font-family="Arial Black" font-size="14" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="#FFD080" filter="url(#g)"><animateMotion dur="8s" repeatCount="indefinite" begin="-2s"><mpath href="#p"/></animateMotion>R</text>
-    <text font-family="Arial Black" font-size="14" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="#FFB347" filter="url(#g)"><animateMotion dur="8s" repeatCount="indefinite" begin="-4s"><mpath href="#p"/></animateMotion>B</text>
-    <text font-family="Arial Black" font-size="14" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="#FFE4A3" filter="url(#g)"><animateMotion dur="8s" repeatCount="indefinite" begin="-6s"><mpath href="#p"/></animateMotion>O</text>
+    <polygon points="30,40 60,25 90,40 60,55" fill="url(#t)"/>
+    <text font-family="Inter,sans-serif" font-size="14" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="url(#orboText)" filter="url(#g)"><animateMotion dur="8s" repeatCount="indefinite"><mpath href="#p"/></animateMotion>O</text>
+    <text font-family="Inter,sans-serif" font-size="14" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="url(#orboText)" filter="url(#g)"><animateMotion dur="8s" repeatCount="indefinite" begin="-2s"><mpath href="#p"/></animateMotion>R</text>
+    <text font-family="Inter,sans-serif" font-size="14" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="url(#orboText)" filter="url(#g)"><animateMotion dur="8s" repeatCount="indefinite" begin="-4s"><mpath href="#p"/></animateMotion>B</text>
+    <text font-family="Inter,sans-serif" font-size="14" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="url(#orboText)" filter="url(#g)"><animateMotion dur="8s" repeatCount="indefinite" begin="-6s"><mpath href="#p"/></animateMotion>O</text>
   </svg>
   <span class="topbar-slogan">Il gusto ti orbita</span>
   <button class="topbar-menu" id="menu-btn" aria-label="Menu">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="#FFB347">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="#A855F7">
       <circle cx="5" cy="5" r="2"/><circle cx="12" cy="5" r="2"/><circle cx="19" cy="5" r="2"/>
       <circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/>
       <circle cx="5" cy="19" r="2"/><circle cx="12" cy="19" r="2"/><circle cx="19" cy="19" r="2"/>
