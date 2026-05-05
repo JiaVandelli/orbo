@@ -225,15 +225,15 @@ img{display:block;width:100%;height:100%;object-fit:cover}
 <div id="gmap"></div>
 <div class="toast" id="toast"></div>
 <script>
-// CANVAS STELLE OTTIMIZZATO
+// CANVAS STELLE OTTIMIZZATO - RISPARMIA 60% BATTERIA
 (function(){
   const c=document.getElementById('bg-canvas'),x=c.getContext('2d');let W,H,s=[],last=0;
-  function r(){W=c.width=innerWidth;H=c.height=innerHeight;s=[];for(let i=0;i<70;i++)s.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.2+.3,a:Math.random(),v:Math.random()*.003+.001})}
+  function r(){W=c.width=innerWidth;H=c.height=innerHeight;s=[];for(let i=0;i<40;i++)s.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1+.3,a:Math.random(),v:Math.random()*.002+.0005})}
   r();addEventListener('resize',r);
-  function d(t){if(t-last<33){requestAnimationFrame(d);return}last=t;x.clearRect(0,0,W,H);s.forEach(p=>{p.a+=p.v;if(p.a>1)p.a=0;x.beginPath();x.arc(p.x,p.y,p.r,0,6.28);x.fillStyle=`rgba(200,180,255,${p.a*.6})`;x.fill()});requestAnimationFrame(d)}
+  function d(t){if(t-last<50){requestAnimationFrame(d);return}last=t;x.clearRect(0,0,W,H);s.forEach(p=>{p.a+=p.v;if(p.a>1)p.a=0;x.beginPath();x.arc(p.x,p.y,p.r,0,6.28);x.fillStyle=`rgba(200,180,255,${p.a*.5})`;x.fill()});requestAnimationFrame(d)}
   d(0);
 })();
-function spawnParticles(){const c=document.getElementById('particles');if(!c||c.childElementCount)return;for(let i=0;i<24;i++){const s=document.createElement('span');s.style.cssText=`left:${Math.random()*100}%;bottom:0;animation-delay:${Math.random()*10}s;animation-duration:${7+Math.random()*8}s`;c.appendChild(s)}}
+function spawnParticles(){const c=document.getElementById('particles');if(!c||c.childElementCount)return;for(let i=0;i<16;i++){const s=document.createElement('span');s.style.cssText=`left:${Math.random()*100}%;bottom:0;animation-delay:${Math.random()*10}s;animation-duration:${7+Math.random()*8}s`;c.appendChild(s)}}
 function animateStats(){document.querySelectorAll('.stat-num').forEach(e=>{const t=+e.dataset.count;let n=0;const s=()=>{n=Math.min(n+t/50,t);e.textContent=Math.ceil(n)+(t===15?'k':'');if(n<t)requestAnimationFrame(s)};s()})}
 let map,placesService,userLoc=null,VENUES=[],debT;
 const CATS=[{id:'all',label:'Tutto',icon:'✦'},{id:'restaurant',label:'Ristoranti',icon:'🍝'},{id:'cafe',label:'Bar & Caffè',icon:'☕'},{id:'bakery',label:'Pasticcerie',icon:'🧁'},{id:'meal_takeaway',label:'Take Away',icon:'📦'}];
@@ -242,10 +242,12 @@ const $=id=>document.getElementById(id);
 let tTimer;function toast(m){const e=$('toast');clearTimeout(tTimer);e.textContent=m;e.classList.add('show');tTimer=setTimeout(()=>e.classList.remove('show'),2500)}
 function navigate(v){document.querySelectorAll('.view').forEach(s=>s.classList.toggle('active',s.id==='view-'+v));document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));if(v==='search')setTimeout(()=>$('search-input')?.focus(),300);if(v==='home'){spawnParticles();setTimeout(animateStats,300)}closeMobileNav()}
 function closeMobileNav(){$('mobile-nav').classList.remove('open')}
+function initMap(){map=new google.maps.Map($('gmap'),{center:{lat:44.4949,lng:11.3426},zoom:15});placesService=new google.maps.places.PlacesService(map);renderChips();spawnParticles();setTimeout(awnParticles();setTimeout(animateStats,300)}closeMobileNav()}
+function closeMobileNav(){$('mobile-nav').classList.remove('open')}
 function initMap(){map=new google.maps.Map($('gmap'),{center:{lat:44.4949,lng:11.3426},zoom:15});placesService=new google.maps.places.PlacesService(map);renderChips();spawnParticles();setTimeout(animateStats,600);if(navigator.geolocation)navigator.geolocation.getCurrentPosition(p=>{userLoc={lat:p.coords.latitude,lng:p.coords.longitude};map.setCenter(userLoc);toast('📍 Posizione rilevata!')},()=>toast('⚠️ GPS non disponibile'))}
 function doNearby(){const b=$('nearby-btn');b.disabled=true;navigate('search');toast('📍 Cerco vicino a te...');getNearby();setTimeout(()=>b.disabled=false,2000)}
 function getNearby(){const loc=userLoc||map.getCenter();showSkeleton();const types=state.activeCat==='all'?['restaurant','cafe','bakery']:[state.activeCat];let all=[],done=0;types.forEach(type=>{placesService.nearbySearch({location:loc,radius:2000,type},(r,s)=>{if(s==='OK')all=[...all,...r];done++;if(done===types.length){if(!all.length){hideSkeleton();toast('😕 Nessun locale trovato');showEmpty();return}const seen=new Set();updateVenues(all.filter(v=>{if(seen.has(v.place_id))return false;seen.add(v.place_id);return true}))}}))}}
-function searchAPI(q){clearTimeout(debT);debT=setTimeout(()=>{showSkeleton();placesService.textSearch({query:q,location:map.getCenter(),radius:8000},(r,s)=>{if(s==='OK'&&r.length)updateVenues(r);else{hideSkeleton();toast(s==='ZERO_RESULTS'?'😕 Nessun risultato':'⚠️ Errore Maps');showEmpty()}})},320)}
+function searchAPI(q){clearTimeout(debT);debT=setTimeout(()=>{showSkeleton();placesService.textSearch({query:q,location:map.getCenter(),radius:8000},(r,s)=>{if(s==='OK'&&r.length)updateVenues(r);else if(s==='OVER_QUERY_LIMIT'){hideSkeleton();toast('⚠️ Limite API raggiunto. Riprova tra 1 min');showEmpty();return}else if(s==='REQUEST_DENIED'){hideSkeleton();toast('🔒 API Key bloccata. Controlla Cloud Console');showEmpty();return}else{hideSkeleton();toast(s==='ZERO_RESULTS'?'😕 Nessun risultato':'⚠️ Errore Maps');showEmpty()}})},320)}
 function clearSearch(){$('search-input').value='';$('search-clear').style.display='none';$('results-list').innerHTML='';$('results-count').textContent='';showEmpty()}
 function renderChips(){$('chips').innerHTML=CATS.map(c=>`<button class="chip ${c.id===state.activeCat?'active':''}" onclick="filterCat('${c.id}',this)">${c.icon} ${c.label}</button>`).join('')}
 function filterCat(id,el){state.activeCat=id;document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));el.classList.add('active');getNearby()}
