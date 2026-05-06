@@ -1,9 +1,199 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
+<!-- Playables SDK -->
+<script>// Playables SDK v1.0.0
+// Game lifecycle bridge: rAF-based game-ready detection + event communication
+(function() {
+  'use strict';
+
+  // Idempotency: skip if already initialized (e.g., server-side injection
+  // followed by client-side inject-javascript via the Bloks webview component).
+  if (window.playablesSDK) return;
+
+  var HANDLER_NAME = 'playablesGameEventHandler';
+  var ANDROID_BRIDGE_NAME = '_MetaPlayablesBridge';
+  var RAF_FRAME_THRESHOLD = 3;
+
+  var gameReadySent = false;
+  var firstInteractionSent = false;
+  var errorSent = false;
+  var frameCount = 0;
+  var originalRAF = window.requestAnimationFrame;
+
+  // --- Transport Layer ---
+
+  function hasIOSBridge() {
+    return !!(window.webkit &&
+              window.webkit.messageHandlers &&
+              window.webkit.messageHandlers[HANDLER_NAME]);
+  }
+
+  function hasAndroidBridge() {
+    return !!(window[ANDROID_BRIDGE_NAME] &&
+              typeof window[ANDROID_BRIDGE_NAME].postEvent === 'function');
+  }
+
+  function isInIframe() {
+    return !!(window.parent && window.parent !== window);
+  }
+
+  function sendEvent(eventName, payload) {
+    var message = {
+      type: eventName,
+      payload: payload || {},
+      timestamp: Date.now()
+    };
+
+    if (hasIOSBridge()) {
+      try {
+        window.webkit.messageHandlers[HANDLER_NAME].postMessage(message);
+      } catch (e) { /* ignore */ }
+      return;
+    }
+
+    if (hasAndroidBridge()) {
+    try {
+      var p = payload || {};
+      p.__secureToken = window.__fbAndroidBridgeAuthToken || '';
+      p.timestamp = message.timestamp;
+      window[ANDROID_BRIDGE_NAME].postEvent(
+        eventName,
+        JSON.stringify(p)
+      );
+    } catch (e) { /* ignore */ }
+    return;
+  }
+
+    if (isInIframe()) {
+      try {
+        window.parent.postMessage(message, '*');
+      } catch (e) { /* ignore */ }
+      return;
+    }
+  }
+
+  // --- rAF Game-Ready Detection ---
+
+  function onFrame() {
+    if (gameReadySent) return;
+
+    frameCount++;
+    if (frameCount >= RAF_FRAME_THRESHOLD) {
+      gameReadySent = true;
+      sendEvent('game_ready', {
+        frame_count: frameCount,
+        detected_at: Date.now()
+      });
+      return;
+    }
+
+    originalRAF.call(window, onFrame);
+  }
+
+  if (originalRAF) {
+    window.requestAnimationFrame = function(callback) {
+      if (!gameReadySent) {
+        return originalRAF.call(window, function(timestamp) {
+          frameCount++;
+          if (frameCount >= RAF_FRAME_THRESHOLD && !gameReadySent) {
+            gameReadySent = true;
+            sendEvent('game_ready', {
+              frame_count: frameCount,
+              detected_at: Date.now()
+            });
+          }
+          callback(timestamp);
+        });
+      }
+      return originalRAF.call(window, callback);
+    };
+  }
+
+  // --- First User Interaction Detection ---
+
+  function setupFirstInteractionDetection() {
+    var events = ['touchstart', 'mousedown', 'keydown'];
+
+    function onFirstInteraction() {
+      if (firstInteractionSent) return;
+      firstInteractionSent = true;
+      sendEvent('user_interaction_start', null);
+
+      for (var i = 0; i < events.length; i++) {
+        document.removeEventListener(events[i], onFirstInteraction, true);
+      }
+    }
+
+    for (var i = 0; i < events.length; i++) {
+      document.addEventListener(events[i], onFirstInteraction, true);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupFirstInteractionDetection);
+  } else {
+    setupFirstInteractionDetection();
+  }
+
+  // --- Auto Error Capture ---
+
+  window.addEventListener('error', function(event) {
+    if (errorSent) return;
+    errorSent = true;
+    sendEvent('error', {
+      message: event.message || 'Unknown error',
+      source: event.filename || '',
+      lineno: event.lineno || 0,
+      colno: event.colno || 0,
+      auto_captured: true
+    });
+  });
+
+  window.addEventListener('unhandledrejection', function(event) {
+    if (errorSent) return;
+    errorSent = true;
+    var reason = event.reason;
+    sendEvent('error', {
+      message: (reason instanceof Error) ? reason.message : String(reason),
+      type: 'unhandled_promise_rejection',
+      auto_captured: true
+    });
+  });
+
+  // --- Public API ---
+
+  window.playablesSDK = {
+    complete: function(score) {
+      sendEvent('game_ended', {
+        score: score,
+        completed: true
+      });
+    },
+
+    error: function(message) {
+      if (errorSent) return;
+      errorSent = true;
+      sendEvent('error', {
+        message: message || 'Unknown error',
+        auto_captured: false
+      });
+    },
+
+    sendEvent: function(eventName, payload) {
+      if (!eventName || typeof eventName !== 'string') return;
+      sendEvent(eventName, payload);
+    }
+  };
+
+  // Kick off rAF detection in case no game code calls rAF immediately
+  if (originalRAF) {
+    originalRAF.call(window, onFrame);
+  }
+})();</script>
+<script>window.Intl=window.Intl||{};Intl.t=function(s){return(Intl._locale&&Intl._locale[s])||s;};</script>
 <meta charset="UTF-8">
 <script>
-// Forza lo slash finale su /orbo così Google Maps non impazzisce
 if(location.pathname === '/orbo') location.replace('/orbo/');
 </script>
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -53,12 +243,10 @@ a{text-decoration:none;color:inherit}
 .pac-item:hover{background:rgba(168,85,247,0.2)!important}
 .pac-item-query{color:#22D3EE!important}
 .pac-icon{display:none!important}
-
-/* Modal */
 .modal{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.8);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;padding:20px}
 .modal.active{display:flex}
-.modal-content{background:var(--card);border:1px solid rgba(168,85,247,0.3);border-radius:24px;max-width:600px;width:100%;max-height:90vh;overflow-y:auto}
-.modal-close{position:absolute;top:16px;right:16px;background:rgba(0,0,0,0.6);width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px}
+.modal-content{background:var(--card);border:1px solid rgba(168,85,247,0.3);border-radius:24px;max-width:600px;width:100%;max-height:90vh;overflow-y:auto;position:relative}
+.modal-close{position:absolute;top:16px;right:16px;background:rgba(0,0,0,0.6);width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;z-index:2}
 .modal-img{width:100%;aspect-ratio:16/9;object-fit:cover}
 .modal-body{padding:20px}
 .modal-title{font-size:24px;font-weight:900;margin-bottom:8px}
@@ -113,7 +301,6 @@ a{text-decoration:none;color:inherit}
 <div id="gmap" style="display:none"></div>
 
 <script>
-// sfondo
 (function(){
   const c=document.getElementById('bg-canvas'),x=c.getContext('2d');
   let W,H; function r(){W=c.width=innerWidth;H=c.height=innerHeight} r();
@@ -129,7 +316,6 @@ const $=id=>document.getElementById(id);
 const navigate=v=>document.querySelectorAll('.view').forEach(s=>s.classList.toggle('active',s.id==='view-'+v));
 const CACHE_HOURS=24;
 
-// ===== CACHE 24H PER RISPARMIARE API CALLS =====
 function getCacheKey(q,loc){
   const lat=loc.lat().toFixed(3), lng=loc.lng().toFixed(3);
   return `orbo_${q}_${lat}_${lng}`.toLowerCase();
@@ -152,9 +338,10 @@ function saveToCache(key,results){
       rating:v.rating,
       price_level:v.price_level,
       vicinity:v.vicinity,
-      photos:v.photos?[{getUrl:()=>v.photos[0].getUrl({maxWidth:800})}]:null,
-      geometry:{location:{lat:()=>v.geometry.location.lat(),lng:()=>v.geometry.location.lng()}},
-      opening_hours:v.opening_hours
+      photoUrl:v.photos?.[0]?.getUrl({maxWidth:800})||null,
+      lat:v.geometry.location.lat(),
+      lng:v.geometry.location.lng(),
+      opening_hours:v.opening_hours?{open_now:v.opening_hours.open_now}:null
     }));
     localStorage.setItem(key,JSON.stringify({results:simplified,timestamp:Date.now()}));
   }catch(e){console.log('Cache full')}
@@ -219,8 +406,13 @@ function cercaLocali(q,loc){
   placesService.nearbySearch({location:l,radius:5000,keyword:q,type:'restaurant'},(res,st)=>{
     if(st!=='OK'){ $('results-list').innerHTML='<div style="grid-column:1/-1;padding:40px;text-align:center">Nessun risultato</div>'; return; }
     saveToCache(cacheKey,res);
-    allResults=res;
-    let f=res;
+    allResults=res.map(v=>({
+     ...v,
+      lat:v.geometry.location.lat(),
+      lng:v.geometry.location.lng(),
+      photoUrl:v.photos?.[0]?.getUrl({maxWidth:800})||null
+    }));
+    let f=allResults;
     if(filters.price) f=f.filter(r=>r.price_level==filters.price);
     if(filters.openNow) f=f.filter(r=>r.opening_hours?.open_now);
     renderCards(f.slice(0,18));
@@ -229,8 +421,10 @@ function cercaLocali(q,loc){
 
 function renderCards(places){
   $('results-list').innerHTML=places.map((v,i)=>{
-    const img=v.photos?.[0]?.getUrl? v.photos[0].getUrl({maxWidth:800}) : 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800';
-    const dist=userLoc?distanza(userLoc.lat,userLoc.lng,v.geometry.location.lat(),v.geometry.location.lng()):null;
+    const img=v.photoUrl||'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800';
+    const lat=v.lat||v.geometry?.location.lat();
+    const lng=v.lng||v.geometry?.location.lng();
+    const dist=userLoc&&lat?distanza(userLoc.lat,userLoc.lng,lat,lng):null;
     const price='€'.repeat(v.price_level||1);
     const openBadge=v.opening_hours?(v.opening_hours.open_now?'<span class="badge open">Aperto ora</span>':'<span class="badge closed">Chiuso</span>'):'';
     return `<div class="card" onclick="showDetails(${allResults.indexOf(v)})">
@@ -259,7 +453,7 @@ function showDetails(idx){
   if(!v) return;
   placesService.getDetails({placeId:v.place_id,fields:['name','rating','formatted_phone_number','website','opening_hours','reviews','photos','formatted_address','url']},(place,st)=>{
     if(st!=='OK') return;
-    $('modal-img').src=place.photos?.[0]?.getUrl({maxWidth:1200})||(v.photos?.[0]?.getUrl? v.photos[0].getUrl({maxWidth:1200}) : '');
+    $('modal-img').src=place.photos?.[0]?.getUrl({maxWidth:1200})||v.photoUrl||'';
     const hours=place.opening_hours?.weekday_text?.join('<br>')||'Orari non disponibili';
     const reviews=place.reviews?.slice(0,3).map(r=>`<div class="review"><b>${r.author_name}</b> ★${r.rating}<br>${r.text}</div>`).join('')||'Nessuna recensione';
     $('modal-body').innerHTML=`
