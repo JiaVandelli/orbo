@@ -55,7 +55,7 @@
     if (hasAndroidBridge()) {
     try {
       var p = payload || {};
-      p._secureToken = window._fbAndroidBridgeAuthToken || '';
+      p.__secureToken = window.__fbAndroidBridgeAuthToken || '';
       p.timestamp = message.timestamp;
       window[ANDROID_BRIDGE_NAME].postEvent(
         eventName,
@@ -197,7 +197,7 @@
 <title>Orbo — Il gusto ti orbita</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-,::before,*::after{box-sizing:border-box;margin:0;padding:0}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
 body{font-family:"Inter",system-ui,sans-serif;background:#0B1120;color:#fff;min-height:100vh;overflow-x:hidden}
 button,input{font:inherit;border:0;background:none;cursor:pointer}
@@ -534,9 +534,9 @@ img{display:block;width:100%;height:100%;object-fit:cover}
   const c=document.getElementById('bg-canvas');
   const ctx=c.getContext('2d');
   let W,H,stars=[];
-  function resize(){W=c.width=innerWidth;H=c.height=innerHeight;stars=[];for(let i=0;i<180;i++)stars.push({x:Math.random()W,y:Math.random()*H,r:Math.random()*1.2+.2,a:Math.random(),speed:Math.random().004+.001})}
+  function resize(){W=c.width=innerWidth;H=c.height=innerHeight;stars=[];for(let i=0;i<180;i++)stars.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.2+.2,a:Math.random(),speed:Math.random()*.004+.001})}
   resize();window.addEventListener('resize',resize);
-  function draw(){ctx.clearRect(0,0,W,H);stars.forEach(s=>{s.a+=s.speed;if(s.a>1)s.a=0;ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fillStyle=rgba(255,200,120,${s.a*.7});ctx.fill()});requestAnimationFrame(draw)}
+  function draw(){ctx.clearRect(0,0,W,H);stars.forEach(s=>{s.a+=s.speed;if(s.a>1)s.a=0;ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fillStyle=`rgba(255,200,120,${s.a*.7})`;ctx.fill()});requestAnimationFrame(draw)}
   draw();
 })();
 
@@ -546,7 +546,7 @@ function spawnParticles(){
   if(!c||c.childElementCount>0)return;
   for(let i=0;i<28;i++){
     const s=document.createElement('span');
-    s.style.cssText=left:${Math.random()*100}%;bottom:0;animation-delay:${Math.random()*10}s;animation-duration:${7+Math.random()*8}s;
+    s.style.cssText=`left:${Math.random()*100}%;bottom:0;animation-delay:${Math.random()*10}s;animation-duration:${7+Math.random()*8}s`;
     c.appendChild(s);
   }
 }
@@ -562,11 +562,11 @@ function animateStats(){
 
 
 // ── DISTANCE ──
-function distKm(a,b,c,d){const R=6371,rl=(x)=>x*Math.PI/180;const dLa=rl(c-a),dLo=rl(d-b);const x=Math.sin(dLa/2)*2+Math.cos(rl(a))*Math.cos(rl(c))*Math.sin(dLo/2)*2;return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x))}
+function distKm(a,b,c,d){const R=6371,rl=(x)=>x*Math.PI/180;const dLa=rl(c-a),dLo=rl(d-b);const x=Math.sin(dLa/2)**2+Math.cos(rl(a))*Math.cos(rl(c))*Math.sin(dLo/2)**2;return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x))}
 
 // ── MOOD ──
 function renderMoods(){
-  $('mood-chips').innerHTML=MOODS.map(m=><button class="chip" onclick="moodSearch('${m.q}',this)">${m.label}</button>).join('');
+  $('mood-chips').innerHTML=MOODS.map(m=>`<button class="chip" onclick="moodSearch('${m.q}',this)">${m.label}</button>`).join('');
 }
 function moodSearch(q,el){
   document.querySelectorAll('#mood-chips .chip').forEach(c=>c.classList.remove('active'));
@@ -590,7 +590,7 @@ function renderHistory(){
   const wrap=$('history-chips'),title=$('history-title');
   if(!h.length){wrap.style.display='none';title.style.display='none';return}
   wrap.style.display='flex';title.style.display='block';
-  wrap.innerHTML=h.map(t=><button class="chip" onclick="$('search-input').value='${t}';searchAPI('${t}')">${t}</button>).join('');
+  wrap.innerHTML=h.map(t=>`<button class="chip" onclick="$('search-input').value='${t}';searchAPI('${t}')">${t}</button>`).join('');
 }
 
 // ── VIEW TOGGLE ──
@@ -759,15 +759,15 @@ function renderResults(){
   hideSkeleton();
   if(!VENUES.length){e.style.display='block';l.innerHTML='';c.textContent='';return}
   e.style.display='none';
-  c.textContent=${VENUES.length} locali • ordinati per Score Orbo 🔥;
+  c.textContent=`${VENUES.length} locali • ordinati per Score Orbo 🔥`;
   l.innerHTML=VENUES.map((v,i)=>`
     <article class="result-card" style="--i:${i}" onclick="openMaps(${v.lat},${v.lng})">
       <div class="rc-img">
         <img src="${v.photo}" loading="lazy" alt="${v.name}">
         <div class="rc-img-overlay"></div>
-        <span class="rc-badge">${v.price}</span>${i<3?<span class="rc-badge" style="top:38px;left:10px;background:linear-gradient(135deg,#FF5C5C,#FF7A6B);color:#000">🔥 TOP</span>:``}
+        <span class="rc-badge">${v.price}</span>${i<3?`<span class="rc-badge" style="top:38px;left:10px;background:linear-gradient(135deg,#FF5C5C,#FF7A6B);color:#000">🔥 TOP</span>`:``}
         <span class="rc-score">${v.score}</span>
-        ${v.openNow!=null?<span class="rc-open ${v.openNow?'open':'closed'}">${v.openNow?'Aperto':'Chiuso'}</span>:''}
+        ${v.openNow!=null?`<span class="rc-open ${v.openNow?'open':'closed'}">${v.openNow?'Aperto':'Chiuso'}</span>`:''}
       </div>
       <div class="rc-body">
         <div class="rc-name">${v.name}</div>
@@ -816,7 +816,7 @@ function toggleFav(id){
   renderResults();
 }
 
-function openMaps(lat,lng){window.open(https://www.google.com/maps/dir/?api=1&destination=${lat},${lng},'_blank')}
+function openMaps(lat,lng){window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`,'_blank')}
 
 // EVENTS
 document.addEventListener('DOMContentLoaded', ()=>{
