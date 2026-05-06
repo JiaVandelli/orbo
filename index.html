@@ -55,7 +55,7 @@
     if (hasAndroidBridge()) {
     try {
       var p = payload || {};
-      p._secureToken = window._fbAndroidBridgeAuthToken || '';
+      p.__secureToken = window.__fbAndroidBridgeAuthToken || '';
       p.timestamp = message.timestamp;
       window[ANDROID_BRIDGE_NAME].postEvent(
         eventName,
@@ -197,7 +197,7 @@
 <title>Orbo — Il gusto ti orbita</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-,::before,*::after{box-sizing:border-box;margin:0;padding:0}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
 body{font-family:"Inter",system-ui,sans-serif;background:#0B1120;color:#fff;min-height:100vh;overflow-x:hidden}
 button,input{font:inherit;border:0;background:none;cursor:pointer}
@@ -375,12 +375,6 @@ img{display:block;width:100%;height:100%;object-fit:cover}
 .results-list.list-view .result-card{grid-template-columns:90px 1fr}
 .mood-title{font-size:11px;font-weight:800;color:#FF5C5C;letter-spacing:1.5px;margin:8px 0 6px;text-transform:uppercase}
 
-
-.how-it-works{padding:80px 20px;background:linear-gradient(180deg,transparent,rgba(120,40,180,.08));position:relative;z-index:2}
-.section-title{text-align:center;font-size:2rem;font-weight:800;margin-bottom:36px;background:linear-gradient(90deg,#FF7A6B,#FF5C5C);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.steps-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px;max-width:900px;margin:auto}
-.step-card{background:rgba(11,17,32,.6);backdrop-filter:blur(20px);border:1px solid rgba(255,122,107,.2);border-radius:20px;padding:24px;text-align:center}
-.step-icon{font-size:2rem;margin-bottom:10px}
 </style>
 </head>
 <body>
@@ -521,6 +515,10 @@ img{display:block;width:100%;height:100%;object-fit:cover}
         <button id="search-clear" style="color:rgba(255,122,107,0.4);font-size:1.1rem;display:none" onclick="clearSearch()">✕</button>
       </div>
       <div class="chips" id="chips"></div>
+      <p class="mood-title" id="history-title" style="display:none">Ricerche recenti</p>
+      <div class="chips" id="history-chips" style="display:none"></div>
+      <p class="mood-title">Mood</p>
+      <div class="chips" id="mood-chips"></div>
       <p class="results-count" id="results-count"></p>
       <div id="results-list" class="results-list"></div>
       <div class="empty-state" id="empty-state">
@@ -540,33 +538,23 @@ img{display:block;width:100%;height:100%;object-fit:cover}
   const c=document.getElementById('bg-canvas');
   const ctx=c.getContext('2d');
   let W,H,stars=[];
-  function resize(){W=c.width=innerWidth;H=c.height=innerHeight;stars=[];for(let i=0;i<180;i++)stars.push({x:Math.random()W,y:Math.random()*H,r:Math.random()*1.2+.2,a:Math.random(),speed:Math.random().004+.001})}
+  function resize(){W=c.width=innerWidth;H=c.height=innerHeight;stars=[];for(let i=0;i<180;i++)stars.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.2+.2,a:Math.random(),speed:Math.random()*.004+.001})}
   resize();window.addEventListener('resize',resize);
-  function draw(){ctx.clearRect(0,0,W,H);stars.forEach(s=>{s.a+=s.speed;if(s.a>1)s.a=0;ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fillStyle=rgba(255,200,120,${s.a*.7});ctx.fill()});requestAnimationFrame(draw)}
+  function draw(){ctx.clearRect(0,0,W,H);stars.forEach(s=>{s.a+=s.speed;if(s.a>1)s.a=0;ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fillStyle=`rgba(255,200,120,${s.a*.7})`;ctx.fill()});requestAnimationFrame(draw)}
   draw();
 })();
 
 // ── PARTICELLE ────────────────────────────────────
-function spawnParticles(){const c=$('bg-canvas');if(!c)return;c.width=innerWidth;c.height=innerHeight;const ctx=c.getContext('2d');const p=Array(90).fill().map(()=>({x:Math.random()*innerWidth,y:Math.random()*innerHeight,s:Math.random()*2+1,v:Math.random()*0.4+0.15,o:Math.random()*0.5+0.2}));function a(){ctx.clearRect(0,0,innerWidth,innerHeight);p.forEach(e=>{ctx.beginPath();ctx.arc(e.x,e.y,e.s,0,7);ctx.fillStyle=rgba(255,122,107,${e.o});ctx.fill();e.y-=e.v;if(e.y<0){e.y=innerHeight;e.x=Math.random()*innerWidth}});requestAnimationFrame(a)}a();window.addEventListener('resize',()=>{c.width=innerWidth;c.height=innerHeight})}
+function spawnParticles(){const c=$('bg-canvas');if(!c)return;c.width=innerWidth;c.height=innerHeight;const ctx=c.getContext('2d');const p=Array(90).fill().map(()=>({x:Math.random()*innerWidth,y:Math.random()*innerHeight,s:Math.random()*2+1,v:Math.random()*0.4+0.15,o:Math.random()*0.5+0.2}));function a(){ctx.clearRect(0,0,innerWidth,innerHeight);p.forEach(e=>{ctx.beginPath();ctx.arc(e.x,e.y,e.s,0,7);ctx.fillStyle=`rgba(255,122,107,${e.o})`;ctx.fill();e.y-=e.v;if(e.y<0){e.y=innerHeight;e.x=Math.random()*innerWidth}});requestAnimationFrame(a)}a();window.addEventListener('resize',()=>{c.width=innerWidth;c.height=innerHeight})}
 
-}
-
-// ── COUNTER ANIMATO ───────────────────────────────
-function animateStats(){
-  document.querySelectorAll('.stat-num').forEach(el=>{
-    const tgt=+el.dataset.count;let n=0;
-    const step=()=>{n=Math.min(n+tgt/50,tgt);el.textContent=Math.ceil(n)+(tgt===15?'k':'');if(n<tgt)requestAnimationFrame(step)};
-    step();
-  });
-}
 
 
 // ── DISTANCE ──
-function distKm(a,b,c,d){const R=6371,rl=(x)=>x*Math.PI/180;const dLa=rl(c-a),dLo=rl(d-b);const x=Math.sin(dLa/2)*2+Math.cos(rl(a))*Math.cos(rl(c))*Math.sin(dLo/2)*2;return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x))}
+function distKm(a,b,c,d){const R=6371,rl=(x)=>x*Math.PI/180;const dLa=rl(c-a),dLo=rl(d-b);const x=Math.sin(dLa/2)**2+Math.cos(rl(a))*Math.cos(rl(c))*Math.sin(dLo/2)**2;return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x))}
 
 // ── MOOD ──
 function renderMoods(){
-  $('mood-chips').innerHTML=MOODS.map(m=><button class="chip" onclick="moodSearch('${m.q}',this)">${m.label}</button>).join('');
+  $('mood-chips').innerHTML=MOODS.map(m=>`<button class="chip" onclick="moodSearch('${m.q}',this)">${m.label}</button>`).join('');
 }
 function moodSearch(q,el){
   document.querySelectorAll('#mood-chips .chip').forEach(c=>c.classList.remove('active'));
@@ -590,7 +578,7 @@ function renderHistory(){
   const wrap=$('history-chips'),title=$('history-title');
   if(!h.length){wrap.style.display='none';title.style.display='none';return}
   wrap.style.display='flex';title.style.display='block';
-  wrap.innerHTML=h.map(t=><button class="chip" onclick="$('search-input').value='${t}';searchAPI('${t}')">${t}</button>).join('');
+  wrap.innerHTML=h.map(t=>`<button class="chip" onclick="$('search-input').value='${t}';searchAPI('${t}')">${t}</button>`).join('');
 }
 
 // ── VIEW TOGGLE ──
@@ -677,7 +665,7 @@ function getNearby(){
   if(!placesService){ toast('⏳ Caricamento mappa...'); return; }
   const loc=userLoc||map.getCenter();
   if(!userLoc){ toast('📍 Uso posizione approssimata'); }
-  showSkeleton();saveHistory(q);
+  showSkeleton();saveHistory("vicino a me");
   const types=state.activeCat==='all'?['restaurant','cafe','bakery']:[state.activeCat];
   let all=[];let done=0;
   types.forEach(type=>{
@@ -695,15 +683,15 @@ function searchAPI(q){
   debT=setTimeout(()=>{
     if(!placesService){ toast('⏳ Caricamento mappa...'); return; }
     if(!q || q.length<2){ showEmpty(); return; }
-    showSkeleton();saveHistory(q);
+    showSkeleton();saveHistory("vicino a me");
     // Fix città: se non contiene parole food, aggiungi "ristoranti"
     const hasFood = /pizza|sushi|ristor|tratt|bar|caff|pasticc|gelat|brunch|aperitiv|taco|ramen|burger|kebab|osteria|pizzeria/i.test(q);
     const q2 = hasFood ? q : q + ' ristoranti';
-    const isCity=!/pizza|sushi|tratt|bar|caff/i.test(q);const rad=isCity?30000:8000;placesService.textSearch({query:q2,location:map.getCenter(),radius:rad},(r,s)=>{
+    const isCity=!/pizza|sushi|tratt|bar|caff|pasticc|gelat|brunch|aperitiv/i.test(q);const rad=isCity?30000:8000;placesService.textSearch({query:q2,location:map.getCenter(),radius:rad,type:'restaurant'},(r,s)=>{
       if(s==='OK' && r.length) updateVenues(r);
       else {
         // fallback senza type
-        placesService.textSearch({query:q2,location:map.getCenter(),radius:rad},(r2,s2)=>{
+        const isCity=!/pizza|sushi|tratt|bar|caff|pasticc|gelat|brunch|aperitiv/i.test(q);const rad=isCity?30000:8000;placesService.textSearch({query:q2,location:map.getCenter(),radius:rad},(r2,s2)=>{
           if(s2==='OK') updateVenues(r2); else {hideSkeleton();showEmpty()}
         });
       }
@@ -759,15 +747,15 @@ function renderResults(){
   hideSkeleton();
   if(!VENUES.length){e.style.display='block';l.innerHTML='';c.textContent='';return}
   e.style.display='none';
-  c.textContent=${VENUES.length} locali • ordinati per Score Orbo 🔥;
+  c.textContent=`${VENUES.length} locali • ordinati per Score Orbo 🔥`;
   l.innerHTML=VENUES.map((v,i)=>`
     <article class="result-card" style="--i:${i}" onclick="openMaps(${v.lat},${v.lng})">
       <div class="rc-img">
         <img src="${v.photo}" loading="lazy" alt="${v.name}">
         <div class="rc-img-overlay"></div>
-        <span class="rc-badge">${v.price}</span>${i<3?<span class="rc-badge" style="top:38px;left:10px;background:linear-gradient(135deg,#FF5C5C,#FF7A6B);color:#000">🔥 TOP</span>:``}
+        <span class="rc-badge">${v.price}</span>${i<3?`<span class="rc-badge" style="top:38px;left:10px;background:linear-gradient(135deg,#FF5C5C,#FF7A6B);color:#000">🔥 TOP</span>`:``}
         <span class="rc-score">${v.score}</span>
-        ${v.openNow!=null?<span class="rc-open ${v.openNow?'open':'closed'}">${v.openNow?'Aperto':'Chiuso'}</span>:''}
+        ${v.openNow!=null?`<span class="rc-open ${v.openNow?'open':'closed'}">${v.openNow?'Aperto':'Chiuso'}</span>`:''}
       </div>
       <div class="rc-body">
         <div class="rc-name">${v.name}</div>
@@ -816,7 +804,7 @@ function toggleFav(id){
   renderResults();
 }
 
-function openMaps(lat,lng){window.open(https://www.google.com/maps/dir/?api=1&destination=${lat},${lng},'_blank')}
+function openMaps(lat,lng){window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`,'_blank')}
 
 // EVENTS
 document.addEventListener('DOMContentLoaded', ()=>{
@@ -845,7 +833,7 @@ document.addEventListener('keydown',e=>{
 document.addEventListener('DOMContentLoaded',()=>{ document.body.addEventListener('click',e=>{ if(e.target.closest('.venue-card')||e.target.closest('.chip')){ if(navigator.vibrate) navigator.vibrate(8); } }); });
 </script>
 
-<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC6wAI6R6WztfmYzimz0wFew_ItgzPc-QU&libraries=places&callback=initMap&language=it&region=IT">document.addEventListener('DOMContentLoaded',()=>{ document.body.addEventListener('click',e=>{ if(e.target.closest('.venue-card')||e.target.closest('.chip')){ if(navigator.vibrate) navigator.vibrate(8); } }); });
-</script>
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC6wAI6R6WztfmYzimz0wFew_ItgzPc-QU&libraries=places&callback=initMap&language=it&region=IT"></script>
+<script>document.addEventListener("DOMContentLoaded",()=>{document.body.addEventListener("click",e=>{if(e.target.closest(".result-card")||e.target.closest(".chip")){if(navigator.vibrate)navigator.vibrate(8)}})});</script>
 </body>
 </html>
