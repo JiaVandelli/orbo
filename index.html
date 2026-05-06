@@ -699,11 +699,11 @@ function searchAPI(q){
     // Fix città: se non contiene parole food, aggiungi "ristoranti"
     const hasFood = /pizza|sushi|ristor|tratt|bar|caff|pasticc|gelat|brunch|aperitiv|taco|ramen|burger|kebab|osteria|pizzeria/i.test(q);
     const q2 = hasFood ? q : q + ' ristoranti';
-    placesService.textSearch({query:q2,location:map.getCenter(),radius:8000,type:'restaurant'},(r,s)=>{
+    const isCity=!/pizza|sushi|tratt|bar|caff/i.test(q);const rad=isCity?30000:8000;placesService.textSearch({query:q2,location:map.getCenter(),radius:rad},(r,s)=>{
       if(s==='OK' && r.length) updateVenues(r);
       else {
         // fallback senza type
-        placesService.textSearch({query:q2,location:map.getCenter(),radius:8000},(r2,s2)=>{
+        placesService.textSearch({query:q2,location:map.getCenter(),radius:rad},(r2,s2)=>{
           if(s2==='OK') updateVenues(r2); else {hideSkeleton();showEmpty()}
         });
       }
@@ -845,7 +845,7 @@ document.addEventListener('keydown',e=>{
 document.addEventListener('DOMContentLoaded',()=>{ document.body.addEventListener('click',e=>{ if(e.target.closest('.venue-card')||e.target.closest('.chip')){ if(navigator.vibrate) navigator.vibrate(8); } }); });
 </script>
 
-<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC6wAI6R6WztfmYzimz0wFew_ItgzPc-QU&libraries=places&callback=initMap&language=it&region=IT">document.addEventListener('DOMContentLoaded',()=>{ document.body.addEventListener('click',e=>{ if(e.target.closest('.venue-card')||e.target.closest('.chip')){ if(navigator.vibrate) navigator.vibrate(8); } }); });
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=LA_TUA_API_KEY&libraries=places&callback=initMap&language=it&region=IT">document.addEventListener('DOMContentLoaded',()=>{ document.body.addEventListener('click',e=>{ if(e.target.closest('.venue-card')||e.target.closest('.chip')){ if(navigator.vibrate) navigator.vibrate(8); } }); });
 </script>
 </body>
 </html>
