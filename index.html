@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<!-- Playables SDK -->
+<script>// Playables SDK v1.0.0
+// Game lifecycle bridge: rAF-based game-ready detection + event communication
+(function() {
+  'use strict';
+
+  // Idempotency: skip if already initialized (e.g., server-side injection
+  // followed by client-side inject-javascript via the Bloks webview component).
+  if (window.playablesSDK) return;
+
+  var HANDLER_NAME = 'playablesGameEventHandler';
+  var ANDROID_BRIDGE_NAME = '_MetaPlayablesBridge';
+  var RAF_FRAME_THRESHOLD = 3;
+
+  var gameReadySent = false;
+  var firstInteractionSent = false;
+  var errorSent = false;
+  var frameCount = 0;
+  var originalRAF = window.requestAnimationFrame;
+
+  // --- Transport Layer ---
+
+  function hasIOSBridge() {
+    return !!(window.webkit &&
+              window.webkit.messageHandlers &&
+              window.webkit.messageHandlers[HANDLER_NAME]);
+  }
+
+  function hasAndroidBridge() {
+    return !!(window[ANDROID_BRIDGE_NAME] &&
+              typeof window[ANDROID_BRIDGE_NAME].postEvent === 'function');
+  }
+
+  function isInIframe() {
+    return !!(window.parent && window.parent !== window);
+  }
+
+  function sendEvent(eventName, payload) {
+    var message = {
+      type: eventName,
+      payload: payload || {},
+      timestamp: Date.now()
+    };
+
+    if (hasIOSBridge()) {
+      try {
+        window.webkit.messageHandlers[HANDLER_NAME].postMessage(message);
+      } catch (e) { /* ignore */ }
+      return;
+    }
+
+    if (hasAndroidBridge()) {
+    try {
+      var p = payload || {};
+      p.__secureToken = window.__fbAndroidBridgeAuthToken || '';
+      p.timestamp = message.timestamp;
+      window[ANDROID_BRIDGE_NAME].postEvent(
+        eventName,
+        JSON.stringify(p)
+      );
+    } catch (e) { /* ignore */ }
+    return;
+  }
+
+    if (isInIframe()) {
+      try {
+        window.parent.postMessage(message, '*');
+      } catch (e) { /* ignore */ }
+      return;
+    }
+  }
+
+  // --- rAF Game-Ready Detection ---
+
+  function onFrame() {
+    if (gameReadySent) return;
+
+    frameCount++;
+    if (frameCount >= RAF_FRAME_THRESHOLD) {
+      gameReadySent = true;
+      sendEvent('game_ready', {
+        frame_count: frameCount,
+        detected_at: Date.now()
+      });
+      return;
+    }
+
+    originalRAF.call(window, onFrame);
+  }
+
+  if (originalRAF) {
+    window.requestAnimationFrame = function(callback) {
+      if (!gameReadySent) {
+        return originalRAF.call(window, function(timestamp) {
+          frameCount++;
+          if (frameCount >= RAF_FRAME_THRESHOLD && !gameReadySent) {
+            gameReadySent = true;
+            sendEvent('game_ready', {
+              frame_count: frameCount,
+              detected_at: Date.now()
+            });
+          }
+          callback(timestamp);
+        });
+      }
+      return originalRAF.call(window, callback);
+    };
+  }
+
+  // --- First User Interaction Detection ---
+
+  function setupFirstInteractionDetection() {
+    var events = ['touchstart', 'mousedown', 'keydown'];
+
+    function onFirstInteraction() {
+      if (firstInteractionSent) return;
+      firstInteractionSent = true;
+      sendEvent('user_interaction_start', null);
+
+      for (var i = 0; i < events.length; i++) {
+        document.removeEventListener(events[i], onFirstInteraction, true);
+      }
+    }
+
+    for (var i = 0; i < events.length; i++) {
+      document.addEventListener(events[i], onFirstInteraction, true);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupFirstInteractionDetection);
+  } else {
+    setupFirstInteractionDetection();
+  }
+
+  // --- Auto Error Capture ---
+
+  window.addEventListener('error', function(event) {
+    if (errorSent) return;
+    errorSent = true;
+    sendEvent('error', {
+      message: event.message || 'Unknown error',
+      source: event.filename || '',
+      lineno: event.lineno || 0,
+      colno: event.colno || 0,
+      auto_captured: true
+    });
+  });
+
+  window.addEventListener('unhandledrejection', function(event) {
+    if (errorSent) return;
+    errorSent = true;
+    var reason = event.reason;
+    sendEvent('error', {
+      message: (reason instanceof Error) ? reason.message : String(reason),
+      type: 'unhandled_promise_rejection',
+      auto_captured: true
+    });
+  });
+
+  // --- Public API ---
+
+  window.playablesSDK = {
+    complete: function(score) {
+      sendEvent('game_ended', {
+        score: score,
+        completed: true
+      });
+    },
+
+    error: function(message) {
+      if (errorSent) return;
+      errorSent = true;
+      sendEvent('error', {
+        message: message || 'Unknown error',
+        auto_captured: false
+      });
+    },
+
+    sendEvent: function(eventName, payload) {
+      if (!eventName || typeof eventName !== 'string') return;
+      sendEvent(eventName, payload);
+    }
+  };
+
+  // Kick off rAF detection in case no game code calls rAF immediately
+  if (originalRAF) {
+    originalRAF.call(window, onFrame);
+  }
+})();</script>
+<script>window.Intl=window.Intl||{};Intl.t=function(s){return(Intl._locale&&Intl._locale[s])||s;};</script>
+<meta charset="UTF-8">
+<script>
+if(location.pathname === '/orbo') location.replace('/orbo/');
+</script>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Orbo — Il gusto ti orbita</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0D0417;--card:#1A0B2E;--primary:#A855F7;--cyan:#22D3EE;--text:#E9D5FF;--text-dim:#A78BFA}
+body{font-family:"Inter",system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+button,input{font:inherit;border:0;background:none;cursor:pointer;color:inherit}
+a{text-decoration:none;color:inherit}
+#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
+.topbar{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:14px;padding:10px 20px;background:rgba(13,4,23,0.9);backdrop-filter:blur(24px);border-bottom:1px solid rgba(168,85,247,0.15)}
+.topbar-logo{height:42px;width:42px;filter:drop-shadow(0 0 12px rgba(168,85,247,0.7));cursor:pointer}
+.topbar-slogan{flex:1;font-family:'Arial Black',sans-serif;font-size:15px;font-weight:900;text-transform:uppercase;background:linear-gradient(90deg,#A855F7,#22D3EE);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.cache-badge{font-size:11px;padding:4px 8px;border-radius:6px;background:rgba(34,211,238,0.15);color:var(--cyan);font-weight:700}
+.view{display:none;position:relative;z-index:1;padding:16px}
+.view.active{display:block}
+.hero{min-height:70vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:20px}
+.btn-primary{background:linear-gradient(135deg,#A855F7,#22D3EE);padding:16px 32px;border-radius:999px;font-weight:900;color:#0D0417}
+.btn-ghost{border:1.5px solid rgba(168,85,247,0.4);padding:16px 32px;border-radius:999px;font-weight:900}
+.search-wrap{max-width:1200px;margin:0 auto}
+.search-box{width:100%;position:relative;margin-bottom:12px}
+.search-box input{width:100%;padding:16px 20px;background:rgba(26,11,46,0.9);border:1.5px solid rgba(168,85,247,0.3);border-radius:16px;font-size:16px;outline:none}
+.search-box input:focus{border-color:#A855F7;box-shadow:0 0 0 3px rgba(168,85,247,0.2)}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;align-items:center}
+.chip{padding:8px 14px;border-radius:999px;border:1px solid rgba(168,85,247,0.3);font-size:13px;font-weight:600;opacity:.7;transition:.2s}
+.chip.active{background:rgba(168,85,247,0.3);border-color:#A855F7;opacity:1}
+.results-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px}
+.card{background:var(--card);border:1px solid rgba(168,85,247,0.2);border-radius:20px;overflow:hidden;cursor:pointer;transition:.3s}
+.card:hover{transform:translateY(-4px);border-color:#A855F7;box-shadow:0 8px 24px rgba(168,85,247,0.3)}
+.card-img{width:100%;aspect-ratio:16/9;object-fit:cover;background:#2d1b4e}
+.card-body{padding:14px}
+.card-title{font-weight:800;font-size:18px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:start;gap:8px}
+.card-rating{font-size:14px;font-weight:700;color:#FBBF24;white-space:nowrap}
+.card-meta{font-size:13px;color:var(--text-dim);display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.badge{padding:3px 10px;border-radius:8px;background:rgba(34,211,238,0.15);color:var(--cyan);font-size:11px;font-weight:700}
+.badge.open{background:rgba(16,185,129,0.15);color:#10B981}
+.badge.closed{background:rgba(239,68,68,0.15);color:#EF4444}
+.card-actions{display:flex;gap:8px;margin-top:10px}
+.btn-action{flex:1;padding:8px;border-radius:10px;font-size:12px;font-weight:700;text-align:center;background:rgba(168,85,247,0.2);border:1px solid rgba(168,85,247,0.3)}
+.btn-action.primary{background:linear-gradient(135deg,#A855F7,#22D3EE);color:#0D0417;border:0}
+.skeleton{background:linear-gradient(90deg,rgba(168,85,247,0.1) 25%,rgba(168,85,247,0.2) 50%,rgba(168,85,247,0.1) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:20px;height:340px}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.pac-container{background:#1A0B2E!important;border:1px solid rgba(168,85,247,0.4)!important;border-radius:12px!important;margin-top:4px;z-index:9999!important}
+.pac-item{color:#E9D5FF!important;padding:10px 16px!important;border-top:1px solid rgba(168,85,247,0.1)!important}
+.pac-item:hover{background:rgba(168,85,247,0.2)!important}
+.pac-item-query{color:#22D3EE!important}
+.pac-icon{display:none!important}
+.modal{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.8);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;padding:20px}
+.modal.active{display:flex}
+.modal-content{background:var(--card);border:1px solid rgba(168,85,247,0.3);border-radius:24px;max-width:600px;width:100%;max-height:90vh;overflow-y:auto;position:relative}
+.modal-close{position:absolute;top:16px;right:16px;background:rgba(0,0,0,0.6);width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;z-index:2}
+.modal-img{width:100%;aspect-ratio:16/9;object-fit:cover}
+.modal-body{padding:20px}
+.modal-title{font-size:24px;font-weight:900;margin-bottom:8px}
+.modal-section{margin:16px 0;padding-top:16px;border-top:1px solid rgba(168,85,247,0.15)}
+.modal-section h4{font-size:13px;text-transform:uppercase;opacity:.6;margin-bottom:8px}
+.review{font-size:14px;line-height:1.6;margin-bottom:12px;opacity:.9}
+@media(max-width:768px){.results-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<canvas id="bg-canvas"></canvas>
+<header class="topbar">
+  <svg class="topbar-logo" id="logo-btn" viewBox="0 0 100 100"><polygon points="50,15 75,30 75,60 50,75 25,60 25,30" fill="url(#g)"/><defs><linearGradient id="g"><stop stop-color="#A855F7"/><stop offset="1" stop-color="#22D3EE"/></linearGradient></defs></svg>
+  <span class="topbar-slogan">IL GUSTO TI ORBITA</span>
+  <span id="cache-indicator" class="cache-badge" style="display:none">CACHE</span>
+</header>
+
+<main>
+  <section class="view active" id="view-home">
+    <div class="hero">
+      <h1 style="font-size:32px;background:linear-gradient(180deg,#E9D5FF,#A855F7);-webkit-background-clip:text;-webkit-text-fill-color:transparent">Il locale perfetto,<br>a portata di tap</h1>
+      <button class="btn-primary" onclick="navigate('search')">Inizia la ricerca →</button>
+      <button class="btn-ghost" onclick="doNearby()">📍 Vicino a me</button>
+    </div>
+  </section>
+
+  <section class="view" id="view-search">
+    <div class="search-wrap">
+      <div class="search-box">
+        <input id="search-input" placeholder="Città, poi pizza, sushi, cocktail..." autocomplete="off">
+      </div>
+      <div class="filters">
+        <button class="chip" data-price="1">€</button>
+        <button class="chip" data-price="2">€€</button>
+        <button class="chip" data-price="3">€€€</button>
+        <button class="chip" data-price="4">€€€€</button>
+        <button class="chip" id="open-now">Aperto ora</button>
+      </div>
+      <div id="results-list" class="results-grid"></div>
+    </div>
+  </section>
+</main>
+
+<div class="modal" id="detail-modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal-content">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <img id="modal-img" class="modal-img" src="">
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<div id="gmap" style="display:none"></div>
+
+<script>
+(function(){
+  const c=document.getElementById('bg-canvas'),x=c.getContext('2d');
+  let W,H; function r(){W=c.width=innerWidth;H=c.height=innerHeight} r();
+  addEventListener('resize',r);
+  const s=Array(40).fill().map(()=>({x:Math.random()*W,y:Math.random()*H,a:Math.random()}));
+  (function d(){x.clearRect(0,0,W,H);s.forEach(p=>{p.a+=.002;if(p.a>1)p.a=0;x.beginPath();x.arc(p.x,p.y,1.2,0,7);x.fillStyle=`rgba(180,150,255,${p.a*.4})`;x.fill()});requestAnimationFrame(d)})();
+})();
+
+let map, placesService, autocomplete, userLoc=null, currentLocation=null;
+let filters={price:null,openNow:false};
+let allResults=[];
+const $=id=>document.getElementById(id);
+const navigate=v=>document.querySelectorAll('.view').forEach(s=>s.classList.toggle('active',s.id==='view-'+v));
+const CACHE_HOURS=24;
+
+function getCacheKey(q,loc){
+  const lat=loc.lat().toFixed(3), lng=loc.lng().toFixed(3);
+  return `orbo_${q}_${lat}_${lng}`.toLowerCase();
+}
+function getFromCache(key){
+  try{
+    const cached=localStorage.getItem(key);
+    if(!cached) return null;
+    const data=JSON.parse(cached);
+    const hoursAgo=(Date.now()-data.timestamp)/1000/60/60;
+    if(hoursAgo>CACHE_HOURS) {localStorage.removeItem(key);return null;}
+    return data.results;
+  }catch(e){return null}
+}
+function saveToCache(key,results){
+  try{
+    const simplified=results.map(v=>({
+      place_id:v.place_id,
+      name:v.name,
+      rating:v.rating,
+      price_level:v.price_level,
+      vicinity:v.vicinity,
+      photoUrl:v.photos?.[0]?.getUrl({maxWidth:800})||null,
+      lat:v.geometry.location.lat(),
+      lng:v.geometry.location.lng(),
+      opening_hours:v.opening_hours?{open_now:v.opening_hours.open_now}:null
+    }));
+    localStorage.setItem(key,JSON.stringify({results:simplified,timestamp:Date.now()}));
+  }catch(e){console.log('Cache full')}
+}
+
+function safeLocation(){
+  return currentLocation || (userLoc? new google.maps.LatLng(userLoc.lat,userLoc.lng) : new google.maps.LatLng(44.546,10.946));
+}
+
+function initMap(){
+  map=new google.maps.Map($('gmap'),{center:{lat:44.546,lng:10.946},zoom:13});
+  placesService=new google.maps.places.PlacesService(map);
+  const bounds=new google.maps.LatLngBounds({lat:43.7,lng:9.2},{lat:45.1,lng:12.8});
+  autocomplete=new google.maps.places.Autocomplete($('search-input'),{
+    componentRestrictions:{country:'it'},
+    bounds:bounds,
+    fields:['geometry','name','place_id','types']
+  });
+  autocomplete.addListener('place_changed',()=>{
+    const p=autocomplete.getPlace();
+    if(!p.geometry) return;
+    currentLocation=p.geometry.location;
+    map.setCenter(currentLocation);
+    cercaLocali('ristoranti',currentLocation);
+  });
+  if(navigator.geolocation){
+    navigator.geolocation.getCurrentPosition(pos=>{
+      userLoc={lat:pos.coords.latitude,lng:pos.coords.longitude};
+      currentLocation=new google.maps.LatLng(userLoc.lat,userLoc.lng);
+    });
+  }
+}
+
+function distanza(a,b,c,d){
+  const R=6371, dLa=(c-a)*Math.PI/180, dLo=(d-b)*Math.PI/180;
+  const x=Math.sin(dLa/2)**2+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(dLo/2)**2;
+  return (R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x))).toFixed(1);
+}
+
+function showSkeleton(){
+  $('results-list').innerHTML=Array(6).fill('<div class="skeleton"></div>').join('');
+  $('cache-indicator').style.display='none';
+}
+
+function cercaLocali(q,loc){
+  const l=loc||safeLocation();
+  const cacheKey=getCacheKey(q,l);
+  const cached=getFromCache(cacheKey);
+
+  if(cached){
+    $('cache-indicator').style.display='inline-block';
+    allResults=cached;
+    let f=cached;
+    if(filters.price) f=f.filter(r=>r.price_level==filters.price);
+    if(filters.openNow) f=f.filter(r=>r.opening_hours?.open_now);
+    renderCards(f.slice(0,18));
+    return;
+  }
+
+  $('cache-indicator').style.display='none';
+  showSkeleton();
+  placesService.nearbySearch({location:l,radius:5000,keyword:q,type:'restaurant'},(res,st)=>{
+    if(st!=='OK'){ $('results-list').innerHTML='<div style="grid-column:1/-1;padding:40px;text-align:center">Nessun risultato</div>'; return; }
+    saveToCache(cacheKey,res);
+    allResults=res.map(v=>({
+     ...v,
+      lat:v.geometry.location.lat(),
+      lng:v.geometry.location.lng(),
+      photoUrl:v.photos?.[0]?.getUrl({maxWidth:800})||null
+    }));
+    let f=allResults;
+    if(filters.price) f=f.filter(r=>r.price_level==filters.price);
+    if(filters.openNow) f=f.filter(r=>r.opening_hours?.open_now);
+    renderCards(f.slice(0,18));
+  });
+}
+
+function renderCards(places){
+  $('results-list').innerHTML=places.map((v,i)=>{
+    const img=v.photoUrl||'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800';
+    const lat=v.lat||v.geometry?.location.lat();
+    const lng=v.lng||v.geometry?.location.lng();
+    const dist=userLoc&&lat?distanza(userLoc.lat,userLoc.lng,lat,lng):null;
+    const price='€'.repeat(v.price_level||1);
+    const openBadge=v.opening_hours?(v.opening_hours.open_now?'<span class="badge open">Aperto ora</span>':'<span class="badge closed">Chiuso</span>'):'';
+    return `<div class="card" onclick="showDetails(${allResults.indexOf(v)})">
+      <img class="card-img" src="${img}" loading="lazy">
+      <div class="card-body">
+        <div class="card-title">
+          <span>${v.name}</span>
+          <span class="card-rating">★ ${v.rating?.toFixed(1)||'-'}</span>
+        </div>
+        <div class="card-meta">
+          <span>${price}</span>
+          ${dist?`<span>${dist} km</span>`:''}
+          ${openBadge}
+        </div>
+        <div style="font-size:13px;opacity:.6">${v.vicinity||''}</div>
+        <div class="card-actions">
+          <button class="btn-action primary" onclick="event.stopPropagation();window.open('https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(v.name)}&destination_place_id=${v.place_id}')">Vai</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function showDetails(idx){
+  const v=allResults[idx];
+  if(!v) return;
+  placesService.getDetails({placeId:v.place_id,fields:['name','rating','formatted_phone_number','website','opening_hours','reviews','photos','formatted_address','url']},(place,st)=>{
+    if(st!=='OK') return;
+    $('modal-img').src=place.photos?.[0]?.getUrl({maxWidth:1200})||v.photoUrl||'';
+    const hours=place.opening_hours?.weekday_text?.join('<br>')||'Orari non disponibili';
+    const reviews=place.reviews?.slice(0,3).map(r=>`<div class="review"><b>${r.author_name}</b> ★${r.rating}<br>${r.text}</div>`).join('')||'Nessuna recensione';
+    $('modal-body').innerHTML=`
+      <div class="modal-title">${place.name}</div>
+      <div style="font-size:15px;margin-bottom:12px">★ ${place.rating?.toFixed(1)||'-'} · ${'€'.repeat(v.price_level||1)}</div>
+      <div class="card-actions">
+        ${place.formatted_phone_number?`<a class="btn-action primary" href="tel:${place.formatted_phone_number}">📞 Chiama</a>`:''}
+        ${place.website?`<a class="btn-action" href="${place.website}" target="_blank">🌐 Sito</a>`:''}
+        <a class="btn-action" href="${place.url}" target="_blank">🗺️ Maps</a>
+      </div>
+      <div class="modal-section">
+        <h4>Indirizzo</h4>
+        <div>${place.formatted_address||v.vicinity}</div>
+      </div>
+      <div class="modal-section">
+        <h4>Orari</h4>
+        <div style="font-size:14px;line-height:1.8">${hours}</div>
+      </div>
+      <div class="modal-section">
+        <h4>Recensioni</h4>
+        ${reviews}
+      </div>
+    `;
+    $('detail-modal').classList.add('active');
+  });
+}
+
+function closeModal(){$('detail-modal').classList.remove('active')}
+
+window.doNearby=()=>{ navigate('search'); cercaLocali('ristoranti',safeLocation()); };
+
+$('search-input').addEventListener('keydown',e=>{
+  if(e.key==='Enter'){ e.preventDefault(); const q=e.target.value.trim(); if(q.length>2) cercaLocali(q,safeLocation()); }
+});
+
+document.querySelectorAll('.chip[data-price]').forEach(b=>{
+  b.onclick=()=>{ document.querySelectorAll('.chip[data-price]').forEach(x=>x.classList.remove('active')); if(filters.price==b.dataset.price){filters.price=null}else{filters.price=Number(b.dataset.price);b.classList.add('active')} cercaLocali($('search-input').value||'ristoranti',safeLocation()); }
+});
+$('open-now').onclick=e=>{ filters.openNow=!filters.openNow; e.target.classList.toggle('active'); cercaLocali($('search-input').value||'ristoranti',safeLocation()); };
+$('logo-btn').onclick=()=>navigate('home');
+</script>
+
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB4eYidHtLV4fXThKSZCS6ejH8Urpf2Km4&libraries=places&callback=initMap&language=it&region=IT"></script>
+</body>
+</html>
