@@ -375,6 +375,12 @@ img{display:block;width:100%;height:100%;object-fit:cover}
 .results-list.list-view .result-card{grid-template-columns:90px 1fr}
 .mood-title{font-size:11px;font-weight:800;color:#FF5C5C;letter-spacing:1.5px;margin:8px 0 6px;text-transform:uppercase}
 
+
+.how-it-works{padding:80px 20px;background:linear-gradient(180deg,transparent,rgba(120,40,180,.08));position:relative;z-index:2}
+.section-title{text-align:center;font-size:2rem;font-weight:800;margin-bottom:36px;background:linear-gradient(90deg,#FF7A6B,#FF5C5C);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.steps-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px;max-width:900px;margin:auto}
+.step-card{background:rgba(11,17,32,.6);backdrop-filter:blur(20px);border:1px solid rgba(255,122,107,.2);border-radius:20px;padding:24px;text-align:center}
+.step-icon{font-size:2rem;margin-bottom:10px}
 </style>
 </head>
 <body>
@@ -541,14 +547,8 @@ img{display:block;width:100%;height:100%;object-fit:cover}
 })();
 
 // ── PARTICELLE ────────────────────────────────────
-function spawnParticles(){
-  const c=document.getElementById('particles');
-  if(!c||c.childElementCount>0)return;
-  for(let i=0;i<28;i++){
-    const s=document.createElement('span');
-    s.style.cssText=`left:${Math.random()*100}%;bottom:0;animation-delay:${Math.random()*10}s;animation-duration:${7+Math.random()*8}s`;
-    c.appendChild(s);
-  }
+function spawnParticles(){const c=$('bg-canvas');if(!c)return;c.width=innerWidth;c.height=innerHeight;const ctx=c.getContext('2d');const p=Array(90).fill().map(()=>({x:Math.random()*innerWidth,y:Math.random()*innerHeight,s:Math.random()*2+1,v:Math.random()*0.4+0.15,o:Math.random()*0.5+0.2}));function a(){ctx.clearRect(0,0,innerWidth,innerHeight);p.forEach(e=>{ctx.beginPath();ctx.arc(e.x,e.y,e.s,0,7);ctx.fillStyle=`rgba(255,122,107,${e.o})`;ctx.fill();e.y-=e.v;if(e.y<0){e.y=innerHeight;e.x=Math.random()*innerWidth}});requestAnimationFrame(a)}a();window.addEventListener('resize',()=>{c.width=innerWidth;c.height=innerHeight})}
+
 }
 
 // ── COUNTER ANIMATO ───────────────────────────────
