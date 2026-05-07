@@ -388,7 +388,7 @@ a{text-decoration:none;color:inherit}
 <div class="toast" id="toast"></div>
 
 <script>
-window.onerror=function(m,s,l,c,e){console.error('ERR',m,'@'+l);const t=document.getElementById('toast');if(t){t.textContent='⚠️ '+m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),4000)}};
+window.onerror=function(m,s,l){console.error('ERR',m,'@'+l);};
 // ── CANVAS STELLE ─────────────────────────────────
 (function(){
   const c=document.getElementById('bg-canvas');if(!c)return;const x=c.getContext('2d');
@@ -514,12 +514,10 @@ function saveToCache(key,results){
 }
 
 function safeLocation(){
-  if(window.google && google.maps){
-    if(currentLocation) return currentLocation;
-    if(userLoc) return new google.maps.LatLng(userLoc.lat,userLoc.lng);
-    return new google.maps.LatLng(44.494,11.343);
-  }
-  return {lat:44.494,lng:11.343};
+  if(!window.google || !google.maps) return null;
+  if(currentLocation) return currentLocation;
+  if(userLoc) return new google.maps.LatLng(userLoc.lat, userLoc.lng);
+  return new google.maps.LatLng(44.494, 11.343);
 }
 
 function distanza(a,b,c,d){
@@ -590,15 +588,19 @@ function processResults(raw){
 
 function doNearby(){
   navigate('search');
+  const loc = safeLocation();
+  if(!loc){ toast('⏳ Attendi il caricamento della mappa...'); setTimeout(doNearby,800); return; }
   toast('📍 Cerco vicino a te...');
-  cercaLocali('ristoranti vicini',safeLocation());
+  cercaLocali('ristoranti', loc);
 }
 
 function doMood(q){
   navigate('search');
-  $('search-input').value=q;
-  $('search-clear').style.display='block';
-  cercaLocali(q,safeLocation());
+  const inp = $('search-input');
+  if(inp) { inp.value = q; $('search-clear').style.display='block'; }
+  const loc = safeLocation();
+  if(!loc){ toast('⏳ GPS in caricamento...'); setTimeout(()=>doMood(q),800); return; }
+  cercaLocali(q, loc);
 }
 
 // ── FILTRI ────────────────────────────────────────
@@ -796,6 +798,6 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
 
 </script>
 
-<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC6wAI6R6WztfmYzimz0wFew_ItgzPc-QU&libraries=places&callback=initMap&language=it&region=IT"></script>
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB4eYidHtLV4fXThKSZCS6ejH8Urpf2Km4&libraries=places&callback=initMap&language=it&region=IT"></script>
 </body>
 </html>
