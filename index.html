@@ -753,21 +753,40 @@ function showSkeleton(){
 
 // ── EVENTS ────────────────────────────────────────
 window.addEventListener('DOMContentLoaded',()=>{
-  // init app
+
   const inp=$('search-input');
-  if(inp){inp.addEventListener('input',e=>{
-  const q=e.target.value;
-  $('search-clear').style.display=q?'block':'none';
-});}
-  if(inp){inp.addEventListener('keydown',e=>{
-  if(e.key!=='Enter')return;
-  e.preventDefault();
-  const q=$('search-input').value.trim();
-  if(q.length<2)return;
-  saveHistory(q);
-  cercaLocali(q,safeLocation());
-});}
-  const logo=$('logo-btn');if(logo)logo.onclick=()=>navigate('home';
+
+  if(inp){
+    inp.addEventListener('input',e=>{
+      const q=e.target.value;
+      $('search-clear').style.display=q ? 'block' : 'none';
+    });
+
+    inp.addEventListener('keydown',e=>{
+      if(e.key!=='Enter') return;
+      e.preventDefault();
+      const q=inp.value.trim();
+      if(q.length<2) return;
+      saveHistory(q);
+      cercaLocali(q,safeLocation());
+    });
+  }
+
+  const logo=$('logo-btn');
+  if(logo){
+    logo.onclick=()=>navigate('home');
+  }
+
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
+  document.body.addEventListener('click',e=>{
+    const card=e.target.closest('.card');
+    if(card && !e.target.closest('.btn-action') && !e.target.closest('.card-fav')){
+      if(navigator.vibrate)navigator.vibrate(8);
+    }
+    if(e.target.closest('.chip')||e.target.closest('.mood-btn')){
+      if(navigator.vibrate)navigator.vibrate(8);
+    }
+  });
 });
 
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
