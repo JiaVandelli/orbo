@@ -391,7 +391,7 @@ a{text-decoration:none;color:inherit}
 window.onerror=function(m,s,l,c,e){console.error('ERR',m,'@'+l);const t=document.getElementById('toast');if(t){t.textContent='⚠️ '+m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),4000)}};
 // ── CANVAS STELLE ─────────────────────────────────
 (function(){
-  const c=document.getElementById('bg-canvas'),x=c.getContext('2d');
+  const c=document.getElementById('bg-canvas');if(!c)return;const x=c.getContext('2d');
   let W,H,stars=[];
   function resize(){W=c.width=innerWidth;H=c.height=innerHeight;stars=[];for(let i=0;i<160;i++)stars.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*.8+.2,a:Math.random(),s:Math.random()*.003+.001})}
   resize();addEventListener('resize',resize);
@@ -514,9 +514,12 @@ function saveToCache(key,results){
 }
 
 function safeLocation(){
-  if(currentLocation) return currentLocation;
-  if(userLoc) return new google.maps.LatLng(userLoc.lat,userLoc.lng);
-  return new google.maps.LatLng(44.494,11.343);
+  if(window.google && google.maps){
+    if(currentLocation) return currentLocation;
+    if(userLoc) return new google.maps.LatLng(userLoc.lat,userLoc.lng);
+    return new google.maps.LatLng(44.494,11.343);
+  }
+  return {lat:44.494,lng:11.343};
 }
 
 function distanza(a,b,c,d){
