@@ -1,6 +1,197 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
+<!-- Playables SDK -->
+<script>// Playables SDK v1.0.0
+// Game lifecycle bridge: rAF-based game-ready detection + event communication
+(function() {
+  'use strict';
+
+  // Idempotency: skip if already initialized (e.g., server-side injection
+  // followed by client-side inject-javascript via the Bloks webview component).
+  if (window.playablesSDK) return;
+
+  var HANDLER_NAME = 'playablesGameEventHandler';
+  var ANDROID_BRIDGE_NAME = '_MetaPlayablesBridge';
+  var RAF_FRAME_THRESHOLD = 3;
+
+  var gameReadySent = false;
+  var firstInteractionSent = false;
+  var errorSent = false;
+  var frameCount = 0;
+  var originalRAF = window.requestAnimationFrame;
+
+  // --- Transport Layer ---
+
+  function hasIOSBridge() {
+    return !!(window.webkit &&
+              window.webkit.messageHandlers &&
+              window.webkit.messageHandlers[HANDLER_NAME]);
+  }
+
+  function hasAndroidBridge() {
+    return !!(window[ANDROID_BRIDGE_NAME] &&
+              typeof window[ANDROID_BRIDGE_NAME].postEvent === 'function');
+  }
+
+  function isInIframe() {
+    return !!(window.parent && window.parent !== window);
+  }
+
+  function sendEvent(eventName, payload) {
+    var message = {
+      type: eventName,
+      payload: payload || {},
+      timestamp: Date.now()
+    };
+
+    if (hasIOSBridge()) {
+      try {
+        window.webkit.messageHandlers[HANDLER_NAME].postMessage(message);
+      } catch (e) { /* ignore */ }
+      return;
+    }
+
+    if (hasAndroidBridge()) {
+    try {
+      var p = payload || {};
+      p.__secureToken = window.__fbAndroidBridgeAuthToken || '';
+      p.timestamp = message.timestamp;
+      window[ANDROID_BRIDGE_NAME].postEvent(
+        eventName,
+        JSON.stringify(p)
+      );
+    } catch (e) { /* ignore */ }
+    return;
+  }
+
+    if (isInIframe()) {
+      try {
+        window.parent.postMessage(message, '*');
+      } catch (e) { /* ignore */ }
+      return;
+    }
+  }
+
+  // --- rAF Game-Ready Detection ---
+
+  function onFrame() {
+    if (gameReadySent) return;
+
+    frameCount++;
+    if (frameCount >= RAF_FRAME_THRESHOLD) {
+      gameReadySent = true;
+      sendEvent('game_ready', {
+        frame_count: frameCount,
+        detected_at: Date.now()
+      });
+      return;
+    }
+
+    originalRAF.call(window, onFrame);
+  }
+
+  if (originalRAF) {
+    window.requestAnimationFrame = function(callback) {
+      if (!gameReadySent) {
+        return originalRAF.call(window, function(timestamp) {
+          frameCount++;
+          if (frameCount >= RAF_FRAME_THRESHOLD && !gameReadySent) {
+            gameReadySent = true;
+            sendEvent('game_ready', {
+              frame_count: frameCount,
+              detected_at: Date.now()
+            });
+          }
+          callback(timestamp);
+        });
+      }
+      return originalRAF.call(window, callback);
+    };
+  }
+
+  // --- First User Interaction Detection ---
+
+  function setupFirstInteractionDetection() {
+    var events = ['touchstart', 'mousedown', 'keydown'];
+
+    function onFirstInteraction() {
+      if (firstInteractionSent) return;
+      firstInteractionSent = true;
+      sendEvent('user_interaction_start', null);
+
+      for (var i = 0; i < events.length; i++) {
+        document.removeEventListener(events[i], onFirstInteraction, true);
+      }
+    }
+
+    for (var i = 0; i < events.length; i++) {
+      document.addEventListener(events[i], onFirstInteraction, true);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupFirstInteractionDetection);
+  } else {
+    setupFirstInteractionDetection();
+  }
+
+  // --- Auto Error Capture ---
+
+  window.addEventListener('error', function(event) {
+    if (errorSent) return;
+    errorSent = true;
+    sendEvent('error', {
+      message: event.message || 'Unknown error',
+      source: event.filename || '',
+      lineno: event.lineno || 0,
+      colno: event.colno || 0,
+      auto_captured: true
+    });
+  });
+
+  window.addEventListener('unhandledrejection', function(event) {
+    if (errorSent) return;
+    errorSent = true;
+    var reason = event.reason;
+    sendEvent('error', {
+      message: (reason instanceof Error) ? reason.message : String(reason),
+      type: 'unhandled_promise_rejection',
+      auto_captured: true
+    });
+  });
+
+  // --- Public API ---
+
+  window.playablesSDK = {
+    complete: function(score) {
+      sendEvent('game_ended', {
+        score: score,
+        completed: true
+      });
+    },
+
+    error: function(message) {
+      if (errorSent) return;
+      errorSent = true;
+      sendEvent('error', {
+        message: message || 'Unknown error',
+        auto_captured: false
+      });
+    },
+
+    sendEvent: function(eventName, payload) {
+      if (!eventName || typeof eventName !== 'string') return;
+      sendEvent(eventName, payload);
+    }
+  };
+
+  // Kick off rAF detection in case no game code calls rAF immediately
+  if (originalRAF) {
+    originalRAF.call(window, onFrame);
+  }
+})();</script>
+<script>window.Intl=window.Intl||{};Intl.t=function(s){return(Intl._locale&&Intl._locale[s])||s;};</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Orbo — Il gusto ti orbita</title>
@@ -459,7 +650,7 @@ button:active{
   const c=document.getElementById('bg-canvas');
   const ctx=c.getContext('2d');
   let W,H,stars=[];
-  function resize(){W=c.width=innerWidth;H=c.height=innerHeight;stars=[];for(let i=0;i<180;i++)stars.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.2+.2,a:Math.random(),speed:Math.random()*.004+.001})}
+  function resize(){W=c.width=innerWidth;H=c.height=innerHeight;stars=[];const STAR_COUNT = window.innerWidth < 768 ? 70 : 140;for(let i=0;i<STAR_COUNT;i++)stars.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.2+.2,a:Math.random(),speed:Math.random()*.004+.001})}
   resize();window.addEventListener('resize',resize);
   function draw(){ctx.clearRect(0,0,W,H);stars.forEach(s=>{s.a+=s.speed;if(s.a>1)s.a=0;ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fillStyle=`rgba(255,200,120,${s.a*.7})`;ctx.fill()});requestAnimationFrame(draw)}
   draw();
@@ -539,10 +730,21 @@ function getNearby(){
 function searchAPI(q){
   clearTimeout(debT);
   debT=setTimeout(()=>{
-    showSkeleton();
-    placesService.textSearch({query:q,location:userLoc || map.getCenter(),radius:8000},(r,s)=>{
-      if(s==='OK')updateVenues(r);
-      else{hideSkeleton();showEmpty()}
+    clearTimeout(window.skelT);
+    window.skelT=setTimeout(()=>showSkeleton(),180);
+    const query=q.trim().toLowerCase();
+    const citySearch = query.split(' ').length <= 2 &&
+      !query.includes('pizza') && !query.includes('sushi') &&
+      !query.includes('ristor') && !query.includes('bar') &&
+      !query.includes('caff') && !query.includes('brunch') &&
+      !query.includes('gelat') && !query.includes('taco');
+    const finalQuery = citySearch ? `ristoranti a ${query}` : q;
+    placesService.textSearch({query:finalQuery,location:userLoc || map.getCenter(),radius:8000},(r,s)=>{
+      if(s!=='OK' || !r){ hideSkeleton(); showEmpty(); return; }
+      const allowed = ['restaurant','cafe','bar','bakery','meal_takeaway','meal_delivery'];
+      const filtered = r.filter(p => p.types && p.types.some(t=>allowed.includes(t)));
+      if(filtered.length){ updateVenues(filtered); }
+      else{ getNearby(); toast('🔄 Nessun risultato preciso, mostro vicini'); }
     });
   },320);
 }
@@ -611,6 +813,9 @@ function renderResults(){
         </div>
       </div>
     </article>`).join('');
+  requestAnimationFrame(()=>{
+    document.querySelectorAll('.result-card').forEach(el=>observer.observe(el));
+  });
 }
 
 function showSkeleton(){$('results-list').innerHTML='<div class="skeleton"></div>'.repeat(4);$('empty-state').style.display='none';$('results-count').textContent=''}
@@ -625,7 +830,7 @@ function toggleFav(id){
   renderResults();
 }
 
-function openMaps(lat,lng){window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`,'_blank')}
+function openMaps(lat,lng){window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`,'_blank','noopener')}
 
 $('search-input').addEventListener('input',e=>{
   const q=e.target.value.trim();
@@ -635,15 +840,13 @@ $('search-input').addEventListener('input',e=>{
 });
 
 $('menu-btn').addEventListener('click',()=>{
-  const n=$('mobile-nav');
-  n.classList.toggle('open');
-  n.style.display=n.classList.contains('open')?'flex':'none';
+  $('mobile-nav').classList.toggle('open');
 });
 
 $('logo-btn').addEventListener('click',()=>navigate('home'));
 
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape'){$('mobile-nav').classList.remove('open');$('mobile-nav').style.display='none'}
+  if(e.key==='Escape'){$('mobile-nav').classList.remove('open')}
 });
 </script>
 
