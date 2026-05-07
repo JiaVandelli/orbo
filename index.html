@@ -778,8 +778,11 @@ function updateVenues(p){
     openNow: typeof v.opening_hours?.open_now === 'boolean' ? v.opening_hours.open_now : null,
     photo:v.photos?.[0]?.getUrl({maxWidth:400,maxHeight:300})||'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400&q=60',
     lat:v.geometry.location.lat(),
-    lng:v.geometry.location.lng()
+    lng:v.geometry.location.lng(),
+    types:v.types||[]
   }));
+  // applica filtro mood se attivo
+  if(window._moodFilter){ VENUES = VENUES.filter(window._moodFilter); window._moodFilter = null; }
   renderResults();
 }
 
@@ -814,7 +817,10 @@ function renderResults(){
       </div>
     </article>`).join('');
   requestAnimationFrame(()=>{
-    document.querySelectorAll('.result-card').forEach(el=>observer.observe(el));
+    if(typeof observer !== 'undefined'){
+      observer.disconnect();
+      document.querySelectorAll('.result-card').forEach(el=>observer.observe(el));
+    }
   });
 }
 
@@ -824,10 +830,15 @@ function showEmpty(){$('empty-state').style.display='block'}
 
 function toggleFav(id){
   const i=state.favs.indexOf(id);
-  i>-1?state.favs.splice(i,1):state.favs.push(id);
+  const isAdding = i === -1;
+  if(isAdding){ state.favs.push(id); } else { state.favs.splice(i,1); }
   localStorage.setItem('orbo_favs',JSON.stringify(state.favs));
-  toast(i>-1?'💔 Rimosso dai preferiti':'❤️ Aggiunto ai preferiti!');
-  renderResults();
+  // aggiorna solo il bottone, niente re-render
+  document.querySelectorAll(`button[onclick*="toggleFav('${id}')"]`).forEach(btn=>{
+    btn.classList.toggle('active', isAdding);
+    btn.innerHTML = isAdding ? '❤️' : '🤍';
+  });
+  toast(isAdding ? '❤️ Salvato' : '💔 Rimosso');
 }
 
 function openMaps(lat,lng){window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`,'_blank','noopener')}
@@ -947,20 +958,20 @@ document.addEventListener('error',e=>{
 },true);
 
 function surpriseMe(){
-  const moods=[
-    'sushi romantico',
-    'pizza gourmet',
-    'brunch instagrammabile',
-    'ramen autentico',
-    'aperitivo rooftop',
-    'dessert artigianale'
+  const moodMap = [
+    {label:'romantico', query:'ristorante romantico', filter:v=>v.rating>=4.2},
+    {label:'chill', query:'caffetteria tranquilla', filter:v=>v.types.includes('cafe')},
+    {label:'veloce', query:'take away', filter:v=>v.openNow===true},
+    {label:'vista', query:'rooftop terrazza', filter:v=>true},
+    {label:'primo appuntamento', query:'cocktail bar', filter:v=>v.rating>=4.5}
   ];
-  const random=moods[Math.floor(Math.random()*moods.length)];
+  const pick = moodMap[Math.floor(Math.random()*moodMap.length)];
   navigate('search');
-  document.getElementById('search-input').value=random;
-  document.getElementById('search-clear').style.display='block';
-  if(typeof toast==='function') toast('🪐 Orbo AI ha scelto: '+random);
-  searchAPI(random);
+  $('search-input').value = pick.label;
+  $('search-clear').style.display='block';
+  toast('🪐 Mood: '+pick.label);
+  window._moodFilter = pick.filter;
+  searchAPI(pick.query);
 }
 </script>
 
