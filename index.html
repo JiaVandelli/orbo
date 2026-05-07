@@ -508,17 +508,35 @@ function saveToCache(key,results){
       photoUrl:v.photos?.[0]?.getUrl({maxWidth:700})||null,
       lat:v.geometry?.location.lat?.()??v.lat,
       lng:v.geometry?.location.lng?.()??v.lng,
-      opening_hours:v.opening_hours?{open_now:v.opening_hours.open_now}:null
+      opening_hours:{ open_now: !!v.opening_hours?.open_now }
     }));
     localStorage.setItem(key,JSON.stringify({r:slim,ts:Date.now()}));
   }catch(e){}
 }
 
 function safeLocation(){
-  if(!window.google || !google.maps) return null;
-  if(currentLocation) return currentLocation;
-  if(userLoc) return new google.maps.LatLng(userLoc.lat, userLoc.lng);
-  return new google.maps.LatLng(44.494, 11.343);
+  try{
+    if(window.google && google.maps){
+      if(currentLocation) return currentLocation;
+      if(userLoc){
+        return new google.maps.LatLng(
+          Number(userLoc.lat),
+          Number(userLoc.lng)
+        );
+      }
+      return new google.maps.LatLng(44.494,11.343);
+    }
+    return {
+      lat:()=>44.494,
+      lng:()=>11.343
+    };
+  }catch(e){
+    console.error('safeLocation error',e);
+    return {
+      lat:()=>44.494,
+      lng:()=>11.343
+    };
+  }
 }
 
 function distanza(a,b,c,d){
@@ -578,8 +596,22 @@ function cercaLocali(q,loc){
   });
 }
 
+function renderFilteredResults(){
+  let results=[...state.allResults];
+  if(state.price){ results=results.filter(v=>v.price_level===state.price); }
+  if(state.openNow){ results=results.filter(v=>v.opening_hours?.open_now); }
+  renderCards(results.slice(0,20));
+}
+
 function processResults(raw){
-  let results=raw.map(v=>({...v,_score:calcolaScore(v,userLoc)}));
+  const results=raw.map(v=>({
+    ...v,
+    _score:calcolaScore(v,userLoc)
+  }));
+  results.sort((a,b)=>b._score-a._score);
+  state.allResults=results;
+  renderFilteredResults();
+}));
   results.sort((a,b)=>b._score-a._score);
   if(state.price) results=results.filter(v=>v.price_level===state.price);
   if(state.openNow) results=results.filter(v=>v.opening_hours?.open_now);
@@ -630,13 +662,13 @@ function setType(type,el){
 function togglePrice(p,el){
   if(state.price===p){state.price=null;el.classList.remove('active')}
   else{state.price=p;document.querySelectorAll('[data-price]').forEach(c=>c.classList.remove('active'));el.classList.add('active')}
-  processResults(state.allResults);
+  renderFilteredResults();
 }
 
 function toggleOpen(el){
   state.openNow=!state.openNow;
   el.classList.toggle('active',state.openNow);
-  processResults(state.allResults);
+  renderFilteredResults();
 }
 
 function setGridView(grid){
@@ -811,6 +843,16 @@ window.addEventListener('DOMContentLoaded',()=>{
 });
 </script>
 
-<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB4eYidHtLV4fXThKSZCS6ejH8Urpf2Km4&libraries=places&callback=initMap&language=it&region=IT"></script>
+<script>
+function loadGoogleMaps(){
+  if(window.google && google.maps){ initMap(); return; }
+  const s=document.createElement('script');
+  s.src='https://maps.googleapis.com/maps/api/js?key=AIzaSyB4eYidHtLV4fXThKSZCS6ejH8Urpf2Km4&libraries=places&callback=initMap&language=it&region=IT';
+  s.async=true; s.defer=true;
+  s.onerror=()=>{ console.error('Google Maps failed'); toast('❌ Google Maps non caricata - controlla API key e restrizioni'); };
+  document.body.appendChild(s);
+}
+window.addEventListener('load',loadGoogleMaps);
+</script>
 </body>
 </html>
