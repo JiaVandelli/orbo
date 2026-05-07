@@ -16,7 +16,8 @@
 }
 html{scroll-behavior:smooth}
 body{font-family:"Inter",system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
-button,input{font:inherit;border:0;background:none;cursor:pointer;color:inherit}
+button,input{
+  touch-action: manipulation;font:inherit;border:0;background:none;cursor:pointer;color:inherit}
 a{text-decoration:none;color:inherit}
 
 /* CANVAS */
@@ -36,7 +37,9 @@ a{text-decoration:none;color:inherit}
 .view.active{display:block}
 
 /* ── HOME ── */
-.hero{min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:80px 20px 40px;position:relative;overflow:hidden}
+.hero{
+  position:relative; z-index:2;
+min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:80px 20px 40px;position:relative;overflow:hidden}
 
 .glow-ball,.orbit-ring,.food-orbits{position:absolute;border-radius:50%;pointer-events:none;animation:glowPulse 6s ease-in-out infinite}
 .glow-ball-1{width:600px;height:600px;background:radial-gradient(circle,rgba(255,92,92,0.15),transparent 70%);top:50%;left:50%;transform:translate(-50%,-60%)}
@@ -228,6 +231,8 @@ a{text-decoration:none;color:inherit}
   .results-grid{grid-template-columns:1fr}
   .results-grid.list-view .card{grid-template-columns:100px 1fr}
 }
+.hero-cta{position:relative;z-index:10}
+.hero *{position:relative;z-index:2}
 </style>
 </head>
 <body>
@@ -394,7 +399,7 @@ window.addEventListener('unhandledrejection', e => { console.error('PROMISE ERRO
 (function(){
   const c=document.getElementById('bg-canvas');if(!c)return;const x=c.getContext('2d');
   let W,H,stars=[];
-  function resize(){W=c.width=innerWidth;H=c.height=innerHeight;stars=[];for(let i=0;i<160;i++)stars.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*.8+.2,a:Math.random(),s:Math.random()*.003+.001})}
+  function resize(){W=c.width=innerWidth;H=c.height=innerHeight;stars=[];for(let i=0;i<80;i++)stars.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*.8+.2,a:Math.random(),s:Math.random()*.003+.001})}
   resize();addEventListener('resize',resize);
   (function draw(){x.clearRect(0,0,W,H);stars.forEach(s=>{s.a+=s.s;if(s.a>1)s.a=0;x.beginPath();x.arc(s.x,s.y,s.r,0,7);x.fillStyle=`rgba(200,150,255,${s.a*.5})`;x.fill()});requestAnimationFrame(draw)})();
 })();
@@ -461,7 +466,17 @@ function renderHistory(){
   if(!row)return;
   if(!state.history.length){row.style.display='none';return}
   row.style.display='flex';
-  row.innerHTML=state.history.map(h=>`<button class="history-chip" onclick="searchFromHistory('${h}')">🕐 ${h}</button>`).join('');
+  row.innerHTML = state.history.map(h => `
+  <button class="history-chip" data-q="${encodeURIComponent(h)}">
+    🕐 ${h}
+  </button>
+`).join('');
+
+row.querySelectorAll('.history-chip').forEach(btn=>{
+  btn.onclick = () => {
+    searchFromHistory(decodeURIComponent(btn.dataset.q));
+  };
+});
 }
 
 function searchFromHistory(q){
@@ -508,7 +523,7 @@ function saveToCache(key,results){
       photoUrl:v.photos?.[0]?.getUrl({maxWidth:700})||null,
       lat:v.geometry?.location.lat?.()??v.lat,
       lng:v.geometry?.location.lng?.()??v.lng,
-      opening_hours:{ open_now: !!v.opening_hours?.open_now }
+      opening_hours:v.opening_hours?{open_now:v.opening_hours.open_now}:null
     }));
     localStorage.setItem(key,JSON.stringify({r:slim,ts:Date.now()}));
   }catch(e){}
@@ -526,16 +541,10 @@ function safeLocation(){
       }
       return new google.maps.LatLng(44.494,11.343);
     }
-    return {
-      lat:()=>44.494,
-      lng:()=>11.343
-    };
+    return { lat:()=>44.494, lng:()=>11.343 };
   }catch(e){
     console.error('safeLocation error',e);
-    return {
-      lat:()=>44.494,
-      lng:()=>11.343
-    };
+    return { lat:()=>44.494, lng:()=>11.343 };
   }
 }
 
@@ -596,21 +605,25 @@ function cercaLocali(q,loc){
   });
 }
 
-function renderFilteredResults(){
-  let results=[...state.allResults];
-  if(state.price){ results=results.filter(v=>v.price_level===state.price); }
-  if(state.openNow){ results=results.filter(v=>v.opening_hours?.open_now); }
-  renderCards(results.slice(0,20));
-}
-
 function processResults(raw){
-  const results=raw.map(v=>({
+  let results = raw.map(v => ({
     ...v,
-    _score:calcolaScore(v,userLoc)
+    _score: calcolaScore(v, userLoc)
   }));
-  results.sort((a,b)=>b._score-a._score);
-  state.allResults=results;
-  renderFilteredResults();
+
+  results.sort((a,b) => b._score - a._score);
+
+  if(state.price){
+    results = results.filter(v => v.price_level === state.price);
+  }
+
+  if(state.openNow){
+    results = results.filter(v => v.opening_hours?.open_now);
+  }
+
+  state.allResults = results;
+
+  renderCards(results.slice(0,20));
 }));
   results.sort((a,b)=>b._score-a._score);
   if(state.price) results=results.filter(v=>v.price_level===state.price);
@@ -662,13 +675,13 @@ function setType(type,el){
 function togglePrice(p,el){
   if(state.price===p){state.price=null;el.classList.remove('active')}
   else{state.price=p;document.querySelectorAll('[data-price]').forEach(c=>c.classList.remove('active'));el.classList.add('active')}
-  renderFilteredResults();
+  processResults(state.allResults);
 }
 
 function toggleOpen(el){
   state.openNow=!state.openNow;
   el.classList.toggle('active',state.openNow);
-  renderFilteredResults();
+  processResults(state.allResults);
 }
 
 function setGridView(grid){
@@ -700,7 +713,7 @@ function renderCards(places){
     const lat=v.lat??v.geometry?.location.lat?.();
     const lng=v.lng??v.geometry?.location.lng?.();
     const dist=userLoc&&lat!=null?distanza(userLoc.lat,userLoc.lng,lat,lng):null;
-    const price='€'.repeat(v.price_level||1);
+    const price = '€'.repeat(Math.max(1, v.price_level || 1));
     const isFav=state.favs.includes(v.place_id);
     const openBadge=v.opening_hours!=null?(v.opening_hours.open_now?'<span class="badge open">Aperto</span>':'<span class="badge closed">Chiuso</span>'):'';
     const score=v._score||calcolaScore(v,userLoc);
@@ -723,7 +736,7 @@ function renderCards(places){
         <div class="card-name">${v.name}</div>
         <div class="card-rating">
           <span class="card-stars">${'★'.repeat(Math.round(v.rating||4))}</span>
-          <span>${(v.rating||'').toFixed?v.rating?.toFixed(1)||'-':v.rating||'-'}</span>
+          <span>${typeof v.rating === 'number' ? v.rating.toFixed(1) : '-'}</span>
           ${v.user_ratings_total?`<span style="color:var(--dim2);font-size:11px">(${v.user_ratings_total})</span>`:''}
         </div>
         <div class="card-addr">${v.vicinity||''}</div>
@@ -843,16 +856,6 @@ window.addEventListener('DOMContentLoaded',()=>{
 });
 </script>
 
-<script>
-function loadGoogleMaps(){
-  if(window.google && google.maps){ initMap(); return; }
-  const s=document.createElement('script');
-  s.src='https://maps.googleapis.com/maps/api/js?key=AIzaSyB4eYidHtLV4fXThKSZCS6ejH8Urpf2Km4&libraries=places&callback=initMap&language=it&region=IT';
-  s.async=true; s.defer=true;
-  s.onerror=()=>{ console.error('Google Maps failed'); toast('❌ Google Maps non caricata - controlla API key e restrizioni'); };
-  document.body.appendChild(s);
-}
-window.addEventListener('load',loadGoogleMaps);
-</script>
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB4eYidHtLV4fXThKSZCS6ejH8Urpf2Km4&libraries=places&callback=initMap&language=it&region=IT"></script>
 </body>
 </html>
