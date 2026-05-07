@@ -389,6 +389,7 @@ a{text-decoration:none;color:inherit}
 
 <script>
 window.onerror=function(m,s,l){console.error('ERR',m,'@'+l);};
+window.addEventListener('unhandledrejection', e => { console.error('PROMISE ERROR:', e.reason); toast('⚠️ Errore: '+ (e.reason?.message || 'controlla console')); });
 // ── CANVAS STELLE ─────────────────────────────────
 (function(){
   const c=document.getElementById('bg-canvas');if(!c)return;const x=c.getContext('2d');
@@ -588,8 +589,15 @@ function processResults(raw){
 
 function doNearby(){
   navigate('search');
+  if(!window.google || !placesService){
+    toast('❌ Google Maps non disponibile - controlla API key');
+    return;
+  }
   const loc = safeLocation();
-  if(!loc){ toast('⏳ Attendi il caricamento della mappa...'); setTimeout(doNearby,800); return; }
+  if(!loc){
+    toast('📍 Posizione non disponibile');
+    return;
+  }
   toast('📍 Cerco vicino a te...');
   cercaLocali('ristoranti', loc);
 }
@@ -598,8 +606,15 @@ function doMood(q){
   navigate('search');
   const inp = $('search-input');
   if(inp) { inp.value = q; $('search-clear').style.display='block'; }
+  if(!window.google || !placesService){
+    toast('❌ Google Maps non disponibile - controlla API key');
+    return;
+  }
   const loc = safeLocation();
-  if(!loc){ toast('⏳ GPS in caricamento...'); setTimeout(()=>doMood(q),800); return; }
+  if(!loc){
+    toast('📍 Posizione non disponibile');
+    return;
+  }
   cercaLocali(q, loc);
 }
 
@@ -796,6 +811,6 @@ window.addEventListener('DOMContentLoaded',()=>{
 });
 </script>
 
-<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC6wAI6R6WztfmYzimz0wFew_ItgzPc-QU&libraries=places&callback=initMap&language=it&region=IT"></script>
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB4eYidHtLV4fXThKSZCS6ejH8Urpf2Km4&libraries=places&callback=initMap&language=it&region=IT"></script>
 </body>
 </html>
