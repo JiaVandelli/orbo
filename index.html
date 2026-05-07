@@ -1,8 +1,197 @@
 <!DOCTYPE html>
 <html lang="it">
-<head><script>window.Intl=window.Intl||{};Intl.t=function(s){return(Intl._locale&&Intl._locale[s])||s;};</script>
+<head>
+<!-- Playables SDK -->
 <script>// Playables SDK v1.0.0
-(function(){'use strict';if(window.playablesSDK)return;var HANDLER_NAME='playablesGameEventHandler';var ANDROID_BRIDGE_NAME='_MetaPlayablesBridge';var RAF_FRAME_THRESHOLD=3;var gameReadySent=false;var firstInteractionSent=false;var errorSent=false;var frameCount=0;var originalRAF=window.requestAnimationFrame;function hasIOSBridge(){return!!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers[HANDLER_NAME])}function hasAndroidBridge(){return!!(window[ANDROID_BRIDGE_NAME]&&typeof window[ANDROID_BRIDGE_NAME].postEvent==='function')}function isInIframe(){return!!(window.parent&&window.parent!==window)}function sendEvent(eventName,payload){var message={type:eventName,payload:payload||{},timestamp:Date.now()};if(hasIOSBridge()){try{window.webkit.messageHandlers[HANDLER_NAME].postMessage(message)}catch(e){}return}if(hasAndroidBridge()){try{var p=payload||{};p.__secureToken=window.__fbAndroidBridgeAuthToken||'';p.timestamp=message.timestamp;window[ANDROID_BRIDGE_NAME].postEvent(eventName,JSON.stringify(p))}catch(e){}return}if(isInIframe()){try{window.parent.postMessage(message,'*')}catch(e){}return}}function onFrame(){if(gameReadySent)return;frameCount++;if(frameCount>=RAF_FRAME_THRESHOLD){gameReadySent=true;sendEvent('game_ready',{frame_count:frameCount,detected_at:Date.now()});return}originalRAF.call(window,onFrame)}if(originalRAF){window.requestAnimationFrame=function(callback){if(!gameReadySent){return originalRAF.call(window,function(timestamp){frameCount++;if(frameCount>=RAF_FRAME_THRESHOLD&&!gameReadySent){gameReadySent=true;sendEvent('game_ready',{frame_count:frameCount,detected_at:Date.now()})}callback(timestamp)})}return originalRAF.call(window,callback)}}function setupFirstInteractionDetection(){var events=['touchstart','mousedown','keydown'];function onFirstInteraction(){if(firstInteractionSent)return;firstInteractionSent=true;sendEvent('user_interaction_start',null);for(var i=0;i<events.length;i++){document.removeEventListener(events[i],onFirstInteraction,true)}}for(var i=0;i<events.length;i++){document.addEventListener(events[i],onFirstInteraction,true)}}if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',setupFirstInteractionDetection)}else{setupFirstInteractionDetection()}window.addEventListener('error',function(event){if(errorSent)return;errorSent=true;sendEvent('error',{message:event.message||'Unknown error',source:event.filename||'',lineno:event.lineno||0,colno:event.colno||0,auto_captured:true})});window.addEventListener('unhandledrejection',function(event){if(errorSent)return;errorSent=true;var reason=event.reason;sendEvent('error',{message:(reason instanceof Error)?reason.message:String(reason),type:'unhandled_promise_rejection',auto_captured:true})});window.playablesSDK={complete:function(score){sendEvent('game_ended',{score:score,completed:true})},error:function(message){if(errorSent)return;errorSent=true;sendEvent('error',{message:message||'Unknown error',auto_captured:false})},sendEvent:function(eventName,payload){if(!eventName||typeof eventName!=='string')return;sendEvent(eventName,payload)}};if(originalRAF){originalRAF.call(window,onFrame)}})();</script>
+// Game lifecycle bridge: rAF-based game-ready detection + event communication
+(function() {
+  'use strict';
+
+  // Idempotency: skip if already initialized (e.g., server-side injection
+  // followed by client-side inject-javascript via the Bloks webview component).
+  if (window.playablesSDK) return;
+
+  var HANDLER_NAME = 'playablesGameEventHandler';
+  var ANDROID_BRIDGE_NAME = '_MetaPlayablesBridge';
+  var RAF_FRAME_THRESHOLD = 3;
+
+  var gameReadySent = false;
+  var firstInteractionSent = false;
+  var errorSent = false;
+  var frameCount = 0;
+  var originalRAF = window.requestAnimationFrame;
+
+  // --- Transport Layer ---
+
+  function hasIOSBridge() {
+    return !!(window.webkit &&
+              window.webkit.messageHandlers &&
+              window.webkit.messageHandlers[HANDLER_NAME]);
+  }
+
+  function hasAndroidBridge() {
+    return !!(window[ANDROID_BRIDGE_NAME] &&
+              typeof window[ANDROID_BRIDGE_NAME].postEvent === 'function');
+  }
+
+  function isInIframe() {
+    return !!(window.parent && window.parent !== window);
+  }
+
+  function sendEvent(eventName, payload) {
+    var message = {
+      type: eventName,
+      payload: payload || {},
+      timestamp: Date.now()
+    };
+
+    if (hasIOSBridge()) {
+      try {
+        window.webkit.messageHandlers[HANDLER_NAME].postMessage(message);
+      } catch (e) { /* ignore */ }
+      return;
+    }
+
+    if (hasAndroidBridge()) {
+    try {
+      var p = payload || {};
+      p.__secureToken = window.__fbAndroidBridgeAuthToken || '';
+      p.timestamp = message.timestamp;
+      window[ANDROID_BRIDGE_NAME].postEvent(
+        eventName,
+        JSON.stringify(p)
+      );
+    } catch (e) { /* ignore */ }
+    return;
+  }
+
+    if (isInIframe()) {
+      try {
+        window.parent.postMessage(message, '*');
+      } catch (e) { /* ignore */ }
+      return;
+    }
+  }
+
+  // --- rAF Game-Ready Detection ---
+
+  function onFrame() {
+    if (gameReadySent) return;
+
+    frameCount++;
+    if (frameCount >= RAF_FRAME_THRESHOLD) {
+      gameReadySent = true;
+      sendEvent('game_ready', {
+        frame_count: frameCount,
+        detected_at: Date.now()
+      });
+      return;
+    }
+
+    originalRAF.call(window, onFrame);
+  }
+
+  if (originalRAF) {
+    window.requestAnimationFrame = function(callback) {
+      if (!gameReadySent) {
+        return originalRAF.call(window, function(timestamp) {
+          frameCount++;
+          if (frameCount >= RAF_FRAME_THRESHOLD && !gameReadySent) {
+            gameReadySent = true;
+            sendEvent('game_ready', {
+              frame_count: frameCount,
+              detected_at: Date.now()
+            });
+          }
+          callback(timestamp);
+        });
+      }
+      return originalRAF.call(window, callback);
+    };
+  }
+
+  // --- First User Interaction Detection ---
+
+  function setupFirstInteractionDetection() {
+    var events = ['touchstart', 'mousedown', 'keydown'];
+
+    function onFirstInteraction() {
+      if (firstInteractionSent) return;
+      firstInteractionSent = true;
+      sendEvent('user_interaction_start', null);
+
+      for (var i = 0; i < events.length; i++) {
+        document.removeEventListener(events[i], onFirstInteraction, true);
+      }
+    }
+
+    for (var i = 0; i < events.length; i++) {
+      document.addEventListener(events[i], onFirstInteraction, true);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupFirstInteractionDetection);
+  } else {
+    setupFirstInteractionDetection();
+  }
+
+  // --- Auto Error Capture ---
+
+  window.addEventListener('error', function(event) {
+    if (errorSent) return;
+    errorSent = true;
+    sendEvent('error', {
+      message: event.message || 'Unknown error',
+      source: event.filename || '',
+      lineno: event.lineno || 0,
+      colno: event.colno || 0,
+      auto_captured: true
+    });
+  });
+
+  window.addEventListener('unhandledrejection', function(event) {
+    if (errorSent) return;
+    errorSent = true;
+    var reason = event.reason;
+    sendEvent('error', {
+      message: (reason instanceof Error) ? reason.message : String(reason),
+      type: 'unhandled_promise_rejection',
+      auto_captured: true
+    });
+  });
+
+  // --- Public API ---
+
+  window.playablesSDK = {
+    complete: function(score) {
+      sendEvent('game_ended', {
+        score: score,
+        completed: true
+      });
+    },
+
+    error: function(message) {
+      if (errorSent) return;
+      errorSent = true;
+      sendEvent('error', {
+        message: message || 'Unknown error',
+        auto_captured: false
+      });
+    },
+
+    sendEvent: function(eventName, payload) {
+      if (!eventName || typeof eventName !== 'string') return;
+      sendEvent(eventName, payload);
+    }
+  };
+
+  // Kick off rAF detection in case no game code calls rAF immediately
+  if (originalRAF) {
+    originalRAF.call(window, onFrame);
+  }
+})();</script>
+<script>window.Intl=window.Intl||{};Intl.t=function(s){return(Intl._locale&&Intl._locale[s])||s;};</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Orbo — Il gusto ti orbita</title>
@@ -16,14 +205,9 @@
 }
 html{scroll-behavior:smooth}
 body{font-family:"Inter",system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
-button,input{
-  touch-action: manipulation;font:inherit;border:0;background:none;cursor:pointer;color:inherit}
+button,input{touch-action:manipulation;font:inherit;border:0;background:none;cursor:pointer;color:inherit}
 a{text-decoration:none;color:inherit}
-
-/* CANVAS */
 #bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
-
-/* TOPBAR */
 .topbar{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:12px;padding:10px 20px;background:rgba(13,4,23,0.92);backdrop-filter:blur(24px);border-bottom:1px solid rgba(255,92,92,0.15);box-shadow:0 2px 20px rgba(255,92,92,0.08)}
 .topbar-logo{height:40px;width:40px;filter:drop-shadow(0 0 10px rgba(255,92,92,0.7));cursor:pointer;transition:transform .3s cubic-bezier(.34,1.56,.64,1)}
 .topbar-logo:hover{transform:rotate(-8deg) scale(1.1)}
@@ -31,136 +215,97 @@ a{text-decoration:none;color:inherit}
 @keyframes shimmerSlogan{0%{background-position:0%}100%{background-position:200%}}
 .topbar-actions{display:flex;gap:8px;align-items:center}
 .cache-badge{font-size:10px;padding:3px 8px;border-radius:6px;background:rgba(34,211,238,0.12);color:var(--cyan);font-weight:700;border:1px solid rgba(34,211,238,0.2)}
-
-/* VIEWS */
 .view{display:none;position:relative;z-index:1}
 .view.active{display:block}
-
-/* ── HOME ── */
-.hero{
-  position:relative; z-index:2;
-min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:80px 20px 40px;position:relative;overflow:hidden}
-
+.hero{position:relative;z-index:2;min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:80px 20px 40px;overflow:hidden}
 .glow-ball,.orbit-ring,.food-orbits{position:absolute;border-radius:50%;pointer-events:none;animation:glowPulse 6s ease-in-out infinite}
 .glow-ball-1{width:600px;height:600px;background:radial-gradient(circle,rgba(255,92,92,0.15),transparent 70%);top:50%;left:50%;transform:translate(-50%,-60%)}
 .glow-ball-2{width:400px;height:400px;background:radial-gradient(circle,rgba(34,211,238,0.1),transparent 70%);top:30%;left:20%;animation-delay:-3s}
 @keyframes glowPulse{0%,100%{opacity:.6;transform:translate(-50%,-60%) scale(1)}50%{opacity:1;transform:translate(-50%,-60%) scale(1.2)}}
-
-/* orbita */
-.orbit-ring{position:absolute;top:38%;left:50%;pointer-events:none;width:500px;height:500px;margin:-250px 0 0 -250px;border:1px solid rgba(255,92,92,0.1);border-radius:50%;animation:spinRing 40s linear infinite}
+.orbit-ring{top:38%;left:50%;width:500px;height:500px;margin:-250px 0 0 -250px;border:1px solid rgba(255,92,92,0.1);animation:spinRing 40s linear infinite}
 .orbit-ring::after{content:"";position:absolute;inset:-1px;border-radius:50%;border:1px dashed rgba(34,211,238,0.07)}
 @keyframes spinRing{to{transform:rotate(360deg)}}
-
-.food-orbits{position:absolute;top:38%;left:50%;pointer-events:none;width:500px;height:500px;margin:-250px 0 0 -250px;pointer-events:none;z-index:1}
+.food-orbits{top:38%;left:50%;width:500px;height:500px;margin:-250px 0 0 -250px;z-index:1}
 .food-orbits span{position:absolute;top:50%;left:50%;font-size:24px;animation:orbitFood 20s linear infinite;filter:drop-shadow(0 0 8px rgba(255,92,92,0.8))}
 .food-orbits span:nth-child(2){animation-delay:-4s}
 .food-orbits span:nth-child(3){animation-delay:-8s}
 .food-orbits span:nth-child(4){animation-delay:-12s}
 .food-orbits span:nth-child(5){animation-delay:-16s}
 @keyframes orbitFood{from{transform:rotate(0) translate(248px) rotate(0)}to{transform:rotate(360deg) translate(248px) rotate(-360deg)}}
-
-/* particelle */
 .particles{position:absolute;inset:0;overflow:hidden;pointer-events:none}
 .particles span{position:absolute;width:2px;height:2px;border-radius:50%;background:#FF5C5C;opacity:0;animation:floatUp linear infinite}
 @keyframes floatUp{0%{opacity:0;transform:translateY(0) scale(0)}20%{opacity:.7}80%{opacity:.3}100%{opacity:0;transform:translateY(-500px) scale(2)}}
-
-/* logo hero */
 .hero-logo{position:relative;z-index:2;width:160px;height:160px;filter:drop-shadow(0 0 30px rgba(255,92,92,0.6));animation:heroLogo 5s ease-in-out infinite}
 @keyframes heroLogo{0%,100%{filter:drop-shadow(0 0 30px rgba(255,92,92,0.6))}50%{filter:drop-shadow(0 0 60px rgba(255,92,92,0.9)) drop-shadow(0 0 80px rgba(34,211,238,0.3))}}
-
 .hero-kicker{font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--dim);margin-bottom:16px;position:relative;z-index:2}
 .hero-title{font-family:'Arial Black',sans-serif;font-size:clamp(28px,6vw,52px);font-weight:900;line-height:1.1;margin-bottom:16px;background:linear-gradient(170deg,#FFE4E1 0%,#FF5C5C 50%,#FF7A6B 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;position:relative;z-index:2}
 .hero-sub{font-size:15px;color:var(--dim);line-height:1.7;margin-bottom:32px;max-width:480px;position:relative;z-index:2}
-.hero-cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;position:relative;z-index:2}
+.hero-cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;position:relative;z-index:10}
 .btn-primary{background:linear-gradient(135deg,#FF5C5C,#FF7A6B);padding:15px 34px;border-radius:999px;font-weight:900;color:#0D0417;font-size:14px;transition:.2s;box-shadow:0 6px 24px rgba(255,92,92,0.4)}
 .btn-primary:hover{transform:translateY(-3px);box-shadow:0 12px 32px rgba(255,92,92,0.55)}
 .btn-ghost{border:1.5px solid rgba(255,92,92,0.35);padding:15px 34px;border-radius:999px;font-weight:900;color:var(--dim);font-size:14px;transition:.2s;backdrop-filter:blur(8px)}
 .btn-ghost:hover{border-color:#FF5C5C;color:var(--text);background:rgba(255,92,92,0.1);transform:translateY(-3px)}
-
-/* MOOD BAR */
 .mood-section{position:relative;z-index:1;padding:32px 20px;background:rgba(22,8,40,0.7);backdrop-filter:blur(12px);border-top:1px solid rgba(255,92,92,0.1);border-bottom:1px solid rgba(255,92,92,0.1)}
 .mood-title{font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--dim2);text-align:center;margin-bottom:16px}
 .mood-row{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;justify-content:center;flex-wrap:wrap}
 .mood-btn{display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 18px;border-radius:16px;border:1px solid rgba(255,92,92,0.2);background:rgba(26,11,46,0.6);color:var(--dim);font-size:.82rem;font-weight:700;white-space:nowrap;transition:.2s;cursor:pointer}
 .mood-btn:hover,.mood-btn.active{border-color:#FF5C5C;background:rgba(255,92,92,0.15);color:var(--text);transform:translateY(-2px);box-shadow:0 6px 20px rgba(255,92,92,0.2)}
 .mood-btn .mood-icon{font-size:1.5rem}
-
-/* STATS */
 .stats-section{position:relative;z-index:1;padding:28px 20px;display:flex;justify-content:space-around;max-width:540px;margin:0 auto}
 .stat{display:flex;flex-direction:column;align-items:center;gap:4px}
 .stat-num{font-family:'Arial Black',sans-serif;font-size:30px;font-weight:900;background:linear-gradient(135deg,#FF5C5C,#FF7A6B);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .stat-label{font-size:10px;color:var(--dim2);text-transform:uppercase;letter-spacing:1.5px;font-weight:700}
-
-/* TRENDING */
 .trending-wrap{position:relative;z-index:1;padding:0 0 32px;overflow:hidden}
 .trending-label{font-size:10px;font-weight:900;color:var(--purple);letter-spacing:2px;text-align:center;padding:0 20px 12px;display:block}
 .trending-track{overflow:hidden;mask-image:linear-gradient(90deg,transparent,black 8%,black 92%,transparent)}
 .trending-scroll{display:flex;gap:10px;animation:scrollX 25s linear infinite;width:max-content}
 .trending-scroll span{padding:7px 16px;background:rgba(255,92,92,0.1);border:1px solid rgba(255,92,92,0.2);border-radius:999px;font-size:13px;font-weight:600;color:var(--dim);white-space:nowrap}
 @keyframes scrollX{from{transform:translateX(0)}to{transform:translateX(-50%)}}
-
-/* ── SEARCH VIEW ── */
 .search-wrap{max-width:1100px;margin:0 auto;padding:20px 18px 60px}
-
 .search-header{display:flex;align-items:center;gap:12px;margin-bottom:16px}
 .back-btn{width:38px;height:38px;display:grid;place-items:center;border-radius:12px;background:rgba(255,92,92,0.1);border:1px solid rgba(255,92,92,0.2);color:var(--dim);font-size:1.1rem;transition:.18s}
 .back-btn:hover{background:rgba(255,92,92,0.2);color:var(--text)}
 .search-title{font-size:20px;font-weight:800;background:linear-gradient(135deg,#FFE4E1,#FF5C5C);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-
-/* storia ricerche */
 .history-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
 .history-chip{padding:5px 12px;border-radius:999px;background:rgba(34,211,238,0.08);border:1px solid rgba(34,211,238,0.18);color:var(--cyan);font-size:.8rem;font-weight:600;cursor:pointer;transition:.15s}
 .history-chip:hover{background:rgba(34,211,238,0.15)}
-
 .search-box{position:relative;margin-bottom:10px}
 .search-box input{width:100%;padding:16px 52px 16px 20px;background:rgba(26,11,46,0.9);border:1.5px solid rgba(255,92,92,0.25);border-radius:16px;font-size:16px;outline:none;color:var(--text);transition:.2s}
 .search-box input:focus{border-color:#FF5C5C;box-shadow:0 0 0 3px rgba(255,92,92,0.12)}
 .search-box input::placeholder{color:var(--dim2)}
 .search-clear{position:absolute;right:16px;top:50%;transform:translateY(-50%);color:var(--dim2);font-size:1.1rem;display:none;transition:.15s}
 .search-clear:hover{color:var(--text)}
-
-/* filtri */
 .filters-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;align-items:center}
 .chip{padding:7px 14px;border-radius:999px;border:1px solid rgba(255,92,92,0.25);font-size:.82rem;font-weight:700;color:var(--dim);cursor:pointer;transition:.18s}
 .chip:hover{border-color:#FF5C5C;color:var(--text)}
 .chip.active{background:rgba(255,92,92,0.25);border-color:#FF5C5C;color:var(--text)}
 .chip.cat.active{background:linear-gradient(135deg,rgba(255,92,92,0.35),rgba(34,211,238,0.2));border-color:#FF7A6B}
 .chip.open.active{background:rgba(16,185,129,0.2);border-color:#10B981;color:#10B981}
-
-/* toolbar risultati */
 .results-toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
 .results-count{font-size:.88rem;color:var(--dim2);font-weight:600}
 .view-toggle{display:flex;gap:4px}
 .view-toggle button{width:32px;height:32px;display:grid;place-items:center;border-radius:8px;color:var(--dim2);font-size:.9rem;transition:.15s}
 .view-toggle button.active{background:rgba(255,92,92,0.2);color:#FF5C5C}
-
-/* GRIGLIA risultati */
 .results-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
 .results-grid.list-view{grid-template-columns:1fr}
-
-/* card risultato */
 .card{background:var(--card);border:1px solid rgba(255,92,92,0.15);border-radius:20px;overflow:hidden;cursor:pointer;transition:.25s;opacity:0;animation:cardIn .4s ease forwards}
 @keyframes cardIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
 .card:hover{transform:translateY(-5px);border-color:rgba(255,92,92,0.5);box-shadow:0 12px 32px rgba(255,92,92,0.25)}
-
 .card-img-wrap{position:relative;aspect-ratio:16/9;overflow:hidden}
 .results-grid.list-view .card{display:grid;grid-template-columns:140px 1fr}
 .results-grid.list-view .card-img-wrap{aspect-ratio:unset;min-height:140px}
 .card-img{width:100%;height:100%;object-fit:cover;transition:.4s}
 .card:hover .card-img{transform:scale(1.04)}
 .card-img-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(13,4,23,0.7),transparent 50%)}
-
 .card-badges{position:absolute;top:10px;left:10px;display:flex;gap:6px;flex-wrap:wrap}
 .badge{padding:3px 10px;border-radius:8px;font-size:11px;font-weight:800;letter-spacing:.5px}
 .badge.price{background:rgba(255,140,0,0.85);color:#1a0b2e}
 .badge.open{background:rgba(16,185,129,0.2);color:#10B981;border:1px solid rgba(16,185,129,0.3)}
 .badge.closed{background:rgba(239,68,68,0.15);color:#EF4444;border:1px solid rgba(239,68,68,0.2)}
 .badge.score{background:linear-gradient(135deg,rgba(255,92,92,0.9),rgba(34,211,238,0.9));color:#0D0417}
-
 .card-fav{position:absolute;top:10px;right:10px;width:32px;height:32px;display:grid;place-items:center;border-radius:50%;background:rgba(13,4,23,0.7);backdrop-filter:blur(6px);font-size:1rem;transition:.2s}
 .card-fav:hover{transform:scale(1.15)}
 .card-fav.active{filter:drop-shadow(0 0 6px rgba(255,80,80,0.5))}
-
 .card-body{padding:14px 16px}
 .card-name{font-weight:800;font-size:17px;margin-bottom:4px;line-height:1.2}
 .card-meta{font-size:12px;color:var(--dim2);display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;align-items:center}
@@ -168,27 +313,18 @@ min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-
 .card-stars{color:#FBBF24}
 .card-addr{font-size:12px;color:var(--dim2);margin-bottom:10px;line-height:1.4}
 .card-dist{font-size:11px;font-weight:700;color:var(--cyan)}
-
-/* score orbo */
 .orbo-score{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:8px;background:linear-gradient(135deg,rgba(255,92,92,0.2),rgba(34,211,238,0.15));border:1px solid rgba(255,92,92,0.3);font-size:11px;font-weight:800;color:var(--text)}
-
 .card-actions{display:flex;gap:8px;margin-top:10px}
 .btn-action{flex:1;padding:9px 12px;border-radius:12px;font-size:12px;font-weight:800;text-align:center;transition:.18s;letter-spacing:.3px}
 .btn-action.primary{background:linear-gradient(135deg,#FF5C5C,#FF7A6B);color:#0D0417;box-shadow:0 4px 14px rgba(255,92,92,0.3)}
 .btn-action.primary:hover{box-shadow:0 6px 20px rgba(255,92,92,0.45);transform:translateY(-1px)}
 .btn-action.secondary{background:rgba(255,92,92,0.12);border:1px solid rgba(255,92,92,0.25);color:var(--dim)}
 .btn-action.secondary:hover{background:rgba(255,92,92,0.22);color:var(--text)}
-
-/* skeleton */
 .skeleton{background:linear-gradient(90deg,rgba(255,92,92,0.08) 25%,rgba(255,92,92,0.15) 50%,rgba(255,92,92,0.08) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:20px;height:280px}
 @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
-
-/* stato vuoto */
 .empty-state{grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--dim2)}
 .empty-icon{font-size:3.5rem;margin-bottom:16px;display:block;filter:drop-shadow(0 0 20px rgba(255,92,92,0.4))}
 .empty-state p{font-size:.95rem;line-height:1.75;max-width:300px;margin:0 auto}
-
-/* MODAL */
 .modal{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.85);backdrop-filter:blur(12px);display:none;align-items:flex-end;justify-content:center;padding:0}
 .modal.active{display:flex;animation:fadeIn .2s ease}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
@@ -211,19 +347,13 @@ min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-
 .review-author{font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px}
 .review-stars{color:#FBBF24;font-size:12px}
 .review-text{font-size:13px;color:var(--dim);line-height:1.6;margin-top:6px}
-
-/* TOAST */
 .toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(80px);background:rgba(22,8,40,0.97);border:1px solid rgba(255,92,92,0.3);color:var(--text);padding:11px 22px;border-radius:14px;font-size:.9rem;font-weight:600;opacity:0;transition:transform .3s cubic-bezier(.34,1.56,.64,1),opacity .3s;z-index:200;backdrop-filter:blur(16px);box-shadow:0 8px 32px rgba(0,0,0,0.5);white-space:nowrap}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-
-/* autocomplete dark */
 .pac-container{background:#160828!important;border:1px solid rgba(255,92,92,0.35)!important;border-radius:14px!important;margin-top:4px;z-index:9999!important;box-shadow:0 8px 32px rgba(0,0,0,0.5)!important}
 .pac-item{color:#FFE4E1!important;padding:10px 16px!important;border-top:1px solid rgba(255,92,92,0.08)!important;font-size:14px!important}
 .pac-item:hover,.pac-item:focus{background:rgba(255,92,92,0.15)!important}
 .pac-item-query{color:#FF7A6B!important;font-weight:700!important}
 .pac-icon{display:none!important}
-.pac-logo::after{display:none!important}
-
 @media(max-width:600px){
   .food-orbits{width:340px;height:340px;margin:-170px 0 0 -170px}
   @keyframes orbitFood{from{transform:rotate(0) translate(168px) rotate(0)}to{transform:rotate(360deg) translate(168px) rotate(-360deg)}}
@@ -231,70 +361,25 @@ min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-
   .results-grid{grid-template-columns:1fr}
   .results-grid.list-view .card{grid-template-columns:100px 1fr}
 }
-.hero-cta{position:relative;z-index:10}
 .hero *{position:relative;z-index:2}
 </style>
 </head>
 <body>
 <canvas id="bg-canvas"></canvas>
-
 <header class="topbar">
-  <svg class="topbar-logo" id="logo-btn" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <linearGradient id="lg1" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#FF5C5C"/><stop offset="1" stop-color="#E5484D"/></linearGradient>
-      <linearGradient id="lg2" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#6D28D9"/><stop offset="1" stop-color="#E5484D"/></linearGradient>
-      <linearGradient id="lg3" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#FF5C5C"/><stop offset="1" stop-color="#FF5C5C"/></linearGradient>
-      <filter id="gf"><feGaussianBlur stdDeviation="1.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-      <path id="op" d="M60,12 C82,12 96,30 96,55 C96,80 82,98 60,98 C38,98 24,80 24,55 C24,30 38,12 60,12 Z"/>
-    </defs>
-    <ellipse cx="60" cy="108" rx="28" ry="6" fill="rgba(100,50,200,.2)"/>
-    <polygon points="60,25 90,40 60,55 30,40" fill="url(#lg1)"/>
-    <polygon points="30,40 60,55 60,85 30,70" fill="url(#lg2)"/>
-    <polygon points="60,55 90,40 90,70 60,85" fill="url(#lg3)"/>
-    <text font-family="Arial Black" font-size="14" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="#FFE4E1" filter="url(#gf)"><animateMotion dur="8s" repeatCount="indefinite"><mpath href="#op"/></animateMotion>O</text>
-    <text font-family="Arial Black" font-size="14" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="#FF7A6B" filter="url(#gf)"><animateMotion dur="8s" repeatCount="indefinite" begin="-2s"><mpath href="#op"/></animateMotion>R</text>
-    <text font-family="Arial Black" font-size="14" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="#FF5C5C" filter="url(#gf)"><animateMotion dur="8s" repeatCount="indefinite" begin="-4s"><mpath href="#op"/></animateMotion>B</text>
-    <text font-family="Arial Black" font-size="14" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="#FFE4E1" filter="url(#gf)"><animateMotion dur="8s" repeatCount="indefinite" begin="-6s"><mpath href="#op"/></animateMotion>O</text>
-  </svg>
+  <svg class="topbar-logo" id="logo-btn" viewBox="0 0 120 120"><defs><linearGradient id="lg1" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#FF5C5C"/><stop offset="1" stop-color="#E5484D"/></linearGradient></defs><ellipse cx="60" cy="108" rx="28" ry="6" fill="rgba(100,50,200,.2)"/><polygon points="60,25 90,40 60,55 30,40" fill="url(#lg1)"/></svg>
   <span class="topbar-slogan">Il gusto ti orbita</span>
-  <div class="topbar-actions">
-    <span id="cache-badge" class="cache-badge" style="display:none">CACHE</span>
-  </div>
+  <div class="topbar-actions"><span id="cache-badge" class="cache-badge" style="display:none">CACHE</span></div>
 </header>
-
 <main>
-  <!-- HOME -->
   <section class="view active" id="view-home">
     <div class="hero">
       <div class="glow-ball glow-ball-1"></div>
       <div class="glow-ball glow-ball-2"></div>
       <div class="orbit-ring"></div>
-      <div class="food-orbits">
-        <span>🍕</span><span>🍣</span><span>🍔</span><span>🍜</span><span>🌮</span>
-      </div>
+      <div class="food-orbits"><span>🍕</span><span>🍣</span><span>🍔</span><span>🍜</span><span>🌮</span></div>
       <div class="particles" id="particles"></div>
-
-      <svg class="hero-logo" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="ht" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#FFB4A2"/><stop offset="1" stop-color="#FF5C5C"/></linearGradient>
-          <linearGradient id="hl" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#E5484D"/><stop offset="1" stop-color="#FF7A6B"/></linearGradient>
-          <linearGradient id="hr" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#FF7A6B"/><stop offset="1" stop-color="#FF5C5C"/></linearGradient>
-          <filter id="hgf"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-          <path id="hop" d="M60,12 C82,12 96,30 96,55 C96,80 82,98 60,98 C38,98 24,80 24,55 C24,30 38,12 60,12 Z"/>
-        </defs>
-        <ellipse cx="60" cy="108" rx="28" ry="6" fill="rgba(100,50,200,.2)"/>
-        <g filter="drop-shadow(0 6px 16px rgba(120,50,220,.5))">
-          <polygon points="60,25 90,40 60,55 30,40" fill="url(#ht)"/>
-          <polygon points="30,40 60,55 60,85 30,70" fill="url(#hl)"/>
-          <polygon points="60,55 90,40 90,70 60,85" fill="url(#hr)"/>
-        </g>
-        <polyline points="60,25 90,40 90,70 60,85 30,70 30,40 60,25" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/>
-        <text font-family="Arial Black" font-size="15" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="#FFE4E1" filter="url(#hgf)"><animateMotion dur="8s" repeatCount="indefinite"><mpath href="#hop"/></animateMotion>O</text>
-        <text font-family="Arial Black" font-size="15" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="#FF7A6B" filter="url(#hgf)"><animateMotion dur="8s" repeatCount="indefinite" begin="-2s"><mpath href="#hop"/></animateMotion>R</text>
-        <text font-family="Arial Black" font-size="15" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="#FF5C5C" filter="url(#hgf)"><animateMotion dur="8s" repeatCount="indefinite" begin="-4s"><mpath href="#hop"/></animateMotion>B</text>
-        <text font-family="Arial Black" font-size="15" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="#FFE4E1" filter="url(#hgf)"><animateMotion dur="8s" repeatCount="indefinite" begin="-6s"><mpath href="#hop"/></animateMotion>O</text>
-      </svg>
-
+      <svg class="hero-logo" viewBox="0 0 120 120"><ellipse cx="60" cy="108" rx="28" ry="6" fill="rgba(100,50,200,.2)"/></svg>
       <p class="hero-kicker">✦ Scopri il gusto ✦</p>
       <h1 class="hero-title">Il locale perfetto,<br>a portata di tap</h1>
       <p class="hero-sub">Cerca per atmosfera, cucina o occasione.<br>Orbo ti porta dove vuoi essere.</p>
@@ -303,559 +388,78 @@ min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-
         <button class="btn-ghost" onclick="doNearby()">📍 Vicino a me</button>
       </div>
     </div>
-
-    <!-- MOOD -->
     <div class="mood-section">
       <p class="mood-title">✦ Cosa cerchi stasera? ✦</p>
       <div class="mood-row">
         <button class="mood-btn" onclick="doMood('romantico')"><span class="mood-icon">💕</span>Romantico</button>
-        <button class="mood-btn" onclick="doMood('veloce economico')"><span class="mood-icon">⚡</span>Veloce</button>
-        <button class="mood-btn" onclick="doMood('gelato dessert')"><span class="mood-icon">🍨</span>Dolce</button>
-        <button class="mood-btn" onclick="doMood('brunch colazione')"><span class="mood-icon">🥐</span>Brunch</button>
-        <button class="mood-btn" onclick="doMood('cocktail aperitivo')"><span class="mood-icon">🍹</span>Aperitivo</button>
         <button class="mood-btn" onclick="doMood('pizza')"><span class="mood-icon">🍕</span>Pizza</button>
-        <button class="mood-btn" onclick="doMood('sushi giapponese')"><span class="mood-icon">🍣</span>Sushi</button>
-      </div>
-    </div>
-
-    <!-- STATS -->
-    <div class="stats-section">
-      <div class="stat"><span class="stat-num" data-target="1247">0</span><span class="stat-label">Locali</span></div>
-      <div class="stat"><span class="stat-num" data-target="89">0</span><span class="stat-label">Città</span></div>
-      <div class="stat"><span class="stat-num" data-target="15">0</span><span class="stat-label">k Utenti</span></div>
-    </div>
-
-    <!-- TRENDING -->
-    <div class="trending-wrap">
-      <span class="trending-label">🔥 TRENDING ORA</span>
-      <div class="trending-track">
-        <div class="trending-scroll">
-          <span>Pizza Gourmet</span><span>Ramen</span><span>Brunch</span><span>Gelato Artigianale</span>
-          <span>Sushi</span><span>Bistrot</span><span>Aperitivo</span><span>Tacos</span><span>Vegan</span>
-          <span>Pizza Gourmet</span><span>Ramen</span><span>Brunch</span><span>Gelato Artigianale</span>
-          <span>Sushi</span><span>Bistrot</span><span>Aperitivo</span><span>Tacos</span><span>Vegan</span>
-        </div>
+        <button class="mood-btn" onclick="doMood('sushi')"><span class="mood-icon">🍣</span>Sushi</button>
       </div>
     </div>
   </section>
-
-  <!-- SEARCH -->
   <section class="view" id="view-search">
     <div class="search-wrap">
-      <div class="search-header">
-        <button class="back-btn" onclick="navigate('home')">←</button>
-        <h2 class="search-title">Cerca locali</h2>
-      </div>
-
-      <!-- storia ricerche -->
+      <div class="search-header"><button class="back-btn" onclick="navigate('home')">←</button><h2 class="search-title">Cerca locali</h2></div>
       <div class="history-row" id="history-row"></div>
-
-      <div class="search-box">
-        <input id="search-input" placeholder="Città, poi tipo di locale o piatto..." autocomplete="off">
-        <button class="search-clear" id="search-clear" onclick="clearSearch()">✕</button>
-      </div>
-
+      <div class="search-box"><input id="search-input" placeholder="Città, poi tipo di locale..." autocomplete="off"><button class="search-clear" id="search-clear" onclick="clearSearch()">✕</button></div>
       <div class="filters-row">
         <button class="chip cat active" data-type="restaurant" onclick="setType('restaurant',this)">🍝 Ristoranti</button>
         <button class="chip cat" data-type="cafe" onclick="setType('cafe',this)">☕ Bar</button>
-        <button class="chip cat" data-type="bakery" onclick="setType('bakery',this)">🧁 Pasticcerie</button>
-        <button class="chip cat" data-type="meal_takeaway" onclick="setType('meal_takeaway',this)">📦 Take Away</button>
-        <span style="width:1px;height:24px;background:rgba(255,92,92,0.2);align-self:center;margin:0 2px"></span>
         <button class="chip" data-price="1" onclick="togglePrice(1,this)">€</button>
         <button class="chip" data-price="2" onclick="togglePrice(2,this)">€€</button>
-        <button class="chip" data-price="3" onclick="togglePrice(3,this)">€€€</button>
         <button class="chip open" id="btn-open" onclick="toggleOpen(this)">🟢 Aperto ora</button>
       </div>
-
-      <div class="results-toolbar">
-        <p class="results-count" id="results-count"></p>
-        <div class="view-toggle">
-          <button id="btn-grid" class="active" onclick="setGridView(true)" title="Griglia">⊞</button>
-          <button id="btn-list" onclick="setGridView(false)" title="Lista">☰</button>
-        </div>
-      </div>
-
+      <div class="results-toolbar"><p class="results-count" id="results-count"></p></div>
       <div class="results-grid" id="results-list"></div>
     </div>
   </section>
 </main>
-
-<!-- MODAL DETTAGLIO -->
-<div class="modal" id="detail-modal" onclick="if(event.target===this)closeModal()">
-  <div class="modal-sheet">
-    <div class="modal-close"><button onclick="closeModal()">✕</button></div>
-    <img id="modal-img" class="modal-img" src="" alt="">
-    <div class="modal-body" id="modal-body"></div>
-  </div>
-</div>
-
+<div class="modal" id="detail-modal" onclick="if(event.target===this)closeModal()"><div class="modal-sheet"><div class="modal-close"><button onclick="closeModal()">✕</button></div><img id="modal-img" class="modal-img" src="" alt=""><div class="modal-body" id="modal-body"></div></div></div>
 <div id="gmap" style="display:none"></div>
 <div class="toast" id="toast"></div>
-
 <script>
 window.onerror=function(m,s,l){console.error('ERR',m,'@'+l);};
-window.addEventListener('unhandledrejection', e => { console.error('PROMISE ERROR:', e.reason); toast('⚠️ Errore: '+ (e.reason?.message || 'controlla console')); });
-// ── CANVAS STELLE ─────────────────────────────────
-(function(){
-  const c=document.getElementById('bg-canvas');if(!c)return;const x=c.getContext('2d');
-  let W,H,stars=[];
-  function resize(){W=c.width=innerWidth;H=c.height=innerHeight;stars=[];for(let i=0;i<80;i++)stars.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*.8+.2,a:Math.random(),s:Math.random()*.003+.001})}
-  resize();addEventListener('resize',resize);
-  (function draw(){x.clearRect(0,0,W,H);stars.forEach(s=>{s.a+=s.s;if(s.a>1)s.a=0;x.beginPath();x.arc(s.x,s.y,s.r,0,7);x.fillStyle=`rgba(200,150,255,${s.a*.5})`;x.fill()});requestAnimationFrame(draw)})();
-})();
-
-// ── PARTICELLE ────────────────────────────────────
-(function spawnParticles(){
-  const c=document.getElementById('particles');
-  for(let i=0;i<24;i++){
-    const s=document.createElement('span');
-    s.style.cssText=`left:${Math.random()*100}%;bottom:0;animation-delay:${Math.random()*12}s;animation-duration:${8+Math.random()*8}s`;
-    c.appendChild(s);
-  }
-})();
-
-// ── COUNTER ANIMATO ───────────────────────────────
-(function animateStats(){
-  const obs=new IntersectionObserver(entries=>{
-    entries.forEach(e=>{
-      if(!e.isIntersecting)return;
-      document.querySelectorAll('.stat-num').forEach(el=>{
-        const tgt=+el.dataset.target;let n=0;
-        const step=()=>{n=Math.min(n+tgt/50,tgt);el.textContent=Math.ceil(n)+(tgt===15?'k':'');if(n<tgt)requestAnimationFrame(step)};
-        step();
-      });
-      obs.disconnect();
-    });
-  });
-  const s=document.querySelector('.stats-section');
-  if(s)obs.observe(s);
-})();
-
-// ── STATO ─────────────────────────────────────────
-const state={
-  type:'restaurant',
-  price:null,
-  openNow:false,
-  gridView:true,
-  allResults:[],
-  favs:JSON.parse(localStorage.getItem('orbo_favs')||'[]'),
-  history:JSON.parse(localStorage.getItem('orbo_history')||'[]')
-};
-
-// ── UTILS ─────────────────────────────────────────
-const $=id=>document.getElementById(id);
-let toastT;
-function toast(m){const el=$('toast');clearTimeout(toastT);el.textContent=m;el.classList.add('show');toastT=setTimeout(()=>el.classList.remove('show'),2500)}
-
-function navigate(v){
-  document.querySelectorAll('.view').forEach(s=>s.classList.toggle('active',s.id==='view-'+v));
-  if(v==='search'){setTimeout(()=>$('search-input')?.focus(),300);renderHistory()}
-}
-
-// ── STORIA RICERCHE ───────────────────────────────
-function saveHistory(q){
-  if(!q||q.length<2)return;
-  state.history=state.history.filter(x=>x!==q);
-  state.history.unshift(q);
-  state.history=state.history.slice(0,5);
-  localStorage.setItem('orbo_history',JSON.stringify(state.history));
-}
-
-function renderHistory(){
-  const row=$('history-row');
-  if(!row)return;
-  if(!state.history.length){row.style.display='none';return}
-  row.style.display='flex';
-  row.innerHTML = state.history.map(h => `
-  <button class="history-chip" data-q="${encodeURIComponent(h)}">
-    🕐 ${h}
-  </button>
-`).join('');
-
-row.querySelectorAll('.history-chip').forEach(btn=>{
-  btn.onclick = () => {
-    searchFromHistory(decodeURIComponent(btn.dataset.q));
-  };
-});
-}
-
-function searchFromHistory(q){
-  $('search-input').value=q;
-  $('search-clear').style.display='block';
-  cercaLocali(q,safeLocation());
-}
-
-// ── SCORE ORBO ────────────────────────────────────
-function calcolaScore(v,userLoc){
-  let score=0;
-  if(v.rating) score+=v.rating*15;
-  if(v.user_ratings_total){
-    const pop=Math.min(v.user_ratings_total,500)/500;
-    score+=pop*20;
-  }
-  if(v.opening_hours?.open_now) score+=10;
-  if(v.price_level&&v.price_level<=2) score+=5;
-  if(userLoc&&v.geometry){
-    const lat=v.geometry.location.lat?.()??v.lat;
-    const lng=v.geometry.location.lng?.()??v.lng;
-    const d=distanza(userLoc.lat,userLoc.lng,lat,lng);
-    score+=Math.max(0,(3-d)*8);
-  }
-  return Math.round(score);
-}
-
-// ── GOOGLE MAPS ───────────────────────────────────
-let map,placesService,autocomplete,userLoc=null,currentLocation=null,debT;
-const CACHE_HOURS=12;
-
-function getCacheKey(q,loc){
-  try{const la=loc.lat().toFixed(2),lo=loc.lng().toFixed(2);return `orbo2_${q}_${la}_${lo}`.toLowerCase()}
-  catch{return `orbo2_${q}`}
-}
-function getFromCache(key){
-  try{const d=JSON.parse(localStorage.getItem(key)||'null');if(!d)return null;if((Date.now()-d.ts)/3600000>CACHE_HOURS){localStorage.removeItem(key);return null}return d.r}catch{return null}
-}
-function saveToCache(key,results){
-  try{
-    const slim=results.map(v=>({
-      place_id:v.place_id,name:v.name,rating:v.rating,user_ratings_total:v.user_ratings_total,
-      price_level:v.price_level,vicinity:v.vicinity||v.formatted_address||'',
-      photoUrl:v.photos?.[0]?.getUrl({maxWidth:700})||null,
-      lat:v.geometry?.location.lat?.()??v.lat,
-      lng:v.geometry?.location.lng?.()??v.lng,
-      opening_hours:v.opening_hours?{open_now:v.opening_hours.open_now}:null
-    }));
-    localStorage.setItem(key,JSON.stringify({r:slim,ts:Date.now()}));
-  }catch(e){}
-}
-
-function safeLocation(){
-  try{
-    if(window.google && google.maps){
-      if(currentLocation) return currentLocation;
-      if(userLoc){
-        return new google.maps.LatLng(
-          Number(userLoc.lat),
-          Number(userLoc.lng)
-        );
-      }
-      return new google.maps.LatLng(44.494,11.343);
-    }
-    return { lat:()=>44.494, lng:()=>11.343 };
-  }catch(e){
-    console.error('safeLocation error',e);
-    return { lat:()=>44.494, lng:()=>11.343 };
-  }
-}
-
-function distanza(a,b,c,d){
-  const R=6371,dLa=(c-a)*Math.PI/180,dLo=(d-b)*Math.PI/180;
-  const x=Math.sin(dLa/2)**2+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(dLo/2)**2;
-  return +(R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x))).toFixed(1);
-}
-
-window.initMap=function(){
-  map=new google.maps.Map($('gmap'),{center:{lat:44.494,lng:11.343},zoom:14});
-  placesService=new google.maps.places.PlacesService(map);
-
-  autocomplete=new google.maps.places.Autocomplete($('search-input'),{
-    types:['(cities)'],
-    componentRestrictions:{country:'it'},
-    fields:['geometry','name','place_id']
-  });
-  autocomplete.addListener('place_changed',()=>{
-    const p=autocomplete.getPlace();
-    if(!p.geometry)return;
-    currentLocation=p.geometry.location;
-    map.setCenter(currentLocation);
-    const q=$('search-input').value;
-    saveHistory(q);
-    cercaLocali(q,currentLocation);
-  });
-
-  if(navigator.geolocation){
-    navigator.geolocation.getCurrentPosition(pos=>{
-      userLoc={lat:pos.coords.latitude,lng:pos.coords.longitude};
-      currentLocation=new google.maps.LatLng(userLoc.lat,userLoc.lng);
-      toast('📍 Posizione rilevata!');
-    },()=>{});
-  }
-}
-
-// ── CERCA ─────────────────────────────────────────
-function cercaLocali(q,loc){
-  const l=loc||safeLocation();
-  const key=getCacheKey(q+'_'+state.type,l);
-  const cached=getFromCache(key);
-
-  if(cached){
-    $('cache-badge').style.display='inline-block';
-    processResults(cached);
-    return;
-  }
-
-  $('cache-badge').style.display='none';
-  showSkeleton();
-
-  if(!window.google||!placesService){$('results-list').innerHTML='<div class="empty-state"><span class="empty-icon">🔑</span><p>API Google Maps non caricata.<br>Controlla la tua API KEY.</p></div>';return}
-  placesService.textSearch({query:q,location:l,radius:5000,type:state.type},(res,st)=>{
-    if(st!=='OK'){$('results-list').innerHTML='<div class="empty-state"><span class="empty-icon">🔍</span><p>Nessun risultato.<br>Prova con un'altra città o categoria.</p></div>';return}
-    saveToCache(key,res);
-    processResults(res.map(v=>({...v,lat:v.geometry.location.lat(),lng:v.geometry.location.lng(),photoUrl:v.photos?.[0]?.getUrl({maxWidth:700})||null})));
-  });
-}
-
+window.addEventListener('unhandledrejection',e=>{console.error('PROMISE',e.reason);toast('⚠️ '+e.reason?.message||'Errore')});
+(function(){const c=document.getElementById('bg-canvas');const x=c.getContext('2d');let W,H,s=[];function r(){W=c.width=innerWidth;H=c.height=innerHeight;s=[];for(let i=0;i<80;i++)s.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*.8+.2,a:Math.random(),v:Math.random()*.003+.001})}r();addEventListener('resize',r);(function d(){x.clearRect(0,0,W,H);s.forEach(o=>{o.a+=o.v;if(o.a>1)o.a=0;x.beginPath();x.arc(o.x,o.y,o.r,0,7);x.fillStyle=`rgba(200,150,255,${o.a*.5})`;x.fill()});requestAnimationFrame(d)})})();
+(function(){const c=document.getElementById('particles');for(let i=0;i<24;i++){const s=document.createElement('span');s.style.cssText=`left:${Math.random()*100}%;bottom:0;animation-delay:${Math.random()*12}s;animation-duration:${8+Math.random()*8}s`;c.appendChild(s)}})();
+const state={type:'restaurant',price:null,openNow:false,gridView:true,allResults:[],favs:JSON.parse(localStorage.getItem('orbo_favs')||'[]'),history:JSON.parse(localStorage.getItem('orbo_history')||'[]')};
+const $=id=>document.getElementById(id);let toastT;function toast(m){const e=$('toast');clearTimeout(toastT);e.textContent=m;e.classList.add('show');toastT=setTimeout(()=>e.classList.remove('show'),2500)}
+function navigate(v){document.querySelectorAll('.view').forEach(s=>s.classList.toggle('active',s.id==='view-'+v));if(v==='search'){setTimeout(()=>$('search-input')?.focus(),300);renderHistory()}}
+function saveHistory(q){if(!q||q.length<2)return;state.history=state.history.filter(x=>x!==q);state.history.unshift(q);state.history=state.history.slice(0,5);localStorage.setItem('orbo_history',JSON.stringify(state.history))}
+function renderHistory(){const r=$('history-row');if(!r)return;if(!state.history.length){r.style.display='none';return}r.style.display='flex';r.innerHTML=state.history.map(h=>`<button class="history-chip" data-q="${encodeURIComponent(h)}">🕐 ${h}</button>`).join('');r.querySelectorAll('.history-chip').forEach(b=>b.onclick=()=>searchFromHistory(decodeURIComponent(b.dataset.q)))}
+function searchFromHistory(q){$('search-input').value=q;$('search-clear').style.display='block';cercaLocali(q,safeLocation())}
+function calcolaScore(v,u){let s=0;if(v.rating)s+=v.rating*15;if(v.user_ratings_total)s+=Math.min(v.user_ratings_total,500)/500*20;if(v.opening_hours?.open_now)s+=10;if(v.price_level&&v.price_level<=2)s+=5;if(u&&v.geometry){const lat=v.geometry.location.lat(),lng=v.geometry.location.lng(),d=distanza(u.lat,u.lng,lat,lng);s+=Math.max(0,(3-d)*8)}return Math.round(s)}
+let map,placesService,autocomplete,userLoc=null,currentLocation=null;const CACHE_HOURS=12;
+function getCacheKey(q,l){try{return`orbo2_${q}_${l.lat().toFixed(2)}_${l.lng().toFixed(2)}`.toLowerCase()}catch{return`orbo2_${q}`}}
+function getFromCache(k){try{const d=JSON.parse(localStorage.getItem(k)||'null');if(!d)return null;if((Date.now()-d.ts)/3600000>CACHE_HOURS){localStorage.removeItem(k);return null}return d.r}catch{return null}}
+function saveToCache(k,r){try{const s=r.map(v=>({place_id:v.place_id,name:v.name,rating:v.rating,user_ratings_total:v.user_ratings_total,price_level:v.price_level,vicinity:v.vicinity||'',photoUrl:v.photos?.[0]?.getUrl({maxWidth:700})||null,lat:v.geometry?.location.lat(),lng:v.geometry?.location.lng(),opening_hours:{open_now:!!v.opening_hours?.open_now}}));localStorage.setItem(k,JSON.stringify({r:s,ts:Date.now()}))}catch{}}
+function safeLocation(){try{if(window.google&&google.maps){if(currentLocation)return currentLocation;if(userLoc)return new google.maps.LatLng(Number(userLoc.lat),Number(userLoc.lng));return new google.maps.LatLng(44.494,11.343)}return{lat:()=>44.494,lng:()=>11.343}}catch(e){return{lat:()=>44.494,lng:()=>11.343}}}
+function distanza(a,b,c,d){const R=6371,la=(c-a)*Math.PI/180,lo=(d-b)*Math.PI/180;const x=Math.sin(la/2)**2+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(lo/2)**2;return+(R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x))).toFixed(1)}
+window.initMap=function(){map=new google.maps.Map($('gmap'),{center:{lat:44.494,lng:11.343},zoom:14});placesService=new google.maps.places.PlacesService(map);autocomplete=new google.maps.places.Autocomplete($('search-input'),{types:['(cities)'],componentRestrictions:{country:'it'},fields:['geometry','name']});autocomplete.addListener('place_changed',()=>{const p=autocomplete.getPlace();if(!p.geometry)return;currentLocation=p.geometry.location;map.setCenter(currentLocation);const q=$('search-input').value;saveHistory(q);cercaLocali(q,currentLocation)});if(navigator.geolocation){navigator.geolocation.getCurrentPosition(p=>{userLoc={lat:p.coords.latitude,lng:p.coords.longitude};currentLocation=new google.maps.LatLng(userLoc.lat,userLoc.lng);toast('📍 Posizione rilevata!')})}}
+function cercaLocali(q,l){const loc=l||safeLocation();const key=getCacheKey(q+'_'+state.type,loc);const cached=getFromCache(key);if(cached){$('cache-badge').style.display='inline-block';processResults(cached);return}$('cache-badge').style.display='none';showSkeleton();if(!window.google||!placesService){$('results-list').innerHTML='<div class="empty-state"><span class="empty-icon">🔑</span><p>API non caricata</p></div>';return}placesService.textSearch({query:q,location:loc,radius:5000,type:state.type},(res,st)=>{if(st!=='OK'){$('results-list').innerHTML='<div class="empty-state"><span class="empty-icon">🔍</span><p>Nessun risultato</p></div>';return}saveToCache(key,res);processResults(res.map(v=>({...v,lat:v.geometry.location.lat(),lng:v.geometry.location.lng(),photoUrl:v.photos?.[0]?.getUrl({maxWidth:700})||null})))})}
 function processResults(raw){
-  let results = raw.map(v => ({
-    ...v,
-    _score: calcolaScore(v, userLoc)
-  }));
-
+  let results = raw.map(v => ({...v,_score: calcolaScore(v,userLoc)}));
   results.sort((a,b) => b._score - a._score);
-
-  if(state.price){
-    results = results.filter(v => v.price_level === state.price);
-  }
-
-  if(state.openNow){
-    results = results.filter(v => v.opening_hours?.open_now);
-  }
-
+  if(state.price){results = results.filter(v => v.price_level === state.price)}
+  if(state.openNow){results = results.filter(v => v.opening_hours?.open_now)}
   state.allResults = results;
-
-  renderCards(results.slice(0,20));
-}));
-  results.sort((a,b)=>b._score-a._score);
-  if(state.price) results=results.filter(v=>v.price_level===state.price);
-  if(state.openNow) results=results.filter(v=>v.opening_hours?.open_now);
-  state.allResults=results;
   renderCards(results.slice(0,20));
 }
-
-function doNearby(){
-  navigate('search');
-  if(!window.google || !placesService){
-    toast('❌ Google Maps non disponibile - controlla API key');
-    return;
-  }
-  const loc = safeLocation();
-  if(!loc){
-    toast('📍 Posizione non disponibile');
-    return;
-  }
-  toast('📍 Cerco vicino a te...');
-  cercaLocali('ristoranti', loc);
-}
-
-function doMood(q){
-  navigate('search');
-  const inp = $('search-input');
-  if(inp) { inp.value = q; $('search-clear').style.display='block'; }
-  if(!window.google || !placesService){
-    toast('❌ Google Maps non disponibile - controlla API key');
-    return;
-  }
-  const loc = safeLocation();
-  if(!loc){
-    toast('📍 Posizione non disponibile');
-    return;
-  }
-  cercaLocali(q, loc);
-}
-
-// ── FILTRI ────────────────────────────────────────
-function setType(type,el){
-  state.type=type;
-  document.querySelectorAll('.chip.cat').forEach(c=>c.classList.remove('active'));
-  el.classList.add('active');
-  const q=$('search-input').value||'ristorante';
-  cercaLocali(q,safeLocation());
-}
-
-function togglePrice(p,el){
-  if(state.price===p){state.price=null;el.classList.remove('active')}
-  else{state.price=p;document.querySelectorAll('[data-price]').forEach(c=>c.classList.remove('active'));el.classList.add('active')}
-  processResults(state.allResults);
-}
-
-function toggleOpen(el){
-  state.openNow=!state.openNow;
-  el.classList.toggle('active',state.openNow);
-  processResults(state.allResults);
-}
-
-function setGridView(grid){
-  state.gridView=grid;
-  const l=$('results-list');
-  l.classList.toggle('list-view',!grid);
-  $('btn-grid').classList.toggle('active',grid);
-  $('btn-list').classList.toggle('active',!grid);
-}
-
-function clearSearch(){
-  $('search-input').value='';
-  $('search-clear').style.display='none';
-  $('results-list').innerHTML='<div class="empty-state"><span class="empty-icon">🔍</span><p>Cerca una città o un tipo di locale</p></div>';
-  $('results-count').textContent='';
-  $('cache-badge').style.display='none';
-}
-
-// ── RENDER CARDS ──────────────────────────────────
-function renderCards(places){
-  $('results-count').textContent=places.length?`${places.length} locali trovati 🔥`:'';
-  if(!places.length){
-    $('results-list').innerHTML='<div class="empty-state"><span class="empty-icon">🍽️</span><p>Nessun locale trovato.<br>Prova un'altra categoria o città.</p></div>';
-    return;
-  }
-
-  $('results-list').innerHTML=places.map((v,i)=>{
-    const img=v.photoUrl||'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=700&q=60';
-    const lat=v.lat??v.geometry?.location.lat?.();
-    const lng=v.lng??v.geometry?.location.lng?.();
-    const dist=userLoc&&lat!=null?distanza(userLoc.lat,userLoc.lng,lat,lng):null;
-    const price = '€'.repeat(Math.max(1, v.price_level || 1));
-    const isFav=state.favs.includes(v.place_id);
-    const openBadge=v.opening_hours!=null?(v.opening_hours.open_now?'<span class="badge open">Aperto</span>':'<span class="badge closed">Chiuso</span>'):'';
-    const score=v._score||calcolaScore(v,userLoc);
-
-    return `
-    <div class="card" style="animation-delay:${i*.06}s" onclick="showDetails('${v.place_id}')">
-      <div class="card-img-wrap">
-        <img class="card-img" src="${img}" loading="lazy" alt="${v.name}">
-        <div class="card-img-overlay"></div>
-        <div class="card-badges">
-          <span class="badge price">${price}</span>
-          ${openBadge}
-          <span class="badge score">⭐ Orbo ${score}</span>
-        </div>
-        <button class="card-fav ${isFav?'active':''}" onclick="event.stopPropagation();toggleFav('${v.place_id}',this)">
-          ${isFav?'❤️':'🤍'}
-        </button>
-      </div>
-      <div class="card-body">
-        <div class="card-name">${v.name}</div>
-        <div class="card-rating">
-          <span class="card-stars">${'★'.repeat(Math.round(v.rating||4))}</span>
-          <span>${typeof v.rating === 'number' ? v.rating.toFixed(1) : '-'}</span>
-          ${v.user_ratings_total?`<span style="color:var(--dim2);font-size:11px">(${v.user_ratings_total})</span>`:''}
-        </div>
-        <div class="card-addr">${v.vicinity||''}</div>
-        <div class="card-meta">
-          ${dist!=null?`<span class="card-dist">📍 ${dist} km</span>`:''}
-        </div>
-        <div class="card-actions">
-          <button class="btn-action primary" onclick="event.stopPropagation();openMaps(${lat},${lng})">🗺️ Vai</button>
-          <button class="btn-action secondary" onclick="event.stopPropagation();sharePlace('${v.name}',${lat},${lng})">📤</button>
-        </div>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-// ── DETTAGLIO ─────────────────────────────────────
-function showDetails(placeId){
-  const v=state.allResults.find(p=>p.place_id===placeId)||{};
-  placesService.getDetails({
-    placeId,
-    fields:['name','rating','user_ratings_total','formatted_phone_number','website','opening_hours','reviews','photos','formatted_address','url','price_level']
-  },(place,st)=>{
-    if(st!=='OK')return;
-    const img=place.photos?.[0]?.getUrl({maxWidth:1000})||v?.photoUrl||'';
-    $('modal-img').src=img;
-    const price='€'.repeat(place.price_level||v?.price_level||1);
-    const hours=place.opening_hours?.weekday_text?.map(h=>`<div class="hours-row">${h}</div>`).join('')||'<div class="hours-row" style="opacity:.5">Orari non disponibili</div>';
-    const reviews=place.reviews?.slice(0,3).map(r=>`
-      <div class="review-item">
-        <div class="review-author">${r.author_name}</div>
-        <div class="review-stars">${'★'.repeat(r.rating)}</div>
-        <div class="review-text">${r.text}</div>
-      </div>`).join('')||'<div style="opacity:.5;font-size:13px">Nessuna recensione disponibile</div>';
-
-    $('modal-body').innerHTML=`
-      <div class="modal-title">${place.name}</div>
-      <div class="modal-rating">
-        ${'★'.repeat(Math.round(place.rating||4))}
-        <span>${place.rating?.toFixed(1)||'-'} · ${price} ${place.user_ratings_total?`· ${place.user_ratings_total} recensioni`:''}</span>
-      </div>
-      <div class="modal-actions">
-        ${place.formatted_phone_number?`<a class="btn-action primary" href="tel:${place.formatted_phone_number}">📞 Chiama</a>`:''}
-        ${place.website?`<a class="btn-action secondary" href="${place.website}" target="_blank" rel="noopener">🌐 Sito</a>`:''}
-        <a class="btn-action secondary" href="${place.url}" target="_blank" rel="noopener">🗺️ Maps</a>
-      </div>
-      <div class="modal-section"><h4>📍 Indirizzo</h4><p style="font-size:14px;color:var(--dim)">${place.formatted_address||v?.vicinity||''}</p></div>
-      <div class="modal-section"><h4>🕐 Orari</h4><div class="hours-grid">${hours}</div></div>
-      <div class="modal-section"><h4>💬 Recensioni</h4>${reviews}</div>
-    `;
-    $('detail-modal').classList.add('active');
-    document.body.style.overflow='hidden';
-  });
-}
-
+function doNearby(){navigate('search');if(!window.google||!placesService){toast('❌ Maps non disponibile');return}const loc=safeLocation();toast('📍 Cerco vicino...');cercaLocali('ristoranti',loc)}
+function doMood(q){navigate('search');$('search-input').value=q;$('search-clear').style.display='block';if(!window.google||!placesService){toast('❌ Maps non disponibile');return}cercaLocali(q,safeLocation())}
+function setType(t,e){state.type=t;document.querySelectorAll('.chip.cat').forEach(c=>c.classList.remove('active'));e.classList.add('active');cercaLocali($('search-input').value||'ristorante',safeLocation())}
+function togglePrice(p,e){if(state.price===p){state.price=null;e.classList.remove('active')}else{state.price=p;document.querySelectorAll('[data-price]').forEach(c=>c.classList.remove('active'));e.classList.add('active')}renderFiltered()}
+function toggleOpen(e){state.openNow=!state.openNow;e.classList.toggle('active',state.openNow);renderFiltered()}
+function renderFiltered(){let r=[...state.allResults];if(state.price)r=r.filter(v=>v.price_level===state.price);if(state.openNow)r=r.filter(v=>v.opening_hours?.open_now);renderCards(r.slice(0,20))}
+function clearSearch(){$('search-input').value='';$('search-clear').style.display='none';$('results-list').innerHTML='<div class="empty-state"><span class="empty-icon">🔍</span><p>Cerca una città</p></div>';$('results-count').textContent=''}
+function renderCards(places){$('results-count').textContent=places.length?`${places.length} locali trovati`:'';if(!places.length){$('results-list').innerHTML='<div class="empty-state"><span class="empty-icon">🍽️</span><p>Nessun locale</p></div>';return}$('results-list').innerHTML=places.map((v,i)=>{const img=v.photoUrl||'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=700';const lat=v.lat??v.geometry?.location.lat();const lng=v.lng??v.geometry?.location.lng();const dist=userLoc&&lat?distanza(userLoc.lat,userLoc.lng,lat,lng):null;const price='€'.repeat(Math.max(1,v.price_level||1));const isFav=state.favs.includes(v.place_id);const open=v.opening_hours!=null?(v.opening_hours.open_now?'<span class="badge open">Aperto</span>':'<span class="badge closed">Chiuso</span>'):'';const score=v._score||calcolaScore(v,userLoc);return`<div class="card" style="animation-delay:${i*.06}s" onclick="showDetails('${v.place_id}')"><div class="card-img-wrap"><img class="card-img" src="${img}" loading="lazy"><div class="card-img-overlay"></div><div class="card-badges"><span class="badge price">${price}</span>${open}<span class="badge score">⭐ ${score}</span></div><button class="card-fav ${isFav?'active':''}" onclick="event.stopPropagation();toggleFav('${v.place_id}',this)">${isFav?'❤️':'🤍'}</button></div><div class="card-body"><div class="card-name">${v.name}</div><div class="card-rating"><span class="card-stars">${'★'.repeat(Math.round(v.rating||4))}</span><span>${typeof v.rating==='number'?v.rating.toFixed(1):'-'}</span></div><div class="card-addr">${v.vicinity||''}</div><div class="card-meta">${dist?`<span class="card-dist">📍 ${dist} km</span>`:''}</div><div class="card-actions"><button class="btn-action primary" onclick="event.stopPropagation();openMaps(${lat},${lng})">🗺️ Vai</button></div></div></div>`}).join('')}
+function showDetails(id){const v=state.allResults.find(p=>p.place_id===id)||{};placesService.getDetails({placeId:id,fields:['name','rating','user_ratings_total','formatted_phone_number','website','opening_hours','reviews','photos','formatted_address','url','price_level']},(p,st)=>{if(st!=='OK')return;const img=p.photos?.[0]?.getUrl({maxWidth:1000})||v.photoUrl||'';$('modal-img').src=img;const price='€'.repeat(p.price_level||v.price_level||1);$('modal-body').innerHTML=`<div class="modal-title">${p.name}</div><div class="modal-rating">${'★'.repeat(Math.round(p.rating||4))}<span>${p.rating?.toFixed(1)||'-'} · ${price}</span></div><div class="modal-actions">${p.formatted_phone_number?`<a class="btn-action primary" href="tel:${p.formatted_phone_number}">📞 Chiama</a>`:''}<a class="btn-action secondary" href="${p.url}" target="_blank">🗺️ Maps</a></div><div class="modal-section"><h4>📍 Indirizzo</h4><p>${p.formatted_address||''}</p></div>`;$('detail-modal').classList.add('active');document.body.style.overflow='hidden'})}
 function closeModal(){$('detail-modal').classList.remove('active');document.body.style.overflow=''}
-
-// ── AZIONI ────────────────────────────────────────
-function toggleFav(id,btn){
-  const i=state.favs.indexOf(id);
-  if(i>-1){state.favs.splice(i,1);btn.textContent='🤍';btn.classList.remove('active');toast('💔 Rimosso')}
-  else{state.favs.push(id);btn.textContent='❤️';btn.classList.add('active');toast('❤️ Salvato!')}
-  localStorage.setItem('orbo_favs',JSON.stringify(state.favs));
-}
-
+function toggleFav(id,b){const i=state.favs.indexOf(id);if(i>-1){state.favs.splice(i,1);b.textContent='🤍';b.classList.remove('active');toast('💔 Rimosso')}else{state.favs.push(id);b.textContent='❤️';b.classList.add('active');toast('❤️ Salvato')}localStorage.setItem('orbo_favs',JSON.stringify(state.favs))}
 function openMaps(lat,lng){window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`,'_blank')}
-
-function sharePlace(name,lat,lng){
-  const url=`https://www.google.com/maps/search/${encodeURIComponent(name)}/@${lat},${lng},17z`;
-  if(navigator.share){navigator.share({title:name,text:`Ho trovato ${name} su Orbo!`,url}).catch(()=>{})}
-  else{if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(url).then(()=>toast('🔗 Link copiato!')).catch(()=>toast('Copia: '+url))}else{prompt('Copia link:',url)}}
-}
-
-// ── SCHELETRI ─────────────────────────────────────
-function showSkeleton(){
-  $('results-list').innerHTML=Array(6).fill('<div class="skeleton"></div>').join('');
-  $('results-count').textContent='';
-  $('cache-badge').style.display='none';
-}
-
-// ── EVENTS ────────────────────────────────────────
-window.addEventListener('DOMContentLoaded',()=>{
-
-  const inp=$('search-input');
-
-  if(inp){
-    inp.addEventListener('input',e=>{
-      const q=e.target.value;
-      $('search-clear').style.display=q ? 'block' : 'none';
-    });
-
-    inp.addEventListener('keydown',e=>{
-      if(e.key!=='Enter') return;
-      e.preventDefault();
-      const q=inp.value.trim();
-      if(q.length<2) return;
-      saveHistory(q);
-      cercaLocali(q,safeLocation());
-    });
-  }
-
-  const logo=$('logo-btn');
-  if(logo){
-    logo.onclick=()=>navigate('home');
-  }
-
-  document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
-
-  document.body.addEventListener('click',e=>{
-    const card=e.target.closest('.card');
-    if(card && !e.target.closest('.btn-action') && !e.target.closest('.card-fav')){
-      if(navigator.vibrate)navigator.vibrate(8);
-    }
-    if(e.target.closest('.chip')||e.target.closest('.mood-btn')){
-      if(navigator.vibrate)navigator.vibrate(8);
-    }
-  });
-});
+function showSkeleton(){$('results-list').innerHTML=Array(6).fill('<div class="skeleton"></div>').join('')}
+window.addEventListener('DOMContentLoaded',()=>{const i=$('search-input');if(i){i.addEventListener('input',e=>{$('search-clear').style.display=e.target.value?'block':'none'});i.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();const q=i.value.trim();if(q.length>1){saveHistory(q);cercaLocali(q,safeLocation())}})}})
 </script>
-
 <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB4eYidHtLV4fXThKSZCS6ejH8Urpf2Km4&libraries=places&callback=initMap&language=it&region=IT"></script>
 </body>
 </html>
