@@ -38,17 +38,17 @@ a{text-decoration:none;color:inherit}
 /* ── HOME ── */
 .hero{min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:80px 20px 40px;position:relative;overflow:hidden}
 
-.glow-ball{position:absolute;border-radius:50%;pointer-events:none;animation:glowPulse 6s ease-in-out infinite}
+.glow-ball,.orbit-ring,.food-orbits{position:absolute;border-radius:50%;pointer-events:none;animation:glowPulse 6s ease-in-out infinite}
 .glow-ball-1{width:600px;height:600px;background:radial-gradient(circle,rgba(255,92,92,0.15),transparent 70%);top:50%;left:50%;transform:translate(-50%,-60%)}
 .glow-ball-2{width:400px;height:400px;background:radial-gradient(circle,rgba(34,211,238,0.1),transparent 70%);top:30%;left:20%;animation-delay:-3s}
 @keyframes glowPulse{0%,100%{opacity:.6;transform:translate(-50%,-60%) scale(1)}50%{opacity:1;transform:translate(-50%,-60%) scale(1.2)}}
 
 /* orbita */
-.orbit-ring{position:absolute;top:38%;left:50%;width:500px;height:500px;margin:-250px 0 0 -250px;border:1px solid rgba(255,92,92,0.1);border-radius:50%;animation:spinRing 40s linear infinite}
+.orbit-ring{position:absolute;top:38%;left:50%;pointer-events:none;width:500px;height:500px;margin:-250px 0 0 -250px;border:1px solid rgba(255,92,92,0.1);border-radius:50%;animation:spinRing 40s linear infinite}
 .orbit-ring::after{content:"";position:absolute;inset:-1px;border-radius:50%;border:1px dashed rgba(34,211,238,0.07)}
 @keyframes spinRing{to{transform:rotate(360deg)}}
 
-.food-orbits{position:absolute;top:38%;left:50%;width:500px;height:500px;margin:-250px 0 0 -250px;pointer-events:none;z-index:1}
+.food-orbits{position:absolute;top:38%;left:50%;pointer-events:none;width:500px;height:500px;margin:-250px 0 0 -250px;pointer-events:none;z-index:1}
 .food-orbits span{position:absolute;top:50%;left:50%;font-size:24px;animation:orbitFood 20s linear infinite;filter:drop-shadow(0 0 8px rgba(255,92,92,0.8))}
 .food-orbits span:nth-child(2){animation-delay:-4s}
 .food-orbits span:nth-child(3){animation-delay:-8s}
@@ -388,6 +388,7 @@ a{text-decoration:none;color:inherit}
 <div class="toast" id="toast"></div>
 
 <script>
+window.onerror=function(m,s,l,c,e){console.error('ERR',m,'@'+l);const t=document.getElementById('toast');if(t){t.textContent='⚠️ '+m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),4000)}};
 // ── CANVAS STELLE ─────────────────────────────────
 (function(){
   const c=document.getElementById('bg-canvas'),x=c.getContext('2d');
@@ -524,7 +525,7 @@ function distanza(a,b,c,d){
   return +(R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x))).toFixed(1);
 }
 
-function initMap(){
+window.initMap=function(){
   map=new google.maps.Map($('gmap'),{center:{lat:44.494,lng:11.343},zoom:14});
   placesService=new google.maps.places.PlacesService(map);
 
@@ -567,6 +568,7 @@ function cercaLocali(q,loc){
   $('cache-badge').style.display='none';
   showSkeleton();
 
+  if(!window.google||!placesService){$('results-list').innerHTML='<div class="empty-state"><span class="empty-icon">🔑</span><p>API Google Maps non caricata.<br>Controlla la tua API KEY.</p></div>';return}
   placesService.textSearch({query:q,location:l,radius:5000,type:state.type},(res,st)=>{
     if(st!=='OK'){$('results-list').innerHTML='<div class="empty-state"><span class="empty-icon">🔍</span><p>Nessun risultato.<br>Prova con un'altra città o categoria.</p></div>';return}
     saveToCache(key,res);
@@ -652,7 +654,7 @@ function renderCards(places){
     const score=v._score||calcolaScore(v,userLoc);
 
     return `
-    <div class="card" style="animation-delay:${i*.06}s" onclick="showDetails('${v.place_id}',${i})">
+    <div class="card" style="animation-delay:${i*.06}s" onclick="showDetails('${v.place_id}')">
       <div class="card-img-wrap">
         <img class="card-img" src="${img}" loading="lazy" alt="${v.name}">
         <div class="card-img-overlay"></div>
@@ -686,8 +688,8 @@ function renderCards(places){
 }
 
 // ── DETTAGLIO ─────────────────────────────────────
-function showDetails(placeId,idx){
-  const v=state.allResults[idx];
+function showDetails(placeId){
+  const v=state.allResults.find(p=>p.place_id===placeId)||{};
   placesService.getDetails({
     placeId,
     fields:['name','rating','user_ratings_total','formatted_phone_number','website','opening_hours','reviews','photos','formatted_address','url','price_level']
@@ -739,7 +741,7 @@ function openMaps(lat,lng){window.open(`https://www.google.com/maps/dir/?api=1&d
 function sharePlace(name,lat,lng){
   const url=`https://www.google.com/maps/search/${encodeURIComponent(name)}/@${lat},${lng},17z`;
   if(navigator.share){navigator.share({title:name,text:`Ho trovato ${name} su Orbo!`,url}).catch(()=>{})}
-  else{navigator.clipboard.writeText(url).then(()=>toast('🔗 Link copiato!')).catch(()=>{})}
+  else{if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(url).then(()=>toast('🔗 Link copiato!')).catch(()=>toast('Copia: '+url))}else{prompt('Copia link:',url)}}
 }
 
 // ── SCHELETRI ─────────────────────────────────────
@@ -750,24 +752,28 @@ function showSkeleton(){
 }
 
 // ── EVENTS ────────────────────────────────────────
-$('search-input').addEventListener('input',e=>{
+window.addEventListener('DOMContentLoaded',()=>{
+  // init app
+  const inp=$('search-input');
+  if(inp){inp.addEventListener('input',e=>{
   const q=e.target.value;
   $('search-clear').style.display=q?'block':'none';
-});
-$('search-input').addEventListener('keydown',e=>{
+});}
+  if(inp){inp.addEventListener('keydown',e=>{
   if(e.key!=='Enter')return;
   e.preventDefault();
   const q=$('search-input').value.trim();
   if(q.length<2)return;
   saveHistory(q);
   cercaLocali(q,safeLocation());
+});}
+  const logo=$('logo-btn');if(logo)logo.onclick=()=>navigate('home';
 });
-$('logo-btn').onclick=()=>navigate('home');
 
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
-document.body.addEventListener('click',e=>{if(e.target.closest('.card')||e.target.closest('.chip')||e.target.closest('.mood-btn')){if(navigator.vibrate)navigator.vibrate(8)}});
+
 </script>
 
-<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB4eYidHtLV4fXThKSZCS6ejH8Urpf2Km4&libraries=places&callback=initMap&language=it&region=IT"></script>
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&libraries=places&callback=initMap&language=it&region=IT"></script>
 </body>
 </html>
