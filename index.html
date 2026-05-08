@@ -1,197 +1,6 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-<!-- Playables SDK -->
-<script>// Playables SDK v1.0.0
-// Game lifecycle bridge: rAF-based game-ready detection + event communication
-(function() {
-  'use strict';
-
-  // Idempotency: skip if already initialized (e.g., server-side injection
-  // followed by client-side inject-javascript via the Bloks webview component).
-  if (window.playablesSDK) return;
-
-  var HANDLER_NAME = 'playablesGameEventHandler';
-  var ANDROID_BRIDGE_NAME = '_MetaPlayablesBridge';
-  var RAF_FRAME_THRESHOLD = 3;
-
-  var gameReadySent = false;
-  var firstInteractionSent = false;
-  var errorSent = false;
-  var frameCount = 0;
-  var originalRAF = window.requestAnimationFrame;
-
-  // --- Transport Layer ---
-
-  function hasIOSBridge() {
-    return !!(window.webkit &&
-              window.webkit.messageHandlers &&
-              window.webkit.messageHandlers[HANDLER_NAME]);
-  }
-
-  function hasAndroidBridge() {
-    return !!(window[ANDROID_BRIDGE_NAME] &&
-              typeof window[ANDROID_BRIDGE_NAME].postEvent === 'function');
-  }
-
-  function isInIframe() {
-    return !!(window.parent && window.parent !== window);
-  }
-
-  function sendEvent(eventName, payload) {
-    var message = {
-      type: eventName,
-      payload: payload || {},
-      timestamp: Date.now()
-    };
-
-    if (hasIOSBridge()) {
-      try {
-        window.webkit.messageHandlers[HANDLER_NAME].postMessage(message);
-      } catch (e) { /* ignore */ }
-      return;
-    }
-
-    if (hasAndroidBridge()) {
-    try {
-      var p = payload || {};
-      p.__secureToken = window.__fbAndroidBridgeAuthToken || '';
-      p.timestamp = message.timestamp;
-      window[ANDROID_BRIDGE_NAME].postEvent(
-        eventName,
-        JSON.stringify(p)
-      );
-    } catch (e) { /* ignore */ }
-    return;
-  }
-
-    if (isInIframe()) {
-      try {
-        window.parent.postMessage(message, '*');
-      } catch (e) { /* ignore */ }
-      return;
-    }
-  }
-
-  // --- rAF Game-Ready Detection ---
-
-  function onFrame() {
-    if (gameReadySent) return;
-
-    frameCount++;
-    if (frameCount >= RAF_FRAME_THRESHOLD) {
-      gameReadySent = true;
-      sendEvent('game_ready', {
-        frame_count: frameCount,
-        detected_at: Date.now()
-      });
-      return;
-    }
-
-    originalRAF.call(window, onFrame);
-  }
-
-  if (originalRAF) {
-    window.requestAnimationFrame = function(callback) {
-      if (!gameReadySent) {
-        return originalRAF.call(window, function(timestamp) {
-          frameCount++;
-          if (frameCount >= RAF_FRAME_THRESHOLD && !gameReadySent) {
-            gameReadySent = true;
-            sendEvent('game_ready', {
-              frame_count: frameCount,
-              detected_at: Date.now()
-            });
-          }
-          callback(timestamp);
-        });
-      }
-      return originalRAF.call(window, callback);
-    };
-  }
-
-  // --- First User Interaction Detection ---
-
-  function setupFirstInteractionDetection() {
-    var events = ['touchstart', 'mousedown', 'keydown'];
-
-    function onFirstInteraction() {
-      if (firstInteractionSent) return;
-      firstInteractionSent = true;
-      sendEvent('user_interaction_start', null);
-
-      for (var i = 0; i < events.length; i++) {
-        document.removeEventListener(events[i], onFirstInteraction, true);
-      }
-    }
-
-    for (var i = 0; i < events.length; i++) {
-      document.addEventListener(events[i], onFirstInteraction, true);
-    }
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', setupFirstInteractionDetection);
-  } else {
-    setupFirstInteractionDetection();
-  }
-
-  // --- Auto Error Capture ---
-
-  window.addEventListener('error', function(event) {
-    if (errorSent) return;
-    errorSent = true;
-    sendEvent('error', {
-      message: event.message || 'Unknown error',
-      source: event.filename || '',
-      lineno: event.lineno || 0,
-      colno: event.colno || 0,
-      auto_captured: true
-    });
-  });
-
-  window.addEventListener('unhandledrejection', function(event) {
-    if (errorSent) return;
-    errorSent = true;
-    var reason = event.reason;
-    sendEvent('error', {
-      message: (reason instanceof Error) ? reason.message : String(reason),
-      type: 'unhandled_promise_rejection',
-      auto_captured: true
-    });
-  });
-
-  // --- Public API ---
-
-  window.playablesSDK = {
-    complete: function(score) {
-      sendEvent('game_ended', {
-        score: score,
-        completed: true
-      });
-    },
-
-    error: function(message) {
-      if (errorSent) return;
-      errorSent = true;
-      sendEvent('error', {
-        message: message || 'Unknown error',
-        auto_captured: false
-      });
-    },
-
-    sendEvent: function(eventName, payload) {
-      if (!eventName || typeof eventName !== 'string') return;
-      sendEvent(eventName, payload);
-    }
-  };
-
-  // Kick off rAF detection in case no game code calls rAF immediately
-  if (originalRAF) {
-    originalRAF.call(window, onFrame);
-  }
-})();</script>
-<script>window.Intl=window.Intl||{};Intl.t=function(s){return(Intl._locale&&Intl._locale[s])||s;};</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Orbo — Il gusto ti orbita</title>
@@ -203,7 +12,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="preconnect" href="https://maps.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
@@ -219,25 +28,15 @@ button:focus-visible,input:focus-visible{outline:2px solid #FFB347;outline-offse
 .topbar-logo:hover{transform:rotate(-8deg) scale(1.12)}
 .topbar-slogan{flex:1;font-family:'Arial Black',Arial,sans-serif;font-size:15px;font-weight:900;letter-spacing:.5px;text-transform:uppercase;background:linear-gradient(90deg,#FFB347,#FF6B00,#FFB347);background-size:200%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:shimmerText 3s linear infinite}
 @keyframes shimmerText{0%{background-position:0%}100%{background-position:200%}}
-.topbar-right{display:flex;gap:8px;align-items:center}
-.topbar-btn{width:40px;height:40px;display:grid;place-items:center;background:rgba(255,140,0,0.1);border:1px solid rgba(255,140,0,0.25);border-radius:11px;font-size:1rem;transition:.2s}
-.topbar-btn:hover{background:rgba(255,140,0,0.22);transform:scale(1.06)}
 .view{display:none;position:relative;z-index:1}
 .view.active{display:block;animation:fadeUp .32s ease}
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
-.hero{min-height:100vh;min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden;padding:80px 20px 48px}
+.hero{min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden;padding:80px 20px 48px}
 .glow-orb{position:absolute;width:700px;height:700px;border-radius:50%;background:radial-gradient(circle,rgba(255,140,0,0.18) 0%,rgba(120,40,180,0.12) 40%,transparent 70%);top:50%;left:50%;transform:translate(-50%,-60%);animation:orbPulse 5s ease-in-out infinite;pointer-events:none}
 @keyframes orbPulse{0%,100%{transform:translate(-50%,-60%) scale(1);opacity:.7}50%{transform:translate(-50%,-60%) scale(1.25);opacity:1}}
 .orbit-ring{position:absolute;top:50%;left:50%;width:460px;height:460px;margin:-230px 0 0 -230px;border:1px solid rgba(255,140,0,0.12);border-radius:50%;animation:spinRing 30s linear infinite;pointer-events:none}
-.orbit-ring::before{content:"";position:absolute;inset:-1px;border-radius:50%;border:1px dashed rgba(255,140,0,0.08)}
-@keyframes spinRing{to{transform:rotate(360deg)}}
 .food-orbits{position:absolute;top:50%;left:50%;width:460px;height:460px;margin:-230px 0 0 -230px;pointer-events:none;z-index:1}
 .food-orbits span{position:absolute;top:50%;left:50%;font-size:26px;animation:orbit 18s linear infinite;filter:drop-shadow(0 0 10px rgba(255,140,0,0.8))}
-.food-orbits span:nth-child(2){animation-delay:-3s}
-.food-orbits span:nth-child(3){animation-delay:-6s}
-.food-orbits span:nth-child(4){animation-delay:-9s}
-.food-orbits span:nth-child(5){animation-delay:-12s}
-.food-orbits span:nth-child(6){animation-delay:-15s}
 @keyframes orbit{from{transform:rotate(0deg) translate(228px) rotate(0deg)}to{transform:rotate(360deg) translate(228px) rotate(-360deg)}}
 .particles{position:absolute;inset:0;pointer-events:none;z-index:1;overflow:hidden}
 .particles span{position:absolute;width:3px;height:3px;background:#FFB347;border-radius:50%;opacity:0;animation:float linear infinite}
@@ -245,26 +44,17 @@ button:focus-visible,input:focus-visible{outline:2px solid #FFB347;outline-offse
 .hero-logo-wrap{position:relative;z-index:2;width:180px;height:180px;animation:logoPulse 4s ease-in-out infinite}
 @keyframes logoPulse{0%,100%{filter:drop-shadow(0 0 28px rgba(255,140,0,0.7))}50%{filter:drop-shadow(0 0 56px rgba(255,140,0,1)) drop-shadow(0 0 80px rgba(120,40,180,0.5))}}
 .hero-text{position:relative;z-index:2;text-align:center;margin-top:32px;max-width:560px}
-.hero-kicker{font-size:10px;font-weight:700;letter-spacing:3.5px;text-transform:uppercase;color:#FFB347;margin-bottom:14px;text-shadow:0 0 20px rgba(255,140,0,0.6)}
-.hero-title{font-family:'Arial Black',Arial,sans-serif;font-size:clamp(26px,5.5vw,48px);font-weight:900;line-height:1.1;margin-bottom:16px;background:linear-gradient(170deg,#FFE0A0 0%,#FF8C00 50%,#FF3A00 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;filter:drop-shadow(0 4px 20px rgba(255,100,0,0.4))}
+.hero-kicker{font-size:10px;font-weight:700;letter-spacing:3.5px;text-transform:uppercase;color:#FFB347;margin-bottom:14px}
+.hero-title{font-family:'Arial Black',Arial,sans-serif;font-size:clamp(26px,5.5vw,48px);font-weight:900;line-height:1.1;margin-bottom:16px;background:linear-gradient(170deg,#FFE0A0 0%,#FF8C00 50%,#FF3A00 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .hero-sub{font-size:15px;color:rgba(200,180,240,0.85);line-height:1.75;margin-bottom:32px}
-.hero-sub strong{color:#FFB347}
-.hero-cta{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
 .btn-primary{background:linear-gradient(135deg,#FF6B00,#FFB347);padding:16px 38px;border-radius:999px;font-family:'Arial Black',sans-serif;font-size:14px;font-weight:900;color:#1a0b2e;text-transform:uppercase;letter-spacing:.5px;box-shadow:0 8px 32px rgba(255,107,0,0.5);transition:.2s}
-.btn-primary:hover{transform:translateY(-3px);box-shadow:0 14px 40px rgba(255,107,0,0.65)}
 .btn-ghost{background:rgba(255,140,0,0.06);border:1.5px solid rgba(255,140,0,0.4);padding:16px 38px;border-radius:999px;font-family:'Arial Black',sans-serif;font-size:14px;font-weight:900;color:#FFB347;text-transform:uppercase;transition:.2s}
-.btn-ghost:hover{background:rgba(255,140,0,0.14);transform:translateY(-3px)}
 .mood-section{position:relative;z-index:1;padding:28px 20px;background:rgba(15,5,26,0.95);border-top:1px solid rgba(255,140,0,0.12);border-bottom:1px solid rgba(255,140,0,0.12)}
 @media(min-width:769px){.mood-section{background:rgba(15,5,26,0.85);backdrop-filter:blur(16px)}}
-.mood-title{font-size:10px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,179,71,0.45);text-align:center;margin-bottom:14px}
 .mood-row{display:flex;gap:10px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
-.mood-row::-webkit-scrollbar{display:none}
 .mood-btn{display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 16px;border-radius:16px;border:1px solid rgba(255,140,0,0.18);background:rgba(26,11,46,0.6);color:rgba(255,179,71,0.65);font-size:.78rem;font-weight:700;white-space:nowrap;transition:.2s;flex-shrink:0}
-.mood-btn:hover,.mood-btn.active{border-color:#FFB347;background:rgba(255,140,0,0.15);color:#FFE0A0;transform:translateY(-2px);box-shadow:0 6px 20px rgba(255,140,0,0.2)}
 .social-proof{position:relative;z-index:1;background:rgba(26,11,46,0.98);border-top:1px solid rgba(255,140,0,0.18);border-bottom:1px solid rgba(255,140,0,0.18);padding:28px 20px}
 @media(min-width:769px){.social-proof{background:linear-gradient(135deg,rgba(26,11,46,0.9),rgba(15,5,26,0.9));backdrop-filter:blur(20px)}}
-.stats-row{display:flex;justify-content:space-around;max-width:580px;margin:0 auto 24px}
-.stat-num{font-family:'Arial Black',sans-serif;font-size:32px;font-weight:900;background:linear-gradient(180deg,#FFE0A0,#FF8C00);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .quick-sections{position:relative;z-index:1;background:linear-gradient(180deg,#0a0010,#0f051a);padding:48px 20px 56px;display:flex;flex-direction:column;gap:16px;align-items:center}
 .quick-card{width:100%;max-width:580px;display:flex;align-items:center;gap:20px;background:linear-gradient(135deg,rgba(45,27,78,0.8),rgba(15,5,26,0.8));border:1px solid rgba(255,140,0,0.25);border-radius:22px;padding:22px 26px;cursor:pointer;transition:.25s;position:relative;overflow:hidden;content-visibility:auto;contain-intrinsic-size:80px}
 @media(min-width:769px){.quick-card{backdrop-filter:blur(12px)}}
@@ -273,21 +63,100 @@ button:focus-visible,input:focus-visible{outline:2px solid #FFB347;outline-offse
 @media(min-width:769px){.search-bar{background:rgba(45,27,78,0.9);backdrop-filter:blur(12px)}}
 .search-bar input{flex:1;height:56px;background:transparent;color:#fff;font-size:1rem;outline:none}
 .result-card{background:linear-gradient(135deg,rgba(45,27,78,0.95),rgba(20,8,38,0.95));border:1px solid rgba(255,140,0,0.18);border-radius:22px;overflow:hidden;margin-bottom:14px;display:grid;grid-template-columns:130px 1fr;cursor:pointer;transition:.22s;position:relative;content-visibility:auto;contain-intrinsic-size:130px}
-@media(max-width:768px){.topbar,.mobile-nav,.search-bar,.social-proof{backdrop-filter:none!important}.food-orbits,.orbit-ring,.particles{display:none}}
+.rc-img{position:relative;min-height:130px}
+.rc-img img{height:100%;object-fit:cover;transition:transform .4s ease;width:100%}
+.rc-body{padding:14px 16px;display:flex;flex-direction:column;gap:3px}
+.rc-name{font-size:1rem;font-weight:800;color:#FFE0A0;line-height:1.2}
+.modal{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.82);display:none;align-items:flex-end;justify-content:center}
+.modal.open{display:flex}
+.modal-sheet{width:100%;max-width:680px;max-height:90svh;overflow-y:auto;border-radius:28px 28px 0 0;background:linear-gradient(180deg,#2d1b4e,#1a0b2e)}
+.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(80px);background:rgba(26,11,46,0.97);border:1px solid rgba(255,140,0,0.35);color:#FFE4B8;padding:12px 22px;border-radius:14px;font-size:.9rem;font-weight:600;opacity:0;transition:transform .3s,opacity .3s;z-index:200}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media(max-width:768px){.topbar,.search-bar,.social-proof,.mood-section{backdrop-filter:none!important}.food-orbits,.orbit-ring,.particles,.glow-orb{display:none!important}}
 @media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 </style>
 </head>
 <body>
 <canvas id="bg-canvas"></canvas>
 <div id="cursor-glow"></div>
-<header class="topbar"><svg class="topbar-logo" id="logo-btn" viewBox="0 0 120 120"><ellipse cx="60" cy="108" rx="28" ry="6" fill="rgba(180,80,0,.18)"/></svg><span class="topbar-slogan">Il gusto ti orbita</span></header>
-<main><section class="view active" id="view-home"><div class="hero"><div class="hero-text"><h1 class="hero-title">Il locale perfetto,<br>a portata di tap</h1><div class="hero-cta"><button class="btn-primary" onclick="navigate('search')">Inizia la ricerca →</button><button class="btn-ghost" onclick="doNearby()">📍 Vicino a me</button></div></div></div></section><section class="view" id="view-search"><div class="view-inner"><div class="search-bar"><input id="search-input" placeholder="Cerca..." autocomplete="off"><button onclick="clearSearch()">✕</button></div><div id="results-list"></div></div></section></main>
-<div id="gmap"></div>
+<header class="topbar">
+  <svg class="topbar-logo" id="logo-btn" viewBox="0 0 120 120"><circle cx="60" cy="60" r="50" fill="url(#g)"/><defs><linearGradient id="g"><stop stop-color="#ffb347"/><stop offset="1" stop-color="#ff6b00"/></linearGradient></defs></svg>
+  <span class="topbar-slogan">Il gusto ti orbita</span>
+</header>
+<main>
+  <section class="view active" id="view-home">
+    <div class="hero">
+      <div class="glow-orb"></div><div class="orbit-ring"></div>
+      <div class="food-orbits"><span>🍕</span><span>🍣</span><span>🍔</span><span>🍜</span><span>🍩</span><span>🌮</span></div>
+      <div class="particles" id="particles"></div>
+      <div class="hero-logo-wrap"></div>
+      <div class="hero-text">
+        <p class="hero-kicker">✦ Scopri il gusto ✦</p>
+        <h1 class="hero-title">Il locale perfetto,<br>a portata di tap</h1>
+        <p class="hero-sub">Cerca per atmosfera, cucina o occasione.<br><strong>Orbo ti porta dove vuoi essere.</strong></p>
+        <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
+          <button class="btn-primary" onclick="navigate('search')">Inizia la ricerca →</button>
+          <button class="btn-ghost" onclick="doNearby()">📍 Vicino a me</button>
+        </div>
+      </div>
+    </div>
+    <div class="mood-section">
+      <div class="mood-row">
+        <button class="mood-btn" onclick="doMood('romantico')">💕 Romantico</button>
+        <button class="mood-btn" onclick="doMood('pizza')">🍕 Pizza</button>
+        <button class="mood-btn" onclick="doMood('sushi')">🍣 Sushi</button>
+        <button class="mood-btn" onclick="surpriseMe()">🪐 Sorprendimi</button>
+      </div>
+    </div>
+    <div class="social-proof">
+      <div style="display:flex;justify-content:space-around;max-width:580px;margin:0 auto">
+        <div style="text-align:center"><div class="stat-num" style="font-size:32px;font-weight:900;background:linear-gradient(180deg,#FFE0A0,#FF8C00);-webkit-background-clip:text;-webkit-text-fill-color:transparent">1247</div><div style="font-size:10px;opacity:.5">Locali</div></div>
+        <div style="text-align:center"><div class="stat-num" style="font-size:32px;font-weight:900;background:linear-gradient(180deg,#FFE0A0,#FF8C00);-webkit-background-clip:text;-webkit-text-fill-color:transparent">89</div><div style="font-size:10px;opacity:.5">Città</div></div>
+        <div style="text-align:center"><div class="stat-num" style="font-size:32px;font-weight:900;background:linear-gradient(180deg,#FFE0A0,#FF8C00);-webkit-background-clip:text;-webkit-text-fill-color:transparent">15k</div><div style="font-size:10px;opacity:.5">Utenti</div></div>
+      </div>
+    </div>
+    <div class="quick-sections">
+      <div class="quick-card" role="button" tabindex="0" onclick="navigate('search')" onkeydown="if(event.key==='Enter')this.click()"><span style="font-size:2rem">🔍</span><div><div style="font-size:9px;color:#FF8C00;font-weight:900">Trova</div><div style="font-size:19px;font-weight:900;background:linear-gradient(135deg,#FFE0A0,#FF8C00);-webkit-background-clip:text;-webkit-text-fill-color:transparent">Cerca un locale</div></div></div>
+      <div class="quick-card" role="button" tabindex="0" onclick="doNearby()" onkeydown="if(event.key==='Enter')this.click()"><span style="font-size:2rem">📍</span><div><div style="font-size:9px;color:#FF8C00;font-weight:900">GPS</div><div style="font-size:19px;font-weight:900;background:linear-gradient(135deg,#FFE0A0,#FF8C00);-webkit-background-clip:text;-webkit-text-fill-color:transparent">Vicino a me</div></div></div>
+    </div>
+  </section>
+  <section class="view" id="view-search">
+    <div class="view-inner">
+      <div style="display:flex;justify-content:space-between;margin-bottom:16px"><h2 style="font-size:24px;font-weight:800;background:linear-gradient(135deg,#FFE0A0,#FF8C00);-webkit-background-clip:text;-webkit-text-fill-color:transparent">🔍 Cerca</h2><button onclick="navigate('home')" style="color:rgba(255,179,71,.6)">← Home</button></div>
+      <div class="search-bar"><span>🔍</span><input id="search-input" placeholder="Città, pizza, sushi..." autocomplete="off"><button id="search-clear" style="display:none" onclick="clearSearch()">✕</button></div>
+      <div id="results-count" style="font-size:.85rem;color:rgba(255,179,71,.45);margin:12px 0"></div>
+      <div id="results-list"></div>
+      <div id="empty-state" style="display:none;text-align:center;padding:60px 20px;color:rgba(255,179,71,.4)"><div style="font-size:3.5rem">🍽️</div><p>Cerca qualcosa o clicca Vicino a me</p></div>
+    </div>
+  </section>
+</main>
+<div class="modal" id="detail-modal" onclick="if(event.target===this)closeModal()"><div class="modal-sheet"><div style="padding:20px" id="modal-body"></div></div></div>
+<div id="gmap" style="position:fixed;left:-9999px"></div>
+<div class="toast" id="toast"></div>
 <script>
 function esc(s=''){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
-(function(){const c=document.getElementById('bg-canvas'),ctx=c.getContext('2d');let W,H,stars=[],rafId=null;function resize(){W=c.width=innerWidth;H=c.height=innerHeight;stars=[];for(let i=0;i<120;i++)stars.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.2+.2,a:Math.random(),speed:Math.random()*.004+.001})}resize();addEventListener('resize',resize,{passive:true});function draw(){ctx.clearRect(0,0,W,H);for(const s of stars){s.a+=s.speed;if(s.a>1)s.a=0;ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,7);ctx.fillStyle=`rgba(255,200,120,${s.a*.7})`;ctx.fill()}rafId=requestAnimationFrame(draw)}function start(){if(!rafId)draw()}function stop(){cancelAnimationFrame(rafId);rafId=null}document.addEventListener('visibilitychange',()=>{document.hidden?stop():start()});start()})();
-let mapsLoaded=false,mapsLoading=false;function loadGoogleMaps(){return new Promise((res,rej)=>{if(mapsLoaded)return res();if(mapsLoading)return;mapsLoading=true;window._mapsReady=()=>{mapsLoaded=true;initMap();res()};const s=document.createElement('script');s.src='https://maps.googleapis.com/maps/api/js?key=YOUR_RESTRICTED_KEY_HERE&libraries=places&callback=_mapsReady&language=it&region=IT';s.async=true;s.defer=true;s.onerror=()=>{mapsLoading=false;rej()};document.body.appendChild(s)})}
-let map,placesService,userLoc=null,VENUES=[];const $=id=>document.getElementById(id);function navigate(v){document.querySelectorAll('.view').forEach(s=>s.classList.toggle('active',s.id==='view-'+v))}function initMap(){map=new google.maps.Map($('gmap'),{center:{lat:44.5,lng:11.3},zoom:15});placesService=new google.maps.places.PlacesService(map)}async function doNearby(){await loadGoogleMaps();navigate('search');placesService.nearbySearch({location:map.getCenter(),radius:2000,type:'restaurant'},(r,s)=>{if(s==='OK')updateVenues(r)})}async function doSearch(q){if(!q)return;await loadGoogleMaps();placesService.textSearch({query:q,location:map.getCenter(),radius:8000},(r,s)=>{if(s==='OK')updateVenues(r)})}function updateVenues(p){VENUES=p.slice(0,12);$('results-list').innerHTML=VENUES.map(v=>`<div class="result-card" onclick="window.open('https://www.google.com/maps/place/?q=place_id:${v.place_id}')"><div style="padding:14px"><div style="font-weight:800;color:#FFE0A0">${esc(v.name)}</div><div style="font-size:12px;opacity:.6">${esc(v.vicinity||'')}</div></div></div>`).join('')}document.getElementById('search-input').addEventListener('input',e=>{const q=e.target.value.trim();if(q.length>2)doSearch(q)});document.getElementById('logo-btn').onclick=()=>navigate('home');if('serviceWorker' in navigator){navigator.serviceWorker.register('data:text/javascript,self.addEventListener("fetch",()=>{})')}
+(function(){const c=document.getElementById('bg-canvas'),x=c.getContext('2d');let W,H,s=[],id=null;function r(){W=c.width=innerWidth;H=c.height=innerHeight;s=[];for(let i=0;i<100;i++)s.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.2+.2,a:Math.random(),v:Math.random()*.004+.001})}r();addEventListener('resize',r,{passive:true});function d(){x.clearRect(0,0,W,H);for(const p of s){p.a+=p.v;if(p.a>1)p.a=0;x.beginPath();x.arc(p.x,p.y,p.r,0,6.28);x.fillStyle=`rgba(255,200,120,${p.a*.6})`;x.fill()}id=requestAnimationFrame(d)}function s1(){if(!id)d()}function s2(){cancelAnimationFrame(id);id=null}document.addEventListener('visibilitychange',()=>document.hidden?s2():s1());s1()})();
+if(window.innerWidth>=768){const g=document.getElementById('cursor-glow');Object.assign(g.style,{width:'260px',height:'260px',borderRadius:'50%',background:'radial-gradient(circle,rgba(255,140,0,.15),transparent 70%)',filter:'blur(28px)',transform:'translate(-50%,-50%)',opacity:'0'});addEventListener('mousemove',e=>{g.style.opacity='.9';g.style.left=e.clientX+'px';g.style.top=e.clientY+'px'})}
+(function(){const p=document.getElementById('particles');if(!p)return;const f=document.createDocumentFragment();for(let i=0;i<20;i++){const s=document.createElement('span');s.style.cssText=`left:${Math.random()*100}%;bottom:0;animation-delay:${Math.random()*10}s;animation-duration:${7+Math.random()*8}s`;f.appendChild(s)}p.appendChild(f)})();
+let mapsLoaded=false,mapsLoading=false,sessionToken=null;function loadMaps(){return new Promise((ok,err)=>{if(mapsLoaded)return ok();if(mapsLoading)return;mapsLoading=true;window._orboReady=()=>{mapsLoaded=true;initMap();ok()};const s=document.createElement('script');s.src='https://maps.googleapis.com/maps/api/js?key=YOUR_RESTRICTED_KEY_HERE&libraries=places&callback=_orboReady&language=it&region=IT';s.async=true;s.defer=true;s.onerror=()=>{mapsLoading=false;err()};document.body.appendChild(s)})}
+let map,svc,userLoc=null,VENUES=[],timer;const $=i=>document.getElementById(i);const state={favs:JSON.parse(localStorage.getItem('orbo_favs')||'[]'),history:JSON.parse(localStorage.getItem('orbo_history')||'[]')};const cache=new Map();
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
+function navigate(v){document.querySelectorAll('.view').forEach(s=>s.classList.toggle('active',s.id==='view-'+v));if(v==='search')setTimeout(()=>$('search-input').focus(),200)}
+function initMap(){map=new google.maps.Map($('gmap'),{center:{lat:44.4949,lng:11.3426},zoom:15});svc=new google.maps.places.PlacesService(map);const c=localStorage.getItem('orbo_loc');if(c){const d=JSON.parse(c);if(Date.now()-d.ts<3600000)userLoc=d.loc}if(!userLoc&&navigator.geolocation){navigator.geolocation.getCurrentPosition(p=>{userLoc={lat:p.coords.latitude,lng:p.coords.longitude};localStorage.setItem('orbo_loc',JSON.stringify({loc:userLoc,ts:Date.now()}));map.setCenter(userLoc)},()=>{},{timeout:5000})}}
+function dist(a,b,c,d){const R=6371,dl=(c-a)*Math.PI/180,dn=(d-b)*Math.PI/180,x=Math.sin(dl/2)**2+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(dn/2)**2;return +(R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x))).toFixed(1)}
+async function doNearby(){await loadMaps();navigate('search');toast('📍 Cerco vicino...');svc.nearbySearch({location:userLoc||map.getCenter(),radius:2000,type:'restaurant'},(r,s)=>{if(s==='OK')upd(r);else toast('Nessun risultato')})}
+async function doSearch(q){if(!q||q.length<3)return;await loadMaps();if(cache.has(q))return upd(cache.get(q));if(!sessionToken)sessionToken=new google.maps.places.AutocompleteSessionToken();svc.textSearch({query:q,location:userLoc||map.getCenter(),radius:8000},(r,s)=>{if(s==='OK'){if(cache.size>40)cache.delete(cache.keys().next().value);cache.set(q,r);upd(r)}else if(s==='ZERO_RESULTS'){$('empty-state').style.display='block';$('results-list').innerHTML=''}else if(s==='OVER_QUERY_LIMIT')toast('⚠️ Troppe ricerche')})}
+function upd(p){VENUES=p.slice(0,20).map(v=>({id:v.place_id,name:v.name,addr:v.vicinity||'',rating:v.rating||0,reviews:v.user_ratings_total||0,photo:v.photos?.[0]?.getUrl({maxWidth:400})||'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400&auto=format&fm=webp&q=60',lat:v.geometry.location.lat(),lng:v.geometry.location.lng(),open:v.opening_hours?.open_now}));render()}
+function render(){const l=$('results-list'),c=$('results-count'),e=$('empty-state');e.style.display='none';if(!VENUES.length){l.innerHTML='';c.textContent='';e.style.display='block';return}c.textContent=`${VENUES.length} locali trovati`;l.innerHTML=VENUES.map(v=>{const d=userLoc?dist(userLoc.lat,userLoc.lng,v.lat,v.lng):null;return `<article class="result-card" onclick="detail('${v.id}')"><div class="rc-img"><img src="${v.photo}" loading="lazy" decoding="async" width="400" height="300" alt="${esc(v.name)}" onerror="this.src='https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400&auto=format&fm=webp'"></div><div class="rc-body"><div class="rc-name">${esc(v.name)}</div><div style="font-size:.76rem;opacity:.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(v.addr)}</div><div style="display:flex;gap:5px;margin-top:3px"><span style="color:#FFB347">${'★'.repeat(Math.round(v.rating))}</span><span style="font-size:.8rem;opacity:.6">${v.rating||'-'}${v.reviews?' ('+v.reviews+')':''}</span></div>${d?`<div style="font-size:.75rem;color:#22d3ee;margin-top:2px">📍 ${d} km</div>`:''}<div style="display:flex;justify-content:space-between;margin-top:auto;padding-top:8px"><button style="padding:7px 12px;border-radius:10px;background:linear-gradient(135deg,#FF6B00,#FFB347);color:#1a0b2e;font-weight:800;font-size:.75rem" onclick="event.stopPropagation();window.open('https://www.google.com/maps/dir/?api=1&destination=${v.lat},${v.lng}')")'>🗺️ Vai</button><button style="opacity:.5" onclick="event.stopPropagation();fav('${v.id}',this)">${state.favs.includes(v.id)?'❤️':'🤍'}</button></div></div></article>`}).join('')}
+async function detail(id){await loadMaps();const v=VENUES.find(x=>x.id===id);svc.getDetails({placeId:id,fields:['name','rating','formatted_phone_number','website','opening_hours','reviews','formatted_address','url']},(p,s)=>{if(s!=='OK')return;$('modal-body').innerHTML=`<h3 style="font-size:20px;font-weight:900;color:#FFE0A0;margin-bottom:8px">${esc(p.name)}</h3><p style="opacity:.7;margin-bottom:16px">${esc(p.formatted_address||'')}</p><div style="display:flex;gap:8px;flex-wrap:wrap"><a href="https://www.google.com/maps/dir/?api=1&destination=${v.lat},${v.lng}" target="_blank" style="flex:1;padding:12px;background:linear-gradient(135deg,#FF6B00,#FFB347);color:#1a0b2e;border-radius:12px;text-align:center;font-weight:800">🗺️ Indicazioni</a>${p.formatted_phone_number?`<a href="tel:${p.formatted_phone_number}" style="padding:12px;background:rgba(255,140,0,.1);border:1px solid rgba(255,140,0,.3);color:#FFB347;border-radius:12px">📞 Chiama</a>`:''}</div><button onclick="closeModal()" style="margin-top:16px;width:100%;padding:10px;opacity:.6">Chiudi</button>`;$('detail-modal').classList.add('open')})}
+function closeModal(){$('detail-modal').classList.remove('open')}
+function fav(id,b){const i=state.favs.indexOf(id);i>-1?state.favs.splice(i,1):state.favs.push(id);localStorage.setItem('orbo_favs',JSON.stringify(state.favs));b.textContent=state.favs.includes(id)?'❤️':'🤍';toast(i>-1?'Rimosso':'Salvato')}
+function doMood(q){navigate('search');$('search-input').value=q;doSearch(q)}
+function surpriseMe(){const m=['pizza gourmet','sushi romantico','ramen','brunch','aperitivo rooftop'];const q=m[Math.floor(Math.random()*m.length)];toast('🪐 '+q);doMood(q)}
+function clearSearch(){$('search-input').value='';$('results-list').innerHTML='';$('results-count').textContent='';$('empty-state').style.display='block'}
+$('search-input').addEventListener('input',e=>{const q=e.target.value.trim();$('search-clear').style.display=q?'block':'none';clearTimeout(timer);timer=setTimeout(()=>doSearch(q),650)});
+$('logo-btn').onclick=()=>navigate('home');
+if('serviceWorker' in navigator){navigator.serviceWorker.register('data:text/javascript;base64,c2VsZi5hZGRFdmVudExpc3RlbmVyKCdmZXRjaCcsZ=>')};
 </script>
 </body>
 </html>
