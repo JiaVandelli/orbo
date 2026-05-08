@@ -1,208 +1,11 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-<!-- Playables SDK -->
-<script>// Playables SDK v1.0.0
-// Game lifecycle bridge: rAF-based game-ready detection + event communication
-(function() {
-  'use strict';
-
-  // Idempotency: skip if already initialized (e.g., server-side injection
-  // followed by client-side inject-javascript via the Bloks webview component).
-  if (window.playablesSDK) return;
-
-  var HANDLER_NAME = 'playablesGameEventHandler';
-  var ANDROID_BRIDGE_NAME = '_MetaPlayablesBridge';
-  var RAF_FRAME_THRESHOLD = 3;
-
-  var gameReadySent = false;
-  var firstInteractionSent = false;
-  var errorSent = false;
-  var frameCount = 0;
-  var originalRAF = window.requestAnimationFrame;
-
-  // --- Transport Layer ---
-
-  function hasIOSBridge() {
-    return !!(window.webkit &&
-              window.webkit.messageHandlers &&
-              window.webkit.messageHandlers[HANDLER_NAME]);
-  }
-
-  function hasAndroidBridge() {
-    return !!(window[ANDROID_BRIDGE_NAME] &&
-              typeof window[ANDROID_BRIDGE_NAME].postEvent === 'function');
-  }
-
-  function isInIframe() {
-    return !!(window.parent && window.parent !== window);
-  }
-
-  function sendEvent(eventName, payload) {
-    var message = {
-      type: eventName,
-      payload: payload || {},
-      timestamp: Date.now()
-    };
-
-    if (hasIOSBridge()) {
-      try {
-        window.webkit.messageHandlers[HANDLER_NAME].postMessage(message);
-      } catch (e) { /* ignore */ }
-      return;
-    }
-
-    if (hasAndroidBridge()) {
-    try {
-      var p = payload || {};
-      p.__secureToken = window.__fbAndroidBridgeAuthToken || '';
-      p.timestamp = message.timestamp;
-      window[ANDROID_BRIDGE_NAME].postEvent(
-        eventName,
-        JSON.stringify(p)
-      );
-    } catch (e) { /* ignore */ }
-    return;
-  }
-
-    if (isInIframe()) {
-      try {
-        window.parent.postMessage(message, '*');
-      } catch (e) { /* ignore */ }
-      return;
-    }
-  }
-
-  // --- rAF Game-Ready Detection ---
-
-  function onFrame() {
-    if (gameReadySent) return;
-
-    frameCount++;
-    if (frameCount >= RAF_FRAME_THRESHOLD) {
-      gameReadySent = true;
-      sendEvent('game_ready', {
-        frame_count: frameCount,
-        detected_at: Date.now()
-      });
-      return;
-    }
-
-    originalRAF.call(window, onFrame);
-  }
-
-  if (originalRAF) {
-    window.requestAnimationFrame = function(callback) {
-      if (!gameReadySent) {
-        return originalRAF.call(window, function(timestamp) {
-          frameCount++;
-          if (frameCount >= RAF_FRAME_THRESHOLD && !gameReadySent) {
-            gameReadySent = true;
-            sendEvent('game_ready', {
-              frame_count: frameCount,
-              detected_at: Date.now()
-            });
-          }
-          callback(timestamp);
-        });
-      }
-      return originalRAF.call(window, callback);
-    };
-  }
-
-  // --- First User Interaction Detection ---
-
-  function setupFirstInteractionDetection() {
-    var events = ['touchstart', 'mousedown', 'keydown'];
-
-    function onFirstInteraction() {
-      if (firstInteractionSent) return;
-      firstInteractionSent = true;
-      sendEvent('user_interaction_start', null);
-
-      for (var i = 0; i < events.length; i++) {
-        document.removeEventListener(events[i], onFirstInteraction, true);
-      }
-    }
-
-    for (var i = 0; i < events.length; i++) {
-      document.addEventListener(events[i], onFirstInteraction, true);
-    }
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', setupFirstInteractionDetection);
-  } else {
-    setupFirstInteractionDetection();
-  }
-
-  // --- Auto Error Capture ---
-
-  window.addEventListener('error', function(event) {
-    if (errorSent) return;
-    errorSent = true;
-    sendEvent('error', {
-      message: event.message || 'Unknown error',
-      source: event.filename || '',
-      lineno: event.lineno || 0,
-      colno: event.colno || 0,
-      auto_captured: true
-    });
-  });
-
-  window.addEventListener('unhandledrejection', function(event) {
-    if (errorSent) return;
-    errorSent = true;
-    var reason = event.reason;
-    sendEvent('error', {
-      message: (reason instanceof Error) ? reason.message : String(reason),
-      type: 'unhandled_promise_rejection',
-      auto_captured: true
-    });
-  });
-
-  // --- Public API ---
-
-  window.playablesSDK = {
-    complete: function(score) {
-      sendEvent('game_ended', {
-        score: score,
-        completed: true
-      });
-    },
-
-    error: function(message) {
-      if (errorSent) return;
-      errorSent = true;
-      sendEvent('error', {
-        message: message || 'Unknown error',
-        auto_captured: false
-      });
-    },
-
-    sendEvent: function(eventName, payload) {
-      if (!eventName || typeof eventName !== 'string') return;
-      sendEvent(eventName, payload);
-    }
-  };
-
-  // Kick off rAF detection in case no game code calls rAF immediately
-  if (originalRAF) {
-    originalRAF.call(window, onFrame);
-  }
-})();</script>
-<script>window.Intl=window.Intl||{};Intl.t=function(s){return(Intl._locale&&Intl._locale[s])||s;};</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Orbo — Il gusto ti orbita</title>
-<meta name="description" content="Orbo: trova il locale perfetto vicino a te. Cerca per atmosfera, cucina o occasione.">
-<meta property="og:title" content="Orbo — Il gusto ti orbita">
-<meta property="og:description" content="Trova il locale perfetto, a portata di tap.">
-<meta property="og:image" content="https://placehold.co/1200x630/FF6B00/1a0b2e?text=ORBO">
 <meta name="theme-color" content="#ff6b00">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<link rel="preconnect" href="https://maps.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -210,24 +13,39 @@ html{scroll-behavior:smooth}
 body{font-family:"Inter",system-ui,sans-serif;background:#0a0010;color:#fff;min-height:100vh;overflow-x:hidden}
 button,input{font:inherit;border:0;background:none;cursor:pointer;touch-action:manipulation;color:inherit}
 img{display:block;width:100%;height:100%;object-fit:cover}
-button:focus-visible,input:focus-visible{outline:2px solid #FFB347;outline-offset:2px}
-#bg-canvas{position:fixed;inset:0;z-index:-2;pointer-events:none}
-#cursor-glow{position:fixed;pointer-events:none;z-index:-1}
-.topbar{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:14px;padding:10px 20px;background:rgba(10,0,16,0.96);border-bottom:1px solid rgba(255,179,71,0.15);box-shadow:0 0 40px rgba(255,140,0,0.1)}
-@media(min-width:769px){.topbar{background:rgba(10,0,16,0.82);backdrop-filter:blur(24px)}}
+
+#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
+#cursor-glow{position:fixed;pointer-events:none;z-index:0}
+
+/* TOPBAR */
+.topbar{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:14px;padding:10px 20px;background:rgba(10,0,16,0.82);backdrop-filter:blur(24px);border-bottom:1px solid rgba(255,179,71,0.15);box-shadow:0 0 40px rgba(255,140,0,0.1)}
 .topbar-logo{height:42px;width:42px;filter:drop-shadow(0 0 12px rgba(255,180,71,0.7));transition:transform .3s cubic-bezier(.34,1.56,.64,1)}
 .topbar-logo:hover{transform:rotate(-8deg) scale(1.12)}
 .topbar-slogan{flex:1;font-family:'Arial Black',Arial,sans-serif;font-size:15px;font-weight:900;letter-spacing:.5px;text-transform:uppercase;background:linear-gradient(90deg,#FFB347,#FF6B00,#FFB347);background-size:200%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:shimmerText 3s linear infinite}
 @keyframes shimmerText{0%{background-position:0%}100%{background-position:200%}}
+.topbar-right{display:flex;gap:8px;align-items:center}
+.topbar-btn{width:40px;height:40px;display:grid;place-items:center;background:rgba(255,140,0,0.1);border:1px solid rgba(255,140,0,0.25);border-radius:11px;font-size:1rem;transition:.2s}
+.topbar-btn:hover{background:rgba(255,140,0,0.22);transform:scale(1.06)}
+
+/* VIEWS */
 .view{display:none;position:relative;z-index:1}
 .view.active{display:block;animation:fadeUp .32s ease}
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+
+/* HERO */
 .hero{min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden;padding:80px 20px 48px}
 .glow-orb{position:absolute;width:700px;height:700px;border-radius:50%;background:radial-gradient(circle,rgba(255,140,0,0.18) 0%,rgba(120,40,180,0.12) 40%,transparent 70%);top:50%;left:50%;transform:translate(-50%,-60%);animation:orbPulse 5s ease-in-out infinite;pointer-events:none}
 @keyframes orbPulse{0%,100%{transform:translate(-50%,-60%) scale(1);opacity:.7}50%{transform:translate(-50%,-60%) scale(1.25);opacity:1}}
 .orbit-ring{position:absolute;top:50%;left:50%;width:460px;height:460px;margin:-230px 0 0 -230px;border:1px solid rgba(255,140,0,0.12);border-radius:50%;animation:spinRing 30s linear infinite;pointer-events:none}
+.orbit-ring::before{content:"";position:absolute;inset:-1px;border-radius:50%;border:1px dashed rgba(255,140,0,0.08)}
+@keyframes spinRing{to{transform:rotate(360deg)}}
 .food-orbits{position:absolute;top:50%;left:50%;width:460px;height:460px;margin:-230px 0 0 -230px;pointer-events:none;z-index:1}
 .food-orbits span{position:absolute;top:50%;left:50%;font-size:26px;animation:orbit 18s linear infinite;filter:drop-shadow(0 0 10px rgba(255,140,0,0.8))}
+.food-orbits span:nth-child(2){animation-delay:-3s}
+.food-orbits span:nth-child(3){animation-delay:-6s}
+.food-orbits span:nth-child(4){animation-delay:-9s}
+.food-orbits span:nth-child(5){animation-delay:-12s}
+.food-orbits span:nth-child(6){animation-delay:-15s}
 @keyframes orbit{from{transform:rotate(0deg) translate(228px) rotate(0deg)}to{transform:rotate(360deg) translate(228px) rotate(-360deg)}}
 .particles{position:absolute;inset:0;pointer-events:none;z-index:1;overflow:hidden}
 .particles span{position:absolute;width:3px;height:3px;background:#FFB347;border-radius:50%;opacity:0;animation:float linear infinite}
@@ -235,119 +53,718 @@ button:focus-visible,input:focus-visible{outline:2px solid #FFB347;outline-offse
 .hero-logo-wrap{position:relative;z-index:2;width:180px;height:180px;animation:logoPulse 4s ease-in-out infinite}
 @keyframes logoPulse{0%,100%{filter:drop-shadow(0 0 28px rgba(255,140,0,0.7))}50%{filter:drop-shadow(0 0 56px rgba(255,140,0,1)) drop-shadow(0 0 80px rgba(120,40,180,0.5))}}
 .hero-text{position:relative;z-index:2;text-align:center;margin-top:32px;max-width:560px}
-.hero-kicker{font-size:10px;font-weight:700;letter-spacing:3.5px;text-transform:uppercase;color:#FFB347;margin-bottom:14px}
-.hero-title{font-family:'Arial Black',Arial,sans-serif;font-size:clamp(26px,5.5vw,48px);font-weight:900;line-height:1.1;margin-bottom:16px;background:linear-gradient(170deg,#FFE0A0 0%,#FF8C00 50%,#FF3A00 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero-kicker{font-size:10px;font-weight:700;letter-spacing:3.5px;text-transform:uppercase;color:#FFB347;margin-bottom:14px;text-shadow:0 0 20px rgba(255,140,0,0.6)}
+.hero-title{font-family:'Arial Black',Arial,sans-serif;font-size:clamp(26px,5.5vw,48px);font-weight:900;line-height:1.1;margin-bottom:16px;background:linear-gradient(170deg,#FFE0A0 0%,#FF8C00 50%,#FF3A00 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;filter:drop-shadow(0 4px 20px rgba(255,100,0,0.4))}
 .hero-sub{font-size:15px;color:rgba(200,180,240,0.85);line-height:1.75;margin-bottom:32px}
+.hero-sub strong{color:#FFB347}
+.hero-cta{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
 .btn-primary{background:linear-gradient(135deg,#FF6B00,#FFB347);padding:16px 38px;border-radius:999px;font-family:'Arial Black',sans-serif;font-size:14px;font-weight:900;color:#1a0b2e;text-transform:uppercase;letter-spacing:.5px;box-shadow:0 8px 32px rgba(255,107,0,0.5);transition:.2s}
-.btn-ghost{background:rgba(255,140,0,0.06);border:1.5px solid rgba(255,140,0,0.4);padding:16px 38px;border-radius:999px;font-family:'Arial Black',sans-serif;font-size:14px;font-weight:900;color:#FFB347;text-transform:uppercase;transition:.2s}
-.mood-section{position:relative;z-index:1;padding:28px 20px;background:rgba(15,5,26,0.95);border-top:1px solid rgba(255,140,0,0.12);border-bottom:1px solid rgba(255,140,0,0.12)}
-@media(min-width:769px){.mood-section{background:rgba(15,5,26,0.85);backdrop-filter:blur(16px)}}
+.btn-primary:hover{transform:translateY(-3px);box-shadow:0 14px 40px rgba(255,107,0,0.65)}
+.btn-primary:active{transform:scale(.96)}
+.btn-ghost{background:rgba(255,140,0,0.06);border:1.5px solid rgba(255,140,0,0.4);padding:16px 38px;border-radius:999px;font-family:'Arial Black',sans-serif;font-size:14px;font-weight:900;color:#FFB347;text-transform:uppercase;backdrop-filter:blur(8px);transition:.2s}
+.btn-ghost:hover{background:rgba(255,140,0,0.14);transform:translateY(-3px)}
+
+/* MOOD BAR */
+.mood-section{position:relative;z-index:1;padding:28px 20px;background:rgba(15,5,26,0.85);backdrop-filter:blur(16px);border-top:1px solid rgba(255,140,0,0.12);border-bottom:1px solid rgba(255,140,0,0.12)}
+.mood-title{font-size:10px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,179,71,0.45);text-align:center;margin-bottom:14px}
 .mood-row{display:flex;gap:10px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.mood-row::-webkit-scrollbar{display:none}
 .mood-btn{display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 16px;border-radius:16px;border:1px solid rgba(255,140,0,0.18);background:rgba(26,11,46,0.6);color:rgba(255,179,71,0.65);font-size:.78rem;font-weight:700;white-space:nowrap;transition:.2s;flex-shrink:0}
-.social-proof{position:relative;z-index:1;background:rgba(26,11,46,0.98);border-top:1px solid rgba(255,140,0,0.18);border-bottom:1px solid rgba(255,140,0,0.18);padding:28px 20px}
-@media(min-width:769px){.social-proof{background:linear-gradient(135deg,rgba(26,11,46,0.9),rgba(15,5,26,0.9));backdrop-filter:blur(20px)}}
+.mood-btn:hover,.mood-btn.active{border-color:#FFB347;background:rgba(255,140,0,0.15);color:#FFE0A0;transform:translateY(-2px);box-shadow:0 6px 20px rgba(255,140,0,0.2)}
+.mood-icon{font-size:1.4rem}
+
+/* STATS */
+.social-proof{position:relative;z-index:1;background:linear-gradient(135deg,rgba(26,11,46,0.9),rgba(15,5,26,0.9));backdrop-filter:blur(20px);border-top:1px solid rgba(255,140,0,0.18);border-bottom:1px solid rgba(255,140,0,0.18);padding:28px 20px}
+.stats-row{display:flex;justify-content:space-around;max-width:580px;margin:0 auto 24px}
+.stat{display:flex;flex-direction:column;align-items:center;gap:6px}
+.stat-num{font-family:'Arial Black',sans-serif;font-size:32px;font-weight:900;background:linear-gradient(180deg,#FFE0A0,#FF8C00);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1}
+.stat-label{font-size:10px;color:rgba(255,179,71,0.5);text-transform:uppercase;letter-spacing:1.5px;font-weight:700}
+.trending-wrap{max-width:580px;margin:0 auto}
+.trending-label{font-size:10px;font-weight:900;color:#FF8C00;letter-spacing:2px;margin-bottom:10px}
+.trending-track{overflow:hidden;mask-image:linear-gradient(90deg,transparent,black 10%,black 90%,transparent)}
+.trending-scroll{display:flex;gap:10px;animation:scrollX 22s linear infinite;width:max-content}
+.trending-scroll span{padding:7px 16px;background:rgba(255,140,0,0.1);border:1px solid rgba(255,140,0,0.25);border-radius:999px;font-size:13px;font-weight:600;color:#FFB347;white-space:nowrap}
+@keyframes scrollX{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+/* QUICK SECTIONS */
 .quick-sections{position:relative;z-index:1;background:linear-gradient(180deg,#0a0010,#0f051a);padding:48px 20px 56px;display:flex;flex-direction:column;gap:16px;align-items:center}
-.quick-card{width:100%;max-width:580px;display:flex;align-items:center;gap:20px;background:linear-gradient(135deg,rgba(45,27,78,0.8),rgba(15,5,26,0.8));border:1px solid rgba(255,140,0,0.25);border-radius:22px;padding:22px 26px;cursor:pointer;transition:.25s;position:relative;overflow:hidden;content-visibility:auto;contain-intrinsic-size:80px}
-@media(min-width:769px){.quick-card{backdrop-filter:blur(12px)}}
+.quick-card{width:100%;max-width:580px;display:flex;align-items:center;gap:20px;background:linear-gradient(135deg,rgba(45,27,78,0.8),rgba(15,5,26,0.8));border:1px solid rgba(255,140,0,0.25);border-radius:22px;padding:22px 26px;cursor:pointer;transition:.25s;backdrop-filter:blur(12px);position:relative;overflow:hidden}
+.quick-card::before{content:"";position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,140,0,0.05),transparent);opacity:0;transition:.25s}
+.quick-card:hover{transform:translateY(-5px) scale(1.02);box-shadow:0 16px 40px rgba(255,140,0,0.2);border-color:rgba(255,140,0,0.5)}
+.quick-card:hover::before{opacity:1}
+.quick-icon{font-size:2.2rem;flex-shrink:0;filter:drop-shadow(0 0 8px rgba(255,140,0,0.6))}
+.quick-kicker{font-size:9px;font-weight:900;color:#FF8C00;letter-spacing:2.5px;text-transform:uppercase;margin-bottom:4px}
+.quick-title{font-size:19px;font-weight:900;background:linear-gradient(135deg,#FFE0A0,#FF8C00);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.quick-arrow{margin-left:auto;font-size:1.4rem;color:rgba(255,179,71,0.4);transition:.2s}
+.quick-card:hover .quick-arrow{color:#FFB347;transform:translateX(4px)}
+
+/* SEARCH VIEW */
 .view-inner{padding:24px 18px 80px;max-width:800px;margin:0 auto}
-.search-bar{display:flex;align-items:center;gap:12px;background:rgba(45,27,78,0.97);border:1.5px solid rgba(255,140,0,0.25);border-radius:18px;padding:0 14px 0 18px;transition:.2s}
-@media(min-width:769px){.search-bar{background:rgba(45,27,78,0.9);backdrop-filter:blur(12px)}}
+.view-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.view-title{font-size:24px;font-weight:800;background:linear-gradient(135deg,#FFE0A0,#FF8C00);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.back-btn{display:flex;align-items:center;gap:6px;color:rgba(255,179,71,0.55);font-size:.9rem;font-weight:600;transition:.15s;padding:8px 14px;border-radius:10px;border:1px solid rgba(255,140,0,0.18)}
+.back-btn:hover{color:#FFB347;border-color:rgba(255,140,0,0.4)}
+
+/* storia ricerche */
+.history-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;min-height:0}
+.history-chip{padding:5px 12px;border-radius:999px;background:rgba(34,211,238,0.07);border:1px solid rgba(34,211,238,0.18);color:rgba(34,211,238,0.8);font-size:.78rem;font-weight:600;cursor:pointer;transition:.15s}
+.history-chip:hover{background:rgba(34,211,238,0.14)}
+
+/* search bar */
+.search-bar-wrap{position:sticky;top:70px;z-index:20;padding:8px 0 4px;background:linear-gradient(#0a0010,transparent)}
+.search-bar{display:flex;align-items:center;gap:12px;background:rgba(45,27,78,0.9);border:1.5px solid rgba(255,140,0,0.25);border-radius:18px;padding:0 14px 0 18px;backdrop-filter:blur(12px);transition:.2s}
+.search-bar:focus-within{border-color:rgba(255,140,0,0.6);box-shadow:0 0 0 3px rgba(255,140,0,0.08)}
 .search-bar input{flex:1;height:56px;background:transparent;color:#fff;font-size:1rem;outline:none}
-.result-card{background:linear-gradient(135deg,rgba(45,27,78,0.95),rgba(20,8,38,0.95));border:1px solid rgba(255,140,0,0.18);border-radius:22px;overflow:hidden;margin-bottom:14px;display:grid;grid-template-columns:130px 1fr;cursor:pointer;transition:.22s;position:relative;content-visibility:auto;contain-intrinsic-size:130px}
+.search-bar input::placeholder{color:rgba(255,179,71,0.35)}
+.search-bar-actions{display:flex;gap:6px;align-items:center}
+.sb-btn{width:36px;height:36px;display:grid;place-items:center;border-radius:10px;background:rgba(255,140,0,0.1);border:1px solid rgba(255,140,0,0.2);font-size:1rem;transition:.18s;flex-shrink:0}
+.sb-btn:hover{background:rgba(255,140,0,0.22)}
+.sb-btn.recording{background:rgba(255,60,60,0.25);border-color:rgba(255,60,60,0.5);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 rgba(255,60,60,0)}50%{box-shadow:0 0 12px rgba(255,60,60,0.5)}}
+
+/* chips */
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
+.chip{padding:8px 16px;border-radius:999px;border:1.5px solid rgba(255,140,0,0.2);background:rgba(26,11,46,0.7);color:rgba(255,179,71,0.6);font-size:.85rem;font-weight:600;cursor:pointer;transition:.18s}
+.chip:hover{border-color:rgba(255,140,0,0.5);color:#FFB347}
+.chip.active{background:linear-gradient(135deg,#FF6B00,#FF8C00);color:#1a0b2e;border-color:transparent;box-shadow:0 4px 16px rgba(255,107,0,0.35)}
+
+.results-toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.results-count{font-size:.85rem;color:rgba(255,179,71,0.45);font-weight:600}
+
+/* RESULT CARD */
+.result-card{background:linear-gradient(135deg,rgba(45,27,78,0.85),rgba(20,8,38,0.85));border:1px solid rgba(255,140,0,0.18);border-radius:22px;overflow:hidden;margin-bottom:14px;display:grid;grid-template-columns:130px 1fr;cursor:pointer;transition:.22s;backdrop-filter:blur(12px);position:relative}
+.result-card:hover{transform:translateY(-3px);box-shadow:0 12px 36px rgba(255,140,0,0.22);border-color:rgba(255,140,0,0.4)}
+.result-card::after{content:"";position:absolute;inset:0;background:linear-gradient(120deg,transparent 20%,rgba(255,255,255,0.04) 40%,transparent 60%);transform:translateX(-120%);transition:transform .7s ease;pointer-events:none}
+.result-card:hover::after{transform:translateX(120%)}
 .rc-img{position:relative;min-height:130px}
-.rc-img img{height:100%;object-fit:cover;transition:transform .4s ease;width:100%}
+.rc-img img{height:100%;object-fit:cover;transition:transform .4s ease}
+.result-card:hover .rc-img img{transform:scale(1.07)}
+.rc-img-overlay{position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,107,0,0.18),transparent)}
+.rc-badge{position:absolute;top:10px;left:10px;padding:4px 10px;border-radius:999px;font-size:.72rem;font-weight:800;background:rgba(255,107,0,0.9);color:#1a0b2e;letter-spacing:.5px}
+.rc-open{position:absolute;bottom:10px;left:10px;padding:3px 9px;border-radius:999px;font-size:.7rem;font-weight:700}
+.rc-open.open{background:rgba(46,213,115,0.2);color:#7FFFC0;border:1px solid rgba(46,213,115,0.3);animation:livePulse 2.5s infinite}
+.rc-open.closed{background:rgba(255,80,80,0.15);color:#FF9090;border:1px solid rgba(255,80,80,0.2)}
+@keyframes livePulse{0%,100%{box-shadow:none}50%{box-shadow:0 0 14px rgba(46,213,115,0.4)}}
+.rc-score{position:absolute;top:10px;right:10px;padding:3px 8px;border-radius:8px;font-size:.68rem;font-weight:800;background:linear-gradient(135deg,rgba(255,107,0,0.9),rgba(255,179,71,0.9));color:#1a0b2e}
 .rc-body{padding:14px 16px;display:flex;flex-direction:column;gap:3px}
 .rc-name{font-size:1rem;font-weight:800;color:#FFE0A0;line-height:1.2}
-.modal{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.82);display:none;align-items:flex-end;justify-content:center}
-.modal.open{display:flex}
-.modal-sheet{width:100%;max-width:680px;max-height:90svh;overflow-y:auto;border-radius:28px 28px 0 0;background:linear-gradient(180deg,#2d1b4e,#1a0b2e)}
-.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(80px);background:rgba(26,11,46,0.97);border:1px solid rgba(255,140,0,0.35);color:#FFE4B8;padding:12px 22px;border-radius:14px;font-size:.9rem;font-weight:600;opacity:0;transition:transform .3s,opacity .3s;z-index:200}
+.rc-address{font-size:.76rem;color:rgba(255,179,71,0.42);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rc-rating{display:flex;align-items:center;gap:5px;margin-top:3px}
+.rc-stars{color:#FFB347;font-size:.85rem}
+.rc-num{font-size:.8rem;color:rgba(255,179,71,0.6);font-weight:600}
+.rc-dist{font-size:.75rem;font-weight:700;color:rgba(34,211,238,0.8);margin-top:1px}
+.rc-footer{display:flex;justify-content:space-between;align-items:center;margin-top:auto;padding-top:8px}
+.rc-actions{display:flex;gap:6px}
+.rc-btn{padding:7px 12px;border-radius:10px;font-size:.75rem;font-weight:800;transition:.15s}
+.rc-btn.go{background:linear-gradient(135deg,#FF6B00,#FFB347);color:#1a0b2e;box-shadow:0 4px 12px rgba(255,107,0,0.3)}
+.rc-btn.go:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(255,107,0,0.45)}
+.rc-btn.detail{background:rgba(255,140,0,0.1);border:1px solid rgba(255,140,0,0.22);color:rgba(255,179,71,0.7)}
+.rc-btn.detail:hover{background:rgba(255,140,0,0.2);color:#FFB347}
+.fav-btn{font-size:1.2rem;opacity:.5;transition:.2s;line-height:1;padding:4px}
+.fav-btn:hover{opacity:.85;transform:scale(1.18)}
+.fav-btn.active{opacity:1;filter:drop-shadow(0 0 6px rgba(255,100,100,0.5))}
+
+.empty-state{display:none;text-align:center;padding:60px 20px;color:rgba(255,179,71,0.4)}
+.empty-icon{font-size:3.5rem;margin-bottom:16px;filter:drop-shadow(0 0 20px rgba(255,140,0,0.3))}
+.empty-state p{font-size:.95rem;line-height:1.7}
+
+.skeleton{background:linear-gradient(90deg,rgba(45,27,78,0.6) 25%,rgba(70,40,100,0.6) 50%,rgba(45,27,78,0.6) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:22px;height:130px;margin-bottom:14px}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* DETAIL MODAL */
+.modal{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.82);backdrop-filter:blur(12px);display:none;align-items:flex-end;justify-content:center}
+.modal.open{display:flex;animation:fadeIn .2s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal-sheet{width:100%;max-width:680px;max-height:90svh;overflow-y:auto;border-radius:28px 28px 0 0;background:linear-gradient(180deg,#2d1b4e,#1a0b2e);border-top:1px solid rgba(255,140,0,0.25);box-shadow:0 -10px 48px rgba(255,140,0,0.15);animation:slideUp .3s ease}
+@keyframes slideUp{from{transform:translateY(48px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal-handle{width:40px;height:4px;border-radius:999px;background:rgba(255,140,0,0.3);margin:12px auto 0}
+.modal-img{width:100%;aspect-ratio:16/9;object-fit:cover}
+.modal-close-btn{position:absolute;top:14px;right:14px;width:36px;height:36px;display:grid;place-items:center;border-radius:50%;background:rgba(10,0,16,0.8);color:#FFB347;font-size:1rem;backdrop-filter:blur(8px);z-index:2}
+.modal-img-wrap{position:relative}
+.modal-body{padding:20px}
+.modal-title{font-size:20px;font-weight:900;color:#FFE0A0;margin-bottom:6px}
+.modal-rating{display:flex;align-items:center;gap:8px;margin-bottom:16px}
+.modal-stars{color:#FFB347;font-size:.95rem}
+.modal-score{padding:3px 10px;border-radius:8px;background:linear-gradient(135deg,rgba(255,107,0,0.9),rgba(255,179,71,0.9));color:#1a0b2e;font-size:.72rem;font-weight:800}
+.modal-actions{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+.ma-btn{flex:1;min-width:90px;padding:12px 16px;border-radius:14px;font-size:.85rem;font-weight:800;text-align:center;transition:.18s;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:6px}
+.ma-btn.primary{background:linear-gradient(135deg,#FF6B00,#FFB347);color:#1a0b2e;box-shadow:0 4px 16px rgba(255,107,0,0.35)}
+.ma-btn.secondary{background:rgba(255,140,0,0.1);border:1px solid rgba(255,140,0,0.28);color:#FFB347}
+.ma-btn:hover{transform:translateY(-2px)}
+.modal-section{margin-top:16px;padding-top:16px;border-top:1px solid rgba(255,140,0,0.1)}
+.modal-section-title{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:rgba(255,179,71,0.45);margin-bottom:8px;font-weight:800}
+.hours-row{font-size:13px;color:rgba(255,179,71,0.65);line-height:1.7;padding:3px 0}
+.hours-row.today{color:#FFE0A0;font-weight:700}
+.review-item{padding:12px 14px;background:rgba(255,140,0,0.05);border-radius:12px;border:1px solid rgba(255,140,0,0.1);margin-bottom:8px}
+.review-author{font-size:.85rem;font-weight:700;color:#FFE0A0}
+.review-stars{color:#FFB347;font-size:.78rem;margin-top:1px}
+.review-text{font-size:.82rem;color:rgba(255,179,71,0.6);line-height:1.6;margin-top:6px}
+
+/* TOAST */
+.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(80px);background:rgba(26,11,46,0.97);border:1px solid rgba(255,140,0,0.35);color:#FFE4B8;padding:12px 22px;border-radius:14px;font-size:.9rem;font-weight:600;opacity:0;transition:transform .3s cubic-bezier(.34,1.56,.64,1),opacity .3s;z-index:200;backdrop-filter:blur(16px);box-shadow:0 8px 32px rgba(0,0,0,0.4);white-space:nowrap}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-@media(max-width:768px){.topbar,.search-bar,.social-proof,.mood-section{backdrop-filter:none!important}.food-orbits,.orbit-ring,.particles,.glow-orb{display:none!important}}
-@media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+/* MOBILE NAV */
+.mobile-nav{display:none;position:fixed;inset:0 0 auto 0;z-index:100;padding:60px 20px 24px;background:rgba(10,0,16,0.97);backdrop-filter:blur(24px);flex-direction:column;gap:6px;transform:translateY(-100%);transition:transform .3s ease;border-bottom:1px solid rgba(255,140,0,0.15)}
+.mobile-nav.open{transform:translateY(0);display:flex}
+.nav-item{padding:14px 18px;border-radius:14px;color:rgba(255,179,71,0.65);font-size:1rem;font-weight:600;text-align:left;transition:.15s}
+.nav-item:hover,.nav-item.active{color:#FFB347;background:rgba(255,140,0,0.1)}
+
+#gmap{position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:8px}
+::-webkit-scrollbar-track{background:#0a0010}
+::-webkit-scrollbar-thumb{background:linear-gradient(#ff6b00,#ffb347);border-radius:999px}
+
+/* BODY AMBIENT */
+body::before{content:"";position:fixed;inset:-20%;background:radial-gradient(circle at 20% 20%,rgba(255,120,0,0.07),transparent 25%),radial-gradient(circle at 80% 30%,rgba(180,0,255,0.07),transparent 25%),radial-gradient(circle at 50% 80%,rgba(255,180,0,0.05),transparent 30%);filter:blur(90px);animation:bgMove 18s ease-in-out infinite alternate;pointer-events:none;z-index:0}
+@keyframes bgMove{0%{transform:translate3d(0,0,0) scale(1)}100%{transform:translate3d(3%,-2%,0) scale(1.08)}}
+
+button:active{transform:scale(.97)}
+.result-card,.quick-card,.btn-primary,.btn-ghost{will-change:transform;transform:translateZ(0);backface-visibility:hidden}
+
+@media(max-width:520px){
+  .orbit-ring,.food-orbits{width:320px;height:320px;margin:-160px 0 0 -160px}
+  @keyframes orbit{from{transform:rotate(0deg) translate(158px) rotate(0deg)}to{transform:rotate(360deg) translate(158px) rotate(-360deg)}}
+  .hero-logo-wrap{width:140px;height:140px}
+  .result-card{grid-template-columns:100px 1fr}
+}
 </style>
 </head>
 <body>
+
 <canvas id="bg-canvas"></canvas>
 <div id="cursor-glow"></div>
+
 <header class="topbar">
-  <svg class="topbar-logo" id="logo-btn" viewBox="0 0 120 120"><circle cx="60" cy="60" r="50" fill="url(#g)"/><defs><linearGradient id="g"><stop stop-color="#ffb347"/><stop offset="1" stop-color="#ff6b00"/></linearGradient></defs></svg>
+  <svg class="topbar-logo" id="logo-btn" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="t" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ffb347"/><stop offset="100%" stop-color="#ff8c00"/></linearGradient>
+      <linearGradient id="l" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#cc5500"/><stop offset="100%" stop-color="#e06500"/></linearGradient>
+      <linearGradient id="r" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#ff7c20"/><stop offset="100%" stop-color="#ff9a40"/></linearGradient>
+      <filter id="gf"><feGaussianBlur stdDeviation="1.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      <path id="op" d="M60,12 C82,12 96,30 96,55 C96,80 82,98 60,98 C38,98 24,80 24,55 C24,30 38,12 60,12 Z"/>
+    </defs>
+    <ellipse cx="60" cy="108" rx="28" ry="6" fill="rgba(180,80,0,.18)"/>
+    <polygon points="60,25 90,40 60,55 30,40" fill="url(#t)"/>
+    <polygon points="30,40 60,55 60,85 30,70" fill="url(#l)"/>
+    <polygon points="60,55 90,40 90,70 60,85" fill="url(#r)"/>
+    <text font-family="Arial Black" font-size="14" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="#FFE4A3" filter="url(#gf)"><animateMotion dur="8s" repeatCount="indefinite"><mpath href="#op"/></animateMotion>O</text>
+    <text font-family="Arial Black" font-size="14" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="#FFD080" filter="url(#gf)"><animateMotion dur="8s" repeatCount="indefinite" begin="-2s"><mpath href="#op"/></animateMotion>R</text>
+    <text font-family="Arial Black" font-size="14" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="#FFB347" filter="url(#gf)"><animateMotion dur="8s" repeatCount="indefinite" begin="-4s"><mpath href="#op"/></animateMotion>B</text>
+    <text font-family="Arial Black" font-size="14" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="#FFE4A3" filter="url(#gf)"><animateMotion dur="8s" repeatCount="indefinite" begin="-6s"><mpath href="#op"/></animateMotion>O</text>
+  </svg>
   <span class="topbar-slogan">Il gusto ti orbita</span>
+  <div class="topbar-right">
+    <button class="topbar-btn" id="menu-btn" aria-label="Menu">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="#FFB347">
+        <circle cx="5" cy="5" r="2"/><circle cx="12" cy="5" r="2"/><circle cx="19" cy="5" r="2"/>
+        <circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/>
+        <circle cx="5" cy="19" r="2"/><circle cx="12" cy="19" r="2"/><circle cx="19" cy="19" r="2"/>
+      </svg>
+    </button>
+  </div>
 </header>
+
+<nav class="mobile-nav" id="mobile-nav">
+  <button class="nav-item active" onclick="navigate('home')">🏠 Home</button>
+  <button class="nav-item" onclick="navigate('search');closeMobileNav()">🔍 Cerca</button>
+  <button class="nav-item" onclick="doNearby();closeMobileNav()">📍 Vicino a te</button>
+  <button class="nav-item" onclick="surpriseMe();closeMobileNav()">🪐 Sorprendimi</button>
+</nav>
+
 <main>
+  <!-- HOME -->
   <section class="view active" id="view-home">
     <div class="hero">
-      <div class="glow-orb"></div><div class="orbit-ring"></div>
-      <div class="food-orbits"><span>🍕</span><span>🍣</span><span>🍔</span><span>🍜</span><span>🍩</span><span>🌮</span></div>
+      <div class="glow-orb"></div>
+      <div class="orbit-ring"></div>
+      <div class="food-orbits">
+        <span>🍕</span><span>🍣</span><span>🍔</span><span>🍜</span><span>🍩</span><span>🌮</span>
+      </div>
       <div class="particles" id="particles"></div>
-      <div class="hero-logo-wrap"></div>
+      <div class="hero-logo-wrap">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="180" height="180">
+          <defs>
+            <linearGradient id="t2" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ffb347"/><stop offset="100%" stop-color="#ff8c00"/></linearGradient>
+            <linearGradient id="l2" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#cc5500"/><stop offset="100%" stop-color="#e06500"/></linearGradient>
+            <linearGradient id="r2" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#ff7c20"/><stop offset="100%" stop-color="#ff9a40"/></linearGradient>
+            <filter id="g2"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+            <path id="p2" d="M60,12 C82,12 96,30 96,55 C96,80 82,98 60,98 C38,98 24,80 24,55 C24,30 38,12 60,12 Z"/>
+          </defs>
+          <ellipse cx="60" cy="108" rx="28" ry="6" fill="rgba(180,80,0,.18)"/>
+          <g filter="drop-shadow(0 6px 16px rgba(180,60,0,0.4))">
+            <polygon points="60,25 90,40 60,55 30,40" fill="url(#t2)"/>
+            <polygon points="30,40 60,55 60,85 30,70" fill="url(#l2)"/>
+            <polygon points="60,55 90,40 90,70 60,85" fill="url(#r2)"/>
+          </g>
+          <polyline points="60,25 90,40 90,70 60,85 30,70 30,40 60,25" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="0.5"/>
+          <text font-family="Arial Black" font-size="15" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="#FFE4A3" filter="url(#g2)"><animateMotion dur="8s" repeatCount="indefinite"><mpath href="#p2"/></animateMotion>O</text>
+          <text font-family="Arial Black" font-size="15" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="#FFD080" filter="url(#g2)"><animateMotion dur="8s" repeatCount="indefinite" begin="-2s"><mpath href="#p2"/></animateMotion>R</text>
+          <text font-family="Arial Black" font-size="15" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="#FFB347" filter="url(#g2)"><animateMotion dur="8s" repeatCount="indefinite" begin="-4s"><mpath href="#p2"/></animateMotion>B</text>
+          <text font-family="Arial Black" font-size="15" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="#FFE4A3" filter="url(#g2)"><animateMotion dur="8s" repeatCount="indefinite" begin="-6s"><mpath href="#p2"/></animateMotion>O</text>
+        </svg>
+      </div>
       <div class="hero-text">
         <p class="hero-kicker">✦ Scopri il gusto ✦</p>
         <h1 class="hero-title">Il locale perfetto,<br>a portata di tap</h1>
         <p class="hero-sub">Cerca per atmosfera, cucina o occasione.<br><strong>Orbo ti porta dove vuoi essere.</strong></p>
-        <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
+        <div class="hero-cta">
           <button class="btn-primary" onclick="navigate('search')">Inizia la ricerca →</button>
           <button class="btn-ghost" onclick="doNearby()">📍 Vicino a me</button>
         </div>
       </div>
     </div>
+
+    <!-- MOOD -->
     <div class="mood-section">
+      <p class="mood-title">✦ Cosa cerchi stasera? ✦</p>
       <div class="mood-row">
-        <button class="mood-btn" onclick="doMood('romantico')">💕 Romantico</button>
-        <button class="mood-btn" onclick="doMood('pizza')">🍕 Pizza</button>
-        <button class="mood-btn" onclick="doMood('sushi')">🍣 Sushi</button>
-        <button class="mood-btn" onclick="surpriseMe()">🪐 Sorprendimi</button>
+        <button class="mood-btn" onclick="doMood('romantico cena')"><span class="mood-icon">💕</span>Romantico</button>
+        <button class="mood-btn" onclick="doMood('veloce rapido')"><span class="mood-icon">⚡</span>Veloce</button>
+        <button class="mood-btn" onclick="doMood('gelato dolce dessert')"><span class="mood-icon">🍨</span>Dolce</button>
+        <button class="mood-btn" onclick="doMood('brunch colazione')"><span class="mood-icon">🥐</span>Brunch</button>
+        <button class="mood-btn" onclick="doMood('cocktail aperitivo bar')"><span class="mood-icon">🍹</span>Aperitivo</button>
+        <button class="mood-btn" onclick="doMood('pizza')"><span class="mood-icon">🍕</span>Pizza</button>
+        <button class="mood-btn" onclick="doMood('sushi giapponese')"><span class="mood-icon">🍣</span>Sushi</button>
+        <button class="mood-btn" onclick="surpriseMe()"><span class="mood-icon">🪐</span>Sorprendimi</button>
       </div>
     </div>
+
+    <!-- STATS -->
     <div class="social-proof">
-      <div style="display:flex;justify-content:space-around;max-width:580px;margin:0 auto">
-        <div style="text-align:center"><div class="stat-num" style="font-size:32px;font-weight:900;background:linear-gradient(180deg,#FFE0A0,#FF8C00);-webkit-background-clip:text;-webkit-text-fill-color:transparent">1247</div><div style="font-size:10px;opacity:.5">Locali</div></div>
-        <div style="text-align:center"><div class="stat-num" style="font-size:32px;font-weight:900;background:linear-gradient(180deg,#FFE0A0,#FF8C00);-webkit-background-clip:text;-webkit-text-fill-color:transparent">89</div><div style="font-size:10px;opacity:.5">Città</div></div>
-        <div style="text-align:center"><div class="stat-num" style="font-size:32px;font-weight:900;background:linear-gradient(180deg,#FFE0A0,#FF8C00);-webkit-background-clip:text;-webkit-text-fill-color:transparent">15k</div><div style="font-size:10px;opacity:.5">Utenti</div></div>
+      <div class="stats-row">
+        <div class="stat"><span class="stat-num" data-count="1247">0</span><span class="stat-label">Locali</span></div>
+        <div class="stat"><span class="stat-num" data-count="89">0</span><span class="stat-label">Città</span></div>
+        <div class="stat"><span class="stat-num" data-count="15">0</span><span class="stat-label">k Utenti</span></div>
+      </div>
+      <div class="trending-wrap">
+        <p class="trending-label">🔥 TRENDING ORA</p>
+        <div class="trending-track">
+          <div class="trending-scroll">
+            <span>Pizza Gourmet</span><span>Ramen</span><span>Brunch</span><span>Gelato Artigianale</span>
+            <span>Tacos</span><span>Sushi</span><span>Bistrot</span><span>Aperitivo</span>
+            <span>Pizza Gourmet</span><span>Ramen</span><span>Brunch</span><span>Gelato Artigianale</span>
+            <span>Tacos</span><span>Sushi</span><span>Bistrot</span><span>Aperitivo</span>
+          </div>
+        </div>
       </div>
     </div>
+
+    <!-- QUICK -->
     <div class="quick-sections">
-      <div class="quick-card" role="button" tabindex="0" onclick="navigate('search')" onkeydown="if(event.key==='Enter')this.click()"><span style="font-size:2rem">🔍</span><div><div style="font-size:9px;color:#FF8C00;font-weight:900">Trova</div><div style="font-size:19px;font-weight:900;background:linear-gradient(135deg,#FFE0A0,#FF8C00);-webkit-background-clip:text;-webkit-text-fill-color:transparent">Cerca un locale</div></div></div>
-      <div class="quick-card" role="button" tabindex="0" onclick="doNearby()" onkeydown="if(event.key==='Enter')this.click()"><span style="font-size:2rem">📍</span><div><div style="font-size:9px;color:#FF8C00;font-weight:900">GPS</div><div style="font-size:19px;font-weight:900;background:linear-gradient(135deg,#FFE0A0,#FF8C00);-webkit-background-clip:text;-webkit-text-fill-color:transparent">Vicino a me</div></div></div>
+      <div class="quick-card" onclick="navigate('search')">
+        <span class="quick-icon">🔍</span>
+        <div><p class="quick-kicker">Trova</p><h3 class="quick-title">Cerca un locale</h3></div>
+        <span class="quick-arrow">→</span>
+      </div>
+      <div class="quick-card" onclick="doNearby()">
+        <span class="quick-icon">📍</span>
+        <div><p class="quick-kicker">GPS</p><h3 class="quick-title">Vicino a me</h3></div>
+        <span class="quick-arrow">→</span>
+      </div>
+      <div class="quick-card" onclick="filterAndGo('restaurant')">
+        <span class="quick-icon">🍝</span>
+        <div><p class="quick-kicker">Esplora</p><h3 class="quick-title">Ristoranti</h3></div>
+        <span class="quick-arrow">→</span>
+      </div>
+      <div class="quick-card" onclick="surpriseMe()">
+        <span class="quick-icon">🪐</span>
+        <div><p class="quick-kicker">AI Mode</p><h3 class="quick-title">Sorprendimi</h3></div>
+        <span class="quick-arrow">→</span>
+      </div>
     </div>
   </section>
+
+  <!-- SEARCH -->
   <section class="view" id="view-search">
     <div class="view-inner">
-      <div style="display:flex;justify-content:space-between;margin-bottom:16px"><h2 style="font-size:24px;font-weight:800;background:linear-gradient(135deg,#FFE0A0,#FF8C00);-webkit-background-clip:text;-webkit-text-fill-color:transparent">🔍 Cerca</h2><button onclick="navigate('home')" style="color:rgba(255,179,71,.6)">← Home</button></div>
-      <div class="search-bar"><span>🔍</span><input id="search-input" placeholder="Città, pizza, sushi..." autocomplete="off"><button id="search-clear" style="display:none" onclick="clearSearch()">✕</button></div>
-      <div id="results-count" style="font-size:.85rem;color:rgba(255,179,71,.45);margin:12px 0"></div>
+      <div class="view-header">
+        <h2 class="view-title">🔍 Cerca</h2>
+        <button class="back-btn" onclick="navigate('home')">← Home</button>
+      </div>
+
+      <div class="history-row" id="history-row"></div>
+
+      <div class="search-bar-wrap">
+        <div class="search-bar">
+          <span style="font-size:1.2rem">🔍</span>
+          <input id="search-input" placeholder="Città, tipo di locale o piatto..." autocomplete="off">
+          <div class="search-bar-actions">
+            <button class="sb-btn" id="voice-btn" onclick="startVoice()" title="Cerca con la voce">🎤</button>
+            <button class="sb-btn" id="search-clear" style="display:none" onclick="clearSearch()">✕</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="chips" id="chips"></div>
+
+      <div class="results-toolbar">
+        <p class="results-count" id="results-count"></p>
+      </div>
+
       <div id="results-list"></div>
-      <div id="empty-state" style="display:none;text-align:center;padding:60px 20px;color:rgba(255,179,71,.4)"><div style="font-size:3.5rem">🍽️</div><p>Cerca qualcosa o clicca Vicino a me</p></div>
+      <div class="empty-state" id="empty-state">
+        <div class="empty-icon">🍽️</div>
+        <p>Cerca una città o un tipo di locale,<br>oppure clicca <strong style="color:#FFB347">Vicino a me</strong></p>
+      </div>
     </div>
   </section>
 </main>
-<div class="modal" id="detail-modal" onclick="if(event.target===this)closeModal()"><div class="modal-sheet"><div style="padding:20px" id="modal-body"></div></div></div>
-<div id="gmap" style="position:fixed;left:-9999px"></div>
+
+<!-- DETAIL MODAL -->
+<div class="modal" id="detail-modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-img-wrap" style="position:relative">
+      <img id="modal-img" class="modal-img" src="" alt="">
+      <button class="modal-close-btn" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<div id="gmap"></div>
 <div class="toast" id="toast"></div>
+
 <script>
-function esc(s=''){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
-(function(){const c=document.getElementById('bg-canvas'),x=c.getContext('2d');let W,H,s=[],id=null;function r(){W=c.width=innerWidth;H=c.height=innerHeight;s=[];for(let i=0;i<100;i++)s.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.2+.2,a:Math.random(),v:Math.random()*.004+.001})}r();addEventListener('resize',r,{passive:true});function d(){x.clearRect(0,0,W,H);for(const p of s){p.a+=p.v;if(p.a>1)p.a=0;x.beginPath();x.arc(p.x,p.y,p.r,0,6.28);x.fillStyle=`rgba(255,200,120,${p.a*.6})`;x.fill()}id=requestAnimationFrame(d)}function s1(){if(!id)d()}function s2(){cancelAnimationFrame(id);id=null}document.addEventListener('visibilitychange',()=>document.hidden?s2():s1());s1()})();
-if(window.innerWidth>=768){const g=document.getElementById('cursor-glow');Object.assign(g.style,{width:'260px',height:'260px',borderRadius:'50%',background:'radial-gradient(circle,rgba(255,140,0,.15),transparent 70%)',filter:'blur(28px)',transform:'translate(-50%,-50%)',opacity:'0'});addEventListener('mousemove',e=>{g.style.opacity='.9';g.style.left=e.clientX+'px';g.style.top=e.clientY+'px'})}
-(function(){const p=document.getElementById('particles');if(!p)return;const f=document.createDocumentFragment();for(let i=0;i<20;i++){const s=document.createElement('span');s.style.cssText=`left:${Math.random()*100}%;bottom:0;animation-delay:${Math.random()*10}s;animation-duration:${7+Math.random()*8}s`;f.appendChild(s)}p.appendChild(f)})();
-let mapsLoaded=false,mapsLoading=false,sessionToken=null;function loadMaps(){return new Promise((ok,err)=>{if(mapsLoaded)return ok();if(mapsLoading)return;mapsLoading=true;window._orboReady=()=>{mapsLoaded=true;initMap();ok()};const s=document.createElement('script');s.src='https://maps.googleapis.com/maps/api/js?key=AIzaSyB4eYidHtLV4fXThKSZCS6ejH8Urpf2Km4&libraries=places&callback=_orboReady&language=it&region=IT';s.async=true;s.defer=true;s.onerror=()=>{mapsLoading=false;err()};document.body.appendChild(s)})}
-let map,svc,userLoc=null,VENUES=[],timer;const $=i=>document.getElementById(i);const state={favs:JSON.parse(localStorage.getItem('orbo_favs')||'[]'),history:JSON.parse(localStorage.getItem('orbo_history')||'[]')};const cache=new Map();
-function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
-function navigate(v){document.querySelectorAll('.view').forEach(s=>s.classList.toggle('active',s.id==='view-'+v));if(v==='search')setTimeout(()=>$('search-input').focus(),200)}
-function initMap(){map=new google.maps.Map($('gmap'),{center:{lat:44.4949,lng:11.3426},zoom:15});svc=new google.maps.places.PlacesService(map);const c=localStorage.getItem('orbo_loc');if(c){const d=JSON.parse(c);if(Date.now()-d.ts<3600000)userLoc=d.loc}if(!userLoc&&navigator.geolocation){navigator.geolocation.getCurrentPosition(p=>{userLoc={lat:p.coords.latitude,lng:p.coords.longitude};localStorage.setItem('orbo_loc',JSON.stringify({loc:userLoc,ts:Date.now()}));map.setCenter(userLoc)},()=>{},{timeout:5000})}}
-function dist(a,b,c,d){const R=6371,dl=(c-a)*Math.PI/180,dn=(d-b)*Math.PI/180,x=Math.sin(dl/2)**2+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(dn/2)**2;return +(R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x))).toFixed(1)}
-async function doNearby(){await loadMaps();navigate('search');toast('📍 Cerco vicino...');svc.nearbySearch({location:userLoc||map.getCenter(),radius:2000,type:'restaurant'},(r,s)=>{if(s==='OK')upd(r);else toast('Nessun risultato')})}
-async function doSearch(q){if(!q||q.length<3)return;await loadMaps();if(cache.has(q))return upd(cache.get(q));if(!sessionToken)sessionToken=new google.maps.places.AutocompleteSessionToken();svc.textSearch({query:q,location:userLoc||map.getCenter(),radius:8000},(r,s)=>{if(s==='OK'){if(cache.size>40)cache.delete(cache.keys().next().value);cache.set(q,r);upd(r)}else if(s==='ZERO_RESULTS'){$('empty-state').style.display='block';$('results-list').innerHTML=''}else if(s==='OVER_QUERY_LIMIT')toast('⚠️ Troppe ricerche')})}
-function upd(p){VENUES=p.slice(0,20).map(v=>({id:v.place_id,name:v.name,addr:v.vicinity||'',rating:v.rating||0,reviews:v.user_ratings_total||0,photo:v.photos?.[0]?.getUrl({maxWidth:400})||'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400&auto=format&fm=webp&q=60',lat:v.geometry.location.lat(),lng:v.geometry.location.lng(),open:v.opening_hours?.open_now}));render()}
-function render(){const l=$('results-list'),c=$('results-count'),e=$('empty-state');e.style.display='none';if(!VENUES.length){l.innerHTML='';c.textContent='';e.style.display='block';return}c.textContent=`${VENUES.length} locali trovati`;l.innerHTML=VENUES.map(v=>{const d=userLoc?dist(userLoc.lat,userLoc.lng,v.lat,v.lng):null;return `<article class="result-card" onclick="detail('${v.id}')"><div class="rc-img"><img src="${v.photo}" loading="lazy" decoding="async" width="400" height="300" alt="${esc(v.name)}" onerror="this.src='https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400&auto=format&fm=webp'"></div><div class="rc-body"><div class="rc-name">${esc(v.name)}</div><div style="font-size:.76rem;opacity:.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(v.addr)}</div><div style="display:flex;gap:5px;margin-top:3px"><span style="color:#FFB347">${'★'.repeat(Math.round(v.rating))}</span><span style="font-size:.8rem;opacity:.6">${v.rating||'-'}${v.reviews?' ('+v.reviews+')':''}</span></div>${d?`<div style="font-size:.75rem;color:#22d3ee;margin-top:2px">📍 ${d} km</div>`:''}<div style="display:flex;justify-content:space-between;margin-top:auto;padding-top:8px"><button style="padding:7px 12px;border-radius:10px;background:linear-gradient(135deg,#FF6B00,#FFB347);color:#1a0b2e;font-weight:800;font-size:.75rem" onclick="event.stopPropagation();window.open('https://www.google.com/maps/dir/?api=1&destination=${v.lat},${v.lng}')")'>🗺️ Vai</button><button style="opacity:.5" onclick="event.stopPropagation();fav('${v.id}',this)">${state.favs.includes(v.id)?'❤️':'🤍'}</button></div></div></article>`}).join('')}
-async function detail(id){await loadMaps();const v=VENUES.find(x=>x.id===id);svc.getDetails({placeId:id,fields:['name','rating','formatted_phone_number','website','opening_hours','reviews','formatted_address','url']},(p,s)=>{if(s!=='OK')return;$('modal-body').innerHTML=`<h3 style="font-size:20px;font-weight:900;color:#FFE0A0;margin-bottom:8px">${esc(p.name)}</h3><p style="opacity:.7;margin-bottom:16px">${esc(p.formatted_address||'')}</p><div style="display:flex;gap:8px;flex-wrap:wrap"><a href="https://www.google.com/maps/dir/?api=1&destination=${v.lat},${v.lng}" target="_blank" style="flex:1;padding:12px;background:linear-gradient(135deg,#FF6B00,#FFB347);color:#1a0b2e;border-radius:12px;text-align:center;font-weight:800">🗺️ Indicazioni</a>${p.formatted_phone_number?`<a href="tel:${p.formatted_phone_number}" style="padding:12px;background:rgba(255,140,0,.1);border:1px solid rgba(255,140,0,.3);color:#FFB347;border-radius:12px">📞 Chiama</a>`:''}</div><button onclick="closeModal()" style="margin-top:16px;width:100%;padding:10px;opacity:.6">Chiudi</button>`;$('detail-modal').classList.add('open')})}
-function closeModal(){$('detail-modal').classList.remove('open')}
-function fav(id,b){const i=state.favs.indexOf(id);i>-1?state.favs.splice(i,1):state.favs.push(id);localStorage.setItem('orbo_favs',JSON.stringify(state.favs));b.textContent=state.favs.includes(id)?'❤️':'🤍';toast(i>-1?'Rimosso':'Salvato')}
-function doMood(q){navigate('search');$('search-input').value=q;doSearch(q)}
-function surpriseMe(){const m=['pizza gourmet','sushi romantico','ramen','brunch','aperitivo rooftop'];const q=m[Math.floor(Math.random()*m.length)];toast('🪐 '+q);doMood(q)}
-function clearSearch(){$('search-input').value='';$('results-list').innerHTML='';$('results-count').textContent='';$('empty-state').style.display='block'}
-$('search-input').addEventListener('input',e=>{const q=e.target.value.trim();$('search-clear').style.display=q?'block':'none';clearTimeout(timer);timer=setTimeout(()=>doSearch(q),650)});
-$('logo-btn').onclick=()=>navigate('home');
-if('serviceWorker' in navigator){navigator.serviceWorker.register('data:text/javascript;base64,c2VsZi5hZGRFdmVudExpc3RlbmVyKCdmZXRjaCcsZ=>')};
+// ── CANVAS STELLE ─────────────────────────────────
+(function(){
+  const c=document.getElementById('bg-canvas'),ctx=c.getContext('2d');
+  let W,H,stars=[];
+  function resize(){W=c.width=innerWidth;H=c.height=innerHeight;stars=[];for(let i=0;i<180;i++)stars.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.2+.2,a:Math.random(),speed:Math.random()*.004+.001})}
+  resize();addEventListener('resize',resize);
+  (function draw(){ctx.clearRect(0,0,W,H);stars.forEach(s=>{s.a+=s.speed;if(s.a>1)s.a=0;ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fillStyle=`rgba(255,200,120,${s.a*.7})`;ctx.fill()});requestAnimationFrame(draw)})();
+})();
+
+// ── CURSOR GLOW (solo desktop) ─────────────────────
+if(window.innerWidth>=768){
+  const glow=document.getElementById('cursor-glow');
+  Object.assign(glow.style,{width:'260px',height:'260px',borderRadius:'50%',background:'radial-gradient(circle,rgba(255,140,0,.15),transparent 70%)',filter:'blur(28px)',transform:'translate(-50%,-50%)',opacity:'0',transition:'opacity .3s'});
+  addEventListener('mousemove',e=>{glow.style.opacity='.9';glow.style.left=e.clientX+'px';glow.style.top=e.clientY+'px'});
+  addEventListener('mouseout',()=>glow.style.opacity='0');
+}
+
+// ── PARTICELLE ────────────────────────────────────
+(function(){
+  const c=document.getElementById('particles');
+  for(let i=0;i<28;i++){const s=document.createElement('span');s.style.cssText=`left:${Math.random()*100}%;bottom:0;animation-delay:${Math.random()*10}s;animation-duration:${7+Math.random()*8}s`;c.appendChild(s)}
+})();
+
+// ── COUNTER ───────────────────────────────────────
+function animateStats(){
+  document.querySelectorAll('.stat-num').forEach(el=>{
+    const tgt=+el.dataset.count;let n=0;
+    const step=()=>{n=Math.min(n+tgt/50,tgt);el.textContent=Math.ceil(n)+(tgt===15?'k':'');if(n<tgt)requestAnimationFrame(step)};
+    step();
+  });
+}
+new IntersectionObserver(entries=>{if(entries[0].isIntersecting){animateStats();entries[0].target._obs?.disconnect()}},{threshold:.2}).observe(document.querySelector('.stats-row'));
+
+// ── CORE STATE ────────────────────────────────────
+let map,placesService,userLoc=null,VENUES=[],debT;
+const CATS=[{id:'all',label:'Tutto',icon:'✦'},{id:'restaurant',label:'Ristoranti',icon:'🍝'},{id:'cafe',label:'Bar & Caffè',icon:'☕'},{id:'bakery',label:'Pasticcerie',icon:'🧁'},{id:'meal_takeaway',label:'Take Away',icon:'📦'}];
+const state={favs:JSON.parse(localStorage.getItem('orbo_favs')||'[]'),activeCat:'all',history:JSON.parse(localStorage.getItem('orbo_history')||'[]')};
+const $=id=>document.getElementById(id);
+
+// ── TOAST ─────────────────────────────────────────
+let tT;
+function toast(m){const el=$('toast');clearTimeout(tT);el.textContent=m;el.classList.add('show');tT=setTimeout(()=>el.classList.remove('show'),2600)}
+
+// ── NAVIGATE ──────────────────────────────────────
+function navigate(v){
+  document.querySelectorAll('.view').forEach(s=>s.classList.toggle('active',s.id==='view-'+v));
+  if(v==='search'){renderHistory();setTimeout(()=>$('search-input')?.focus(),300)}
+}
+
+function closeMobileNav(){
+  const n=$('mobile-nav');n.classList.remove('open');n.style.display='none';
+}
+
+// ── STORIA RICERCHE ───────────────────────────────
+function saveHistory(q){
+  if(!q||q.length<2)return;
+  state.history=[q,...state.history.filter(x=>x!==q)].slice(0,5);
+  localStorage.setItem('orbo_history',JSON.stringify(state.history));
+}
+
+function renderHistory(){
+  const row=$('history-row');if(!row)return;
+  if(!state.history.length){row.innerHTML='';return}
+  row.innerHTML=state.history.map(h=>`<button class="history-chip" onclick="doSearch('${h.replace(/'/g,"\\'")}')">🕐 ${h}</button>`).join('');
+}
+
+// ── HAVERSINE DISTANZA ────────────────────────────
+function distanza(a,b,c,d){
+  const R=6371,dLa=(c-a)*Math.PI/180,dLo=(d-b)*Math.PI/180;
+  const x=Math.sin(dLa/2)**2+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(dLo/2)**2;
+  return +(R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x))).toFixed(1);
+}
+
+// ── SCORE ORBO ────────────────────────────────────
+function orboScore(v){
+  let s=0;
+  if(v.rating) s+=v.rating*14;
+  if(v.reviews) s+=Math.min(v.reviews,1000)/1000*18;
+  if(v.openNow===true) s+=10;
+  if(v.price==='€'||v.price==='€€') s+=4;
+  if(userLoc&&v.lat){const d=distanza(userLoc.lat,userLoc.lng,v.lat,v.lng);s+=Math.max(0,(3-d)*6)}
+  return Math.round(s);
+}
+
+// ── GOOGLE MAPS INIT ──────────────────────────────
+function initMap(){
+  map=new google.maps.Map($('gmap'),{center:{lat:44.4949,lng:11.3426},zoom:15});
+  placesService=new google.maps.places.PlacesService(map);
+  renderChips();
+  if(navigator.geolocation){
+    navigator.geolocation.getCurrentPosition(
+      p=>{userLoc={lat:p.coords.latitude,lng:p.coords.longitude};map.setCenter(userLoc);toast('📍 Posizione rilevata!')},
+      ()=>{}
+    );
+  }
+  // saluto intelligente
+  const h=new Date().getHours();
+  const msgs=['☀️ Buongiorno, fame cosmica?','☀️ Buona giornata!','🍝 Pronto per qualcosa di buono?','🍹 Aperitivo in arrivo?','🌙 Cena perfetta stasera?'];
+  const idx=h<10?0:h<12?1:h<15?2:h<20?3:4;
+  setTimeout(()=>toast(msgs[idx]),1000);
+}
+
+// ── CERCA ─────────────────────────────────────────
+function getNearby(){
+  const loc=userLoc||map?.getCenter();if(!loc)return;
+  showSkeleton();
+  const types=state.activeCat==='all'?['restaurant','cafe','bakery']:[state.activeCat];
+  let all=[],done=0;
+  types.forEach(type=>{
+    placesService.nearbySearch({location:loc,radius:2000,type},(r,s)=>{
+      if(s==='OK')all=[...all,...r];
+      if(++done===types.length){const seen=new Set();updateVenues(all.filter(v=>{if(seen.has(v.place_id))return false;seen.add(v.place_id);return true}))}
+    });
+  });
+}
+
+function searchAPI(q){
+  if(!q||!placesService)return;
+  clearTimeout(debT);
+  debT=setTimeout(()=>{
+    showSkeleton();
+    placesService.textSearch({query:q,location:userLoc||map.getCenter(),radius:8000},(r,s)=>{
+      if(s==='OK')updateVenues(r);
+      else{hideSkeleton();showEmpty()}
+    });
+  },320);
+}
+
+function doSearch(q){
+  $('search-input').value=q;
+  $('search-clear').style.display='block';
+  saveHistory(q);
+  searchAPI(q);
+  navigate('search');
+}
+
+function doNearby(){navigate('search');toast('📍 Cerco vicino a te...');getNearby()}
+function doMood(q){navigate('search');doSearch(q)}
+
+function filterAndGo(type){
+  state.activeCat=type;navigate('search');renderChips();getNearby();
+}
+
+function surpriseMe(){
+  const moods=['sushi romantico','pizza gourmet','brunch instagrammabile','ramen autentico','aperitivo rooftop','bistrot locale','gelato artigianale','tacos street food'];
+  const q=moods[Math.floor(Math.random()*moods.length)];
+  toast('🪐 Orbo sceglie: '+q);
+  doSearch(q);
+}
+
+// ── RICERCA VOCALE ────────────────────────────────
+function startVoice(){
+  const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SpeechRecognition){toast('⚠️ Voce non supportata');return}
+  const rec=new SpeechRecognition();
+  rec.lang='it-IT';rec.interimResults=false;
+  const btn=$('voice-btn');
+  btn.classList.add('recording');
+  btn.textContent='🔴';
+  toast('🎤 Parla ora...');
+  rec.onresult=e=>{
+    const q=e.results[0][0].transcript;
+    $('search-input').value=q;
+    $('search-clear').style.display='block';
+    toast('🎤 "'+q+'"');
+    doSearch(q);
+  };
+  rec.onerror=()=>toast('⚠️ Errore microfono');
+  rec.onend=()=>{btn.classList.remove('recording');btn.textContent='🎤'};
+  rec.start();
+}
+
+// ── CHIPS ─────────────────────────────────────────
+function renderChips(){
+  $('chips').innerHTML=CATS.map(c=>`<button class="chip ${c.id===state.activeCat?'active':''}" onclick="setCat('${c.id}',this)">${c.icon} ${c.label}</button>`).join('');
+}
+
+function setCat(id,el){
+  state.activeCat=id;
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  const q=$('search-input').value||'ristorante';
+  searchAPI(q)||getNearby();
+}
+
+// ── UPDATE VENUES ─────────────────────────────────
+function updateVenues(p){
+  VENUES=p.slice(0,20).map(v=>({
+    id:v.place_id,name:v.name,
+    address:v.vicinity||v.formatted_address||'',
+    rating:v.rating||0,reviews:v.user_ratings_total||0,
+    price:'€'.repeat(Math.max(1,v.price_level||2)),
+    openNow:typeof v.opening_hours?.open_now==='boolean'?v.opening_hours.open_now:null,
+    photo:v.photos?.[0]?.getUrl({maxWidth:400,maxHeight:300})||'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400&q=60',
+    lat:v.geometry.location.lat(),lng:v.geometry.location.lng()
+  }));
+  VENUES.forEach(v=>v.score=orboScore(v));
+  VENUES.sort((a,b)=>b.score-a.score);
+  renderResults();
+}
+
+// ── RENDER CARDS ──────────────────────────────────
+function renderResults(){
+  const l=$('results-list'),c=$('results-count'),e=$('empty-state');
+  hideSkeleton();
+  if(!VENUES.length){e.style.display='block';l.innerHTML='';c.textContent='';return}
+  e.style.display='none';
+  c.textContent=`${VENUES.length} locali trovati 🔥`;
+  l.innerHTML=VENUES.map((v,i)=>{
+    const dist=userLoc?distanza(userLoc.lat,userLoc.lng,v.lat,v.lng):null;
+    return `
+    <article class="result-card" style="animation:cardIn .4s ${i*.05}s ease both" onclick="showDetail('${v.id}')">
+      <div class="rc-img">
+        <img src="${v.photo}" loading="lazy" alt="${v.name}" onerror="this.src='https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400&q=60'">
+        <div class="rc-img-overlay"></div>
+        <span class="rc-badge">${v.price}</span>
+        ${v.openNow!=null?`<span class="rc-open ${v.openNow?'open':'closed'}">${v.openNow?'Aperto':'Chiuso'}</span>`:''}
+        <span class="rc-score">⭐ ${v.score}</span>
+      </div>
+      <div class="rc-body">
+        <div class="rc-name">${v.name}</div>
+        <div class="rc-address">${v.address}</div>
+        <div class="rc-rating">
+          <span class="rc-stars">${'★'.repeat(Math.round(v.rating))||'★★★★'}</span>
+          <span class="rc-num">${v.rating||'N/A'}${v.reviews?' ('+v.reviews+')':''}</span>
+        </div>
+        ${dist!=null?`<div class="rc-dist">📍 ${dist} km da te</div>`:''}
+        <div class="rc-footer">
+          <div class="rc-actions">
+            <button class="rc-btn go" onclick="event.stopPropagation();openMaps(${v.lat},${v.lng})">🗺️ Vai</button>
+            <button class="rc-btn detail" onclick="event.stopPropagation();showDetail('${v.id}')">ℹ️ Info</button>
+          </div>
+          <button class="fav-btn ${state.favs.includes(v.id)?'active':''}" onclick="event.stopPropagation();toggleFav('${v.id}',this)">${state.favs.includes(v.id)?'❤️':'🤍'}</button>
+        </div>
+      </div>
+    </article>`;
+  }).join('');
+}
+
+// ── DETAIL MODAL ──────────────────────────────────
+function showDetail(placeId){
+  const v=VENUES.find(x=>x.id===placeId);if(!v||!placesService)return;
+  placesService.getDetails({
+    placeId,
+    fields:['name','rating','user_ratings_total','formatted_phone_number','website','opening_hours','reviews','photos','formatted_address','url','price_level']
+  },(place,st)=>{
+    if(st!=='OK')return;
+    $('modal-img').src=place.photos?.[0]?.getUrl({maxWidth:900})||v.photo||'';
+    const price='€'.repeat(place.price_level||1);
+    const score=v.score||0;
+    const todayIdx=new Date().getDay();
+    const hours=place.opening_hours?.weekday_text?.map((h,i)=>`<div class="hours-row ${i===(todayIdx===0?6:todayIdx-1)?'today':''}">${h}</div>`).join('')||'<div class="hours-row" style="opacity:.45">Orari non disponibili</div>';
+    const reviews=place.reviews?.slice(0,3).map(r=>`<div class="review-item"><div class="review-author">${r.author_name}</div><div class="review-stars">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</div><div class="review-text">${r.text}</div></div>`).join('')||'<div style="opacity:.4;font-size:13px">Nessuna recensione</div>';
+    const isFav=state.favs.includes(placeId);
+    $('modal-body').innerHTML=`
+      <div class="modal-title">${place.name}</div>
+      <div class="modal-rating">
+        <span class="modal-stars">${'★'.repeat(Math.round(place.rating||4))}</span>
+        <span style="color:rgba(255,179,71,0.6);font-size:13px">${place.rating?.toFixed(1)||'-'} · ${price} ${place.user_ratings_total?'· '+place.user_ratings_total+' rec.':''}</span>
+        <span class="modal-score">⭐ Orbo ${score}</span>
+      </div>
+      <div class="modal-actions">
+        <a class="ma-btn primary" href="https://www.google.com/maps/dir/?api=1&destination=${v.lat},${v.lng}" target="_blank" rel="noopener">🗺️ Indicazioni</a>
+        ${place.formatted_phone_number?`<a class="ma-btn secondary" href="tel:${place.formatted_phone_number}">📞 Chiama</a>`:''}
+        ${place.website?`<a class="ma-btn secondary" href="${place.website}" target="_blank" rel="noopener">🌐 Sito</a>`:''}
+        <button class="ma-btn secondary ${isFav?'active':''}" id="modal-fav" onclick="toggleFavModal('${placeId}')">${isFav?'❤️ Salvato':'🤍 Salva'}</button>
+      </div>
+      <div class="modal-section"><div class="modal-section-title">📍 Indirizzo</div><p style="font-size:13px;color:rgba(255,179,71,0.65)">${place.formatted_address||v.address}</p></div>
+      <div class="modal-section"><div class="modal-section-title">🕐 Orari</div>${hours}</div>
+      <div class="modal-section"><div class="modal-section-title">💬 Recensioni</div>${reviews}</div>
+    `;
+    $('detail-modal').classList.add('open');
+    document.body.style.overflow='hidden';
+  });
+}
+
+function closeModal(){$('detail-modal').classList.remove('open');document.body.style.overflow=''}
+
+// ── PREFERITI ─────────────────────────────────────
+function toggleFav(id,btn){
+  const i=state.favs.indexOf(id);
+  i>-1?(state.favs.splice(i,1),btn.textContent='🤍',btn.classList.remove('active')):(state.favs.push(id),btn.textContent='❤️',btn.classList.add('active'));
+  localStorage.setItem('orbo_favs',JSON.stringify(state.favs));
+  toast(i>-1?'💔 Rimosso':'❤️ Salvato!');
+}
+
+function toggleFavModal(id){
+  const i=state.favs.indexOf(id);
+  i>-1?state.favs.splice(i,1):state.favs.push(id);
+  localStorage.setItem('orbo_favs',JSON.stringify(state.favs));
+  const btn=$('modal-fav');
+  if(btn){btn.textContent=state.favs.includes(id)?'❤️ Salvato':'🤍 Salva'}
+  toast(i>-1?'💔 Rimosso':'❤️ Salvato!');
+  renderResults();
+}
+
+function openMaps(lat,lng){window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`,'_blank')}
+
+// ── SKELETON ──────────────────────────────────────
+function showSkeleton(){$('results-list').innerHTML='<div class="skeleton"></div>'.repeat(4);$('empty-state').style.display='none';$('results-count').textContent=''}
+function hideSkeleton(){$('results-list').querySelectorAll('.skeleton').forEach(s=>s.remove())}
+function showEmpty(){$('empty-state').style.display='block'}
+function clearSearch(){$('search-input').value='';$('search-clear').style.display='none';$('results-list').innerHTML='';$('results-count').textContent='';showEmpty()}
+
+// ── EVENTI ────────────────────────────────────────
+$('search-input').addEventListener('input',e=>{
+  const q=e.target.value.trim();
+  $('search-clear').style.display=q?'block':'none';
+  if(q.length>1)searchAPI(q);
+  else if(!q){$('results-list').innerHTML='';$('results-count').textContent='';showEmpty()}
+});
+
+$('search-input').addEventListener('keydown',e=>{
+  if(e.key!=='Enter')return;
+  const q=$('search-input').value.trim();
+  if(q.length<2)return;
+  saveHistory(q);searchAPI(q);
+});
+
+$('menu-btn').addEventListener('click',()=>{
+  const n=$('mobile-nav');n.classList.toggle('open');n.style.display=n.classList.contains('open')?'flex':'none';
+});
+
+$('logo-btn').addEventListener('click',()=>navigate('home'));
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();closeMobileNav()}});
+
+// offline/online
+addEventListener('offline',()=>toast('📡 Connessione persa'));
+addEventListener('online',()=>toast('🚀 Connessione ristabilita'));
+
+// card animation keyframe
+const style=document.createElement('style');
+style.textContent='@keyframes cardIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}';
+document.head.appendChild(style);
 </script>
+
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB4eYidHtLV4fXThKSZCS6ejH8Urpf2Km4&libraries=places&callback=initMap&language=it&region=IT"></script>
 </body>
 </html>
