@@ -13,8 +13,8 @@ html{scroll-behavior:smooth}
 body{font-family:"Inter",system-ui,sans-serif;background:#0a0010;color:#fff;min-height:100vh;overflow-x:hidden}
 button,input{font:inherit;border:0;background:none;cursor:pointer;touch-action:manipulation;color:inherit}
 img{display:block;width:100%;height:100%;object-fit:cover}
-#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
-#cursor-glow{position:fixed;pointer-events:none;z-index:0}
+#bg-canvas{position:fixed;inset:0;z-index:-2;pointer-events:none}
+#cursor-glow{position:fixed;pointer-events:none;z-index:-1}
 .topbar{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:14px;padding:10px 20px;background:rgba(10,0,16,0.82);backdrop-filter:blur(24px);border-bottom:1px solid rgba(255,179,71,0.15);box-shadow:0 0 40px rgba(255,140,0,0.1)}
 .topbar-logo{height:42px;width:42px;filter:drop-shadow(0 0 12px rgba(255,180,71,0.7));transition:transform.3s cubic-bezier(.34,1.56,.64,1)}
 .topbar-logo:hover{transform:rotate(-8deg) scale(1.12)}
@@ -93,7 +93,6 @@ img{display:block;width:100%;height:100%;object-fit:cover}
 .sb-btn:hover{background:rgba(255,140,0,0.22)}
 .sb-btn.recording{background:rgba(255,60,60,0.25);border-color:rgba(255,60,60,0.5);animation:pulse 1s infinite}
 @keyframes pulse{0%,100%{box-shadow:0 0 0 rgba(255,60,60,0)}50%{box-shadow:0 0 12px rgba(255,60,60,0.5)}}
-/* CHIPS */
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
 .chip{padding:8px 16px;border-radius:999px;border:1.5px solid rgba(255,140,0,0.2);background:rgba(26,11,46,0.7);color:rgba(255,179,71,0.6);font-size:.85rem;font-weight:600;cursor:pointer;transition:.18s}
 .chip:hover{border-color:rgba(255,140,0,0.5);color:#FFB347}
@@ -106,7 +105,7 @@ img{display:block;width:100%;height:100%;object-fit:cover}
 .result-card:hover::after{transform:translateX(120%)}
 .rc-img{position:relative;min-height:130px}
 .rc-img img{height:100%;object-fit:cover;transition:transform.4s ease}
-.result-card:hover .rc-img img{transform:scale(1.07)}
+.result-card:hover.rc-img img{transform:scale(1.07)}
 .rc-img-overlay{position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,107,0,0.18),transparent)}
 .rc-badge{position:absolute;top:10px;left:10px;padding:4px 10px;border-radius:999px;font-size:.72rem;font-weight:800;background:rgba(255,107,0,0.9);color:#1a0b2e}
 .rc-open{position:absolute;bottom:10px;left:10px;padding:3px 9px;border-radius:999px;font-size:.7rem;font-weight:700}
@@ -136,7 +135,7 @@ img{display:block;width:100%;height:100%;object-fit:cover}
 .tr-card:hover{transform:translateY(-3px);box-shadow:0 12px 36px rgba(255,140,0,0.2);border-color:rgba(255,140,0,0.4)}
 .tr-img{position:relative;min-height:110px}
 .tr-img img{height:100%;object-fit:cover;transition:transform.4s}
-.tr-card:hover .tr-img img{transform:scale(1.07)}
+.tr-card:hover.tr-img img{transform:scale(1.07)}
 .tr-rank{position:absolute;top:8px;left:8px;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-family:'Arial Black',sans-serif;font-size:12px;font-weight:900;color:#1a0b2e}
 .tr-rank.gold{background:linear-gradient(135deg,#FFD700,#FFA500)}
 .tr-rank.silver{background:linear-gradient(135deg,#C0C0C0,#A0A0A0)}
@@ -158,7 +157,7 @@ img{display:block;width:100%;height:100%;object-fit:cover}
 .map-recenter:hover{transform:scale(1.1)}
 .favs-empty{text-align:center;padding:60px 20px;color:rgba(255,179,71,0.4)}
 .favs-empty-icon{font-size:3rem;margin-bottom:12px}
-.modal{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.85);backdrop-filter:blur(12px);display:none;align-items:flex-end;justify-content:center}
+.modal{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.85);backdrop-filter:blur(12px);display:none;align-items:flex-end;justify-content:center;isolation:isolate}
 .modal.open{display:flex;animation:fadeIn.2s ease}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 .modal-sheet{width:100%;max-width:680px;max-height:92svh;overflow-y:auto;border-radius:28px 28px 0 0;background:linear-gradient(180deg,#2d1b4e,#1a0b2e);border-top:1px solid rgba(255,140,0,0.25);box-shadow:0 -10px 48px rgba(255,140,0,0.15);animation:slideUp.3s ease}
@@ -196,8 +195,8 @@ img{display:block;width:100%;height:100%;object-fit:cover}
 .review-text{font-size:.82rem;color:rgba(255,179,71,0.6);line-height:1.6;margin-top:5px}
 .toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(80px);background:rgba(26,11,46,0.97);border:1px solid rgba(255,140,0,0.35);color:#FFE4B8;padding:12px 22px;border-radius:14px;font-size:.9rem;font-weight:600;opacity:0;transition:transform.3s cubic-bezier(.34,1.56,.64,1),opacity.3s;z-index:200;backdrop-filter:blur(16px);box-shadow:0 8px 32px rgba(0,0,0,0.4);white-space:nowrap}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-.mobile-nav{display:none;position:fixed;inset:0 0 auto 0;z-index:100;padding:60px 20px 24px;background:rgba(10,0,16,0.97);backdrop-filter:blur(24px);flex-direction:column;gap:6px;transform:translateY(-100%);transition:transform.3s ease;border-bottom:1px solid rgba(255,140,0,0.15)}
-.mobile-nav.open{transform:translateY(0);display:flex}
+.mobile-nav{display:none;position:fixed;inset:0 0 auto 0;z-index:100;padding:60px 20px 24px;background:rgba(10,0,16,0.97);backdrop-filter:blur(24px);flex-direction:column;gap:6px;transform:translateY(-100%);transition:transform.3s ease;border-bottom:1px solid rgba(255,140,0,0.15);pointer-events:none}
+.mobile-nav.open{transform:translateY(0);display:flex;pointer-events:auto}
 .nav-item{padding:14px 18px;border-radius:14px;color:rgba(255,179,71,0.65);font-size:1rem;font-weight:600;text-align:left;transition:.15s}
 .nav-item:hover,.nav-item.active{color:#FFB347;background:rgba(255,140,0,0.1)}
 ::-webkit-scrollbar{width:8px}
@@ -207,347 +206,73 @@ body::before{content:"";position:fixed;inset:-20%;background:radial-gradient(cir
 @keyframes bgMove{0%{transform:translate3d(0,0,0) scale(1)}100%{transform:translate3d(3%,-2%,0) scale(1.08)}}
 button:active{transform:scale(.97)}
 .result-card,.tr-card,.app-tile,.btn-primary,.btn-ghost{will-change:transform;transform:translateZ(0);backface-visibility:hidden}
-.hidden{display:none !important;}
+.hidden{display:none!important;}
+*{-webkit-tap-highlight-color:transparent}
+button,a,.app-tile,.result-card,.chip{touch-action:manipulation}
 @media(max-width:520px){
- .orbit-ring,.food-orbits{width:320px;height:320px;margin:-160px 0 0 -160px}
+.orbit-ring,.food-orbits{width:320px;height:320px;margin:-160px 0 0 -160px}
  @keyframes orbit{from{transform:rotate(0deg) translate(158px) rotate(0deg)}to{transform:rotate(360deg) translate(158px) rotate(-360deg)}}
- .hero-logo-wrap{width:140px;height:140px}
- .result-card{grid-template-columns:100px 1fr}
- .tr-card{grid-template-columns:90px 1fr}
+.hero-logo-wrap{width:140px;height:140px}
+.result-card{grid-template-columns:100px 1fr}
+.tr-card{grid-template-columns:90px 1fr}
 }
 </style>
 </head><body>
 <canvas id="bg-canvas"></canvas>
 <div id="cursor-glow"></div>
-
-<header class="topbar">
-  <svg class="topbar-logo" id="logo-btn" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <linearGradient id="t" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ffb347"/><stop offset="100%" stop-color="#ff8c00"/></linearGradient>
-      <linearGradient id="l" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#cc5500"/><stop offset="100%" stop-color="#e06500"/></linearGradient>
-      <linearGradient id="r" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#ff7c20"/><stop offset="100%" stop-color="#ff9a40"/></linearGradient>
-      <filter id="gf"><feGaussianBlur stdDeviation="1.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-      <path id="op" d="M60,12 C82,12 96,30 96,55 C96,80 82,98 60,98 C38,98 24,80 24,55 C24,30 38,12 60,12 Z"/>
-    </defs>
-    <ellipse cx="60" cy="108" rx="28" ry="6" fill="rgba(180,80,0,.18)"/>
-    <polygon points="60,25 90,40 60,55 30,40" fill="url(#t)"/>
-    <polygon points="30,40 60,55 60,85 30,70" fill="url(#l)"/>
-    <polygon points="60,55 90,40 90,70 60,85" fill="url(#r)"/>
-    <text font-family="Arial Black" font-size="14" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="#FFE4A3" filter="url(#gf)"><animateMotion dur="8s" repeatCount="indefinite"><mpath href="#op"/></animateMotion>O</text>
-    <text font-family="Arial Black" font-size="14" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="#FFD080" filter="url(#gf)"><animateMotion dur="8s" repeatCount="indefinite" begin="-2s"><mpath href="#op"/></animateMotion>R</text>
-    <text font-family="Arial Black" font-size="14" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="#FFB347" filter="url(#gf)"><animateMotion dur="8s" repeatCount="indefinite" begin="-4s"><mpath href="#op"/></animateMotion>B</text>
-    <text font-family="Arial Black" font-size="14" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="#FFE4A3" filter="url(#gf)"><animateMotion dur="8s" repeatCount="indefinite" begin="-6s"><mpath href="#op"/></animateMotion>O</text>
-  </svg>
-  <span class="topbar-slogan">Il gusto ti orbita</span>
-  <button class="topbar-menu" id="menu-btn" aria-label="Menu">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="#FFB347">
-      <circle cx="5" cy="5" r="2"/><circle cx="12" cy="5" r="2"/><circle cx="19" cy="5" r="2"/>
-      <circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/>
-      <circle cx="5" cy="19" r="2"/><circle cx="12" cy="19" r="2"/><circle cx="19" cy="19" r="2"/>
-    </svg>
-  </button>
-</header>
-
-<nav class="mobile-nav" id="mobile-nav">
-  <button class="nav-item active" onclick="navigate('home')">🏠 Home</button>
-  <button class="nav-item" onclick="navigate('search');closeMobileNav()">🔍 Cerca</button>
-  <button class="nav-item" onclick="navigate('toprated');closeMobileNav()">⭐ Top Rated</button>
-  <button class="nav-item" onclick="navigate('favs');closeMobileNav()">❤️ Preferiti</button>
-  <button class="nav-item" onclick="navigate('mappa');closeMobileNav()">🗺️ Mappa</button>
-  <button class="nav-item" onclick="doNearby();closeMobileNav()">📍 Vicino a te</button>
-  <button class="nav-item" onclick="surpriseMe();closeMobileNav()">🪐 Sorprendimi</button>
-</nav>
-
-<main>
-  <section class="view active" id="view-home">
-    <div class="hero">
-      <div class="glow-orb"></div>
-      <div class="orbit-ring"></div>
-      <div class="food-orbits">
-        <span>🍕</span><span>🍣</span><span>🍔</span><span>🍜</span><span>🍩</span><span>🌮</span>
-      </div>
-      <div class="particles" id="particles"></div>
-      <div class="hero-logo-wrap">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="180" height="180">
-          <defs>
-            <linearGradient id="t2" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ffb347"/><stop offset="100%" stop-color="#ff8c00"/></linearGradient>
-            <linearGradient id="l2" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#cc5500"/><stop offset="100%" stop-color="#e06500"/></linearGradient>
-            <linearGradient id="r2" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#ff7c20"/><stop offset="100%" stop-color="#ff9a40"/></linearGradient>
-            <filter id="g2"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-            <path id="p2" d="M60,12 C82,12 96,30 96,55 C96,80 82,98 60,98 C38,98 24,80 24,55 C24,30 38,12 60,12 Z"/>
-          </defs>
-          <ellipse cx="60" cy="108" rx="28" ry="6" fill="rgba(180,80,0,.18)"/>
-          <g filter="drop-shadow(0 6px 16px rgba(180,60,0,0.4))">
-            <polygon points="60,25 90,40 60,55 30,40" fill="url(#t2)"/>
-            <polygon points="30,40 60,55 60,85 30,70" fill="url(#l2)"/>
-            <polygon points="60,55 90,40 90,70 60,85" fill="url(#r2)"/>
-          </g>
-          <polyline points="60,25 90,40 90,70 60,85 30,70 30,40 60,25" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="0.5"/>
-          <text font-family="Arial Black" font-size="15" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="#FFE4A3" filter="url(#g2)"><animateMotion dur="8s" repeatCount="indefinite"><mpath href="#p2"/></animateMotion>O</text>
-          <text font-family="Arial Black" font-size="15" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="#FFD080" filter="url(#g2)"><animateMotion dur="8s" repeatCount="indefinite" begin="-2s"><mpath href="#p2"/></animateMotion>R</text>
-          <text font-family="Arial Black" font-size="15" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="#FFB347" filter="url(#g2)"><animateMotion dur="8s" repeatCount="indefinite" begin="-4s"><mpath href="#p2"/></animateMotion>B</text>
-          <text font-family="Arial Black" font-size="15" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="#FFE4A3" filter="url(#g2)"><animateMotion dur="8s" repeatCount="indefinite" begin="-6s"><mpath href="#p2"/></animateMotion>O</text>
-        </svg>
-      </div>
-      <div class="hero-text">
-        <p class="hero-kicker">✦ Scopri il gusto ✦</p>
-        <h1 class="hero-title">Il locale perfetto,<br>a portata di tap</h1>
-        <p class="hero-sub">Cerca per atmosfera, cucina o occasione.<br><strong>Orbo ti porta dove vuoi essere.</strong></p>
-        <div class="hero-cta">
-          <button class="btn-primary" onclick="navigate('search')">Inizia la ricerca →</button>
-          <button class="btn-ghost" onclick="doNearby()">📍 Vicino a me</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="social-proof">
-      <div class="stats-row" style="justify-content:center;gap:40px">
-        <div class="stat"><span class="stat-num" style="-webkit-text-fill-color:#FFB347;background:none">BETA</span><span class="stat-label">Modena</span></div>
-        <div class="stat"><span class="stat-num" style="-webkit-text-fill-color:#FFB347;background:none">12</span><span class="stat-label">Locali curati</span></div>
-        <div class="stat"><span class="stat-num" style="-webkit-text-fill-color:#FFB347;background:none">LIVE</span><span class="stat-label">Ora</span></div>
-      </div>
-      <div class="trending-wrap">
-        <p class="trending-label">🔥 TRENDING ORA</p>
-        <div class="trending-track">
-          <div class="trending-scroll">
-            <span>Pizza Gourmet</span><span>Ramen</span><span>Brunch</span><span>Gelato</span>
-            <span>Tacos</span><span>Sushi</span><span>Bistrot</span><span>Aperitivo</span>
-            <span>Pizza Gourmet</span><span>Ramen</span><span>Brunch</span><span>Gelato</span>
-            <span>Tacos</span><span>Sushi</span><span>Bistrot</span><span>Aperitivo</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="app-grid-section">
-      <p class="app-grid-title">✦ Scegli il tuo mood ✦</p>
-      <div class="app-grid">
-        <div class="app-tile" onclick="searchAPI('pizza')">
-          <span class="at-icon">🍕</span>
-          <div>
-            <span class="at-kicker">CLASSICO</span>
-            <span class="at-title">Pizza Napoletana</span>
-            <span class="at-sub">Forno a legna vicino a te</span>
-          </div>
-        </div>
-        <div class="app-tile" onclick="searchAPI('sushi')">
-          <span class="at-icon">🍣</span>
-          <div>
-            <span class="at-kicker">FRESCO</span>
-            <span class="at-title">Sushi Bar</span>
-            <span class="at-sub">Crudo selezionato</span>
-          </div>
-        </div>
-        <div class="app-tile" onclick="surpriseMe()" style="background:linear-gradient(135deg,rgba(255,107,0,0.25),rgba(45,27,78,0.85));border-color:rgba(255,140,0,0.5)">
-          <span class="at-icon">🪐</span>
-          <div>
-            <span class="at-kicker">AI MODE</span>
-            <span class="at-title">Sorprendimi</span>
-            <span class="at-sub">Orbo sceglie per te</span>
-          </div>
-        </div>
-      </div>
-      <div style="display:flex;gap:10px;justify-content:center;margin-top:24px;flex-wrap:wrap">
-        <button class="chip" onclick="navigate('search')">🔍 Cerca</button>
-        <button class="chip" onclick="doNearby()">📍 Vicino a me</button>
-        <button class="chip" onclick="navigate('toprated')">⭐ Top Rated</button>
-        <button class="chip" onclick="navigate('mappa')">🗺️ Mappa</button>
-        <button class="chip" onclick="navigate('favs')">❤️ Preferiti</button>
-      </div>
-    </div>
-  </section>
-  <section class="view" id="view-search">
-    <div class="view-inner">
-      <div class="view-header">
-        <h2 class="view-title">🔍 Cerca</h2>
-        <button class="back-btn" onclick="navigate('home')">← Home</button>
-      </div>
-      <div class="history-row" id="history-row"></div>
-      <div class="search-bar-wrap">
-        <div class="search-bar">
-          <span style="font-size:1.2rem">🔍</span>
-          <input id="search-input" placeholder="Pizza, sushi, romantico, brunch..." autocomplete="off">
-          <div class="search-bar-actions">
-            <button class="sb-btn" id="voice-btn" onclick="startVoice()" title="Voce">🎤</button>
-            <button class="sb-btn" id="search-clear" style="display:none" onclick="clearSearch()">✕</button>
-          </div>
-        </div>
-      </div>
-      <div class="chips" id="chips"></div>
-      <div class="results-toolbar">
-        <p class="results-count" id="results-count"></p>
-      </div>
-      <div id="results-list"></div>
-      <div class="empty-state" id="empty-state">
-        <div class="empty-icon">🍽️</div>
-        <p>Cerca qualcosa o clicca<br><strong style="color:#FFB347">Vicino a me</strong></p>
-      </div>
-    </div>
-  </section>
-
-  <section class="view" id="view-toprated">
-    <div class="view-inner">
-      <div class="view-header">
-        <h2 class="view-title">⭐ Top Rated</h2>
-        <button class="back-btn" onclick="navigate('home')">← Home</button>
-      </div>
-      <p style="font-size:.85rem;color:rgba(255,179,71,0.45);margin-bottom:16px">I meglio votati vicino a te</p>
-      <div id="toprated-list"></div>
-      <div class="empty-state" id="toprated-empty">
-        <div class="empty-icon">⭐</div>
-        <p>Attiva la posizione GPS<br>per vedere i top della zona</p>
-      </div>
-    </div>
-  </section>
-
-  <section class="view" id="view-favs">
-    <div class="view-inner">
-      <div class="view-header">
-        <h2 class="view-title">❤️ Preferiti</h2>
-        <button class="back-btn" onclick="navigate('home')">← Home</button>
-      </div>
-      <div id="favs-list"></div>
-      <div class="favs-empty hidden" id="favs-empty">
-        <div class="favs-empty-icon">🤍</div>
-        <p style="font-size:.92rem;color:rgba(255,179,71,0.45);line-height:1.7">Nessun preferito ancora.<br>Clicca ❤️ su un locale per salvarlo.</p>
-      </div>
-    </div>
-  </section>
-
-  <section class="view" id="view-mappa">
-    <div class="view-inner" style="padding:24px 18px 0">
-      <div class="view-header">
-        <h2 class="view-title">🗺️ Mappa</h2>
-        <button class="back-btn" onclick="navigate('home')">← Home</button>
-      </div>
-    </div>
-    <div class="map-wrapper">
-      <div class="map-bar" id="map-bar">📍 Clicca 🎯 per centrare sulla tua posizione</div>
-      <div id="map-view"></div>
-      <button class="map-recenter" onclick="recenterMap()" title="Centra mappa">🎯</button>
-    </div>
-  </section>
-</main>
-
-<div class="modal" id="detail-modal" onclick="if(event.target===this)closeModal()">
-  <div class="modal-sheet">
-    <div class="modal-handle"></div>
-    <div class="modal-img-wrap">
-      <img id="modal-img" class="modal-img" src="" alt="">
-      <button class="modal-close" onclick="closeModal()">✕</button>
-    </div>
-    <div class="modal-body" id="modal-body"></div>
-  </div>
-</div>
-
-<div id="gmap" style="width:1px;height:1px;opacity:0;position:fixed"></div>
-<div class="toast" id="toast"></div>
+<!--... tutto il resto del body identico alla tua versione... -->
+<!-- Per brevità non ripeto tutto qui, usa il file completo che avevi, con queste modifiche JS sotto -->
 
 <script>
 const $=id=>document.getElementById(id);
 function escapeHtml(str=''){return String(str).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));}
 const lowPerf = window.innerWidth < 768;
 let animationId;
-
-(function(){const c=document.getElementById('bg-canvas'),ctx=c.getContext('2d');let W,H,stars=[];function resize(){W=c.width=innerWidth;H=c.height=innerHeight;stars=[];const N=lowPerf?60:140;for(let i=0;i<N;i++)stars.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.2+.2,a:Math.random(),s:Math.random()*.004+.001})}resize();addEventListener('resize',resize);function draw(){ctx.clearRect(0,0,W,H);stars.forEach(s=>{s.a+=s.s;if(s.a>1)s.a=0;ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fillStyle=`rgba(255,200,120,${s.a*.7})`;ctx.fill()});animationId=requestAnimationFrame(draw)}draw();document.addEventListener('visibilitychange',()=>{if(document.hidden){cancelAnimationFrame(animationId);}else{draw();}});if(lowPerf){document.getElementById('cursor-glow').style.display='none';}})();
-
+(function(){const c=document.getElementById('bg-canvas'),ctx=c.getContext('2d');let W,H,stars=[];function resize(){W=c.width=innerWidth;H=c.height=innerHeight;stars=[];const N=lowPerf?30:80;for(let i=0;i<N;i++)stars.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.2+.2,a:Math.random(),s:Math.random()*.004+.001})}resize();addEventListener('resize',resize);function draw(){ctx.clearRect(0,0,W,H);stars.forEach(s=>{s.a+=s.s;if(s.a>1)s.a=0;ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fillStyle=`rgba(255,200,120,${s.a*.7})`;ctx.fill()});animationId=requestAnimationFrame(draw)}draw();document.addEventListener('visibilitychange',()=>{if(document.hidden){cancelAnimationFrame(animationId);}else{cancelAnimationFrame(animationId);draw();}});if(lowPerf){document.getElementById('cursor-glow').style.display='none';}})();
 if(innerWidth>=768){const g=document.getElementById('cursor-glow');Object.assign(g.style,{width:'240px',height:'240px',borderRadius:'50%',background:'radial-gradient(circle,rgba(255,140,0,.15),transparent 70%)',filter:'blur(26px)',transform:'translate(-50%,-50%)',opacity:'0',transition:'opacity.3s'});addEventListener('mousemove',e=>{g.style.opacity='.9';g.style.left=e.clientX+'px';g.style.top=e.clientY+'px'});addEventListener('mouseout',()=>g.style.opacity='0');}
-
 (function(){const c=document.getElementById('particles');for(let i=0;i<12;i++){const s=document.createElement('span');s.style.cssText=`left:${Math.random()*100}%;bottom:0;animation-delay:${Math.random()*10}s;animation-duration:${7+Math.random()*8}s`;c.appendChild(s)}})();
-
 let map,visMap,placesService,userLoc=null,VENUES=[],debT;
 const CATS=[{id:'all',label:'Tutto',icon:'✦'},{id:'restaurant',label:'Ristoranti',icon:'🍝'},{id:'cafe',label:'Bar & Caffè',icon:'☕'},{id:'bakery',label:'Pasticcerie',icon:'🧁'},{id:'meal_takeaway',label:'Take Away',icon:'📦'}];
-const state={favs:JSON.parse(localStorage.getItem('orbo_favs')||'[]'),activeCat:'all',history:JSON.parse(localStorage.getItem('orbo_history')||'[]')};
-
+const state={favs:JSON.parse(localStorage.getItem('orbo_favs')||'[]'),favData:JSON.parse(localStorage.getItem('orbo_favdata')||'[]'),activeCat:'all',history:JSON.parse(localStorage.getItem('orbo_history')||'[]')};
 let tT;function toast(m){const el=$('toast');clearTimeout(tT);el.textContent=m;el.classList.add('show');tT=setTimeout(()=>el.classList.remove('show'),2600)}
 function navigate(v){document.querySelectorAll('.view').forEach(s=>s.classList.toggle('active',s.id==='view-'+v));document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));closeMobileNav();window.scrollTo({top:0,behavior:'smooth'});if(v==='search'){renderHistory();setTimeout(()=>$('search-input')?.focus(),300);}if(v==='toprated')renderTopRated();if(v==='favs')renderFavs();if(v==='mappa')initVisMap();}
 function closeMobileNav(){const n=$('mobile-nav');n.classList.remove('open')}
 function closeModal(){$('detail-modal').classList.remove('open');}
-
 $('menu-btn').onclick=()=>$('mobile-nav').classList.toggle('open');
 $('logo-btn').onclick=()=>navigate('home');
-
 function saveHistory(q){if(!q||q.length<2)return;state.history=[q,...state.history.filter(x=>x!==q)].slice(0,5);localStorage.setItem('orbo_history',JSON.stringify(state.history));}
 function renderHistory(){const row=$('history-row');if(!row)return;if(!state.history.length){row.innerHTML='';return}row.innerHTML=state.history.map(h=>`<button class="history-chip" onclick="doSearch('${h.replace(/'/g,"\\'")}')">🕐 ${escapeHtml(h)}</button>`).join('');}
-
 function distanza(a,b,c,d){const R=6371,dLa=(c-a)*Math.PI/180,dLo=(d-b)*Math.PI/180;const x=Math.sin(dLa/2)**2+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(dLo/2)**2;return +(R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x))).toFixed(1);}
-
 function orboScore(v){let s=0;if(v.rating)s+=v.rating*14;if(v.reviews)s+=Math.min(v.reviews,1000)/1000*18;if(v.openNow===true)s+=10;if(v.price==='€'||v.price==='€€')s+=4;if(userLoc&&v.lat){const d=distanza(userLoc.lat,userLoc.lng,v.lat,v.lng);s+=Math.max(0,(3-d)*6)}return Math.round(s);}
-
 function initMap(){map=new google.maps.Map($('gmap'),{center:{lat:44.4949,lng:11.3426},zoom:15});placesService=new google.maps.places.PlacesService(map);renderChips();if(navigator.geolocation){navigator.geolocation.getCurrentPosition(p=>{userLoc={lat:p.coords.latitude,lng:p.coords.longitude};map.setCenter(userLoc);toast('📍 Posizione rilevata!')},()=>toast('⚠️ GPS non disponibile'));}const h=new Date().getHours();const greetings=['☀️ Buongiorno, fame cosmica?','🌤️ Buona giornata!','🍝 Pronto per qualcosa di buono?','🍹 Aperitivo in arrivo?','🌙 Cena perfetta stasera?'];setTimeout(()=>toast(greetings[h<10?0:h<12?1:h<15?2:h<20?3:4]),1000);}window.initMap=initMap;
-
-let visMapInit=false,visMarkers=[];function initVisMap(){if(visMapInit)return;visMapInit=true;const center=userLoc||{lat:44.4949,lng:11.3426};visMap=new google.maps.Map($('map-view'),{center,zoom:15,styles:[{elementType:'geometry',stylers:[{color:'#1a0b2e'}]},{elementType:'labels.text.fill',stylers:[{color:'#FFB347'}]},{elementType:'labels.text.stroke',stylers:[{color:'#1a0b2e'}]},{featureType:'road',elementType:'geometry',stylers:[{color:'#2d1b4e'}]},{featureType:'water',elementType:'geometry',stylers:[{color:'#0a0010'}]},{featureType:'poi',stylers:[{visibility:'off'}]}],disableDefaultUI:true,zoomControl:true});$('map-bar').textContent='📍 Caricamento locali...';const loc=userLoc||{lat:44.4949,lng:11.3426};const ps=new google.maps.places.PlacesService(visMap);ps.nearbySearch({location:loc,radius:1500,type:'restaurant'},(res,st)=>{if(st!=='OK')return;visMarkers.forEach(m=>m.setMap(null));visMarkers=[];res.slice(0,20).forEach(p=>{const m=new google.maps.Marker({map:visMap,position:p.geometry.location,title:p.name,icon:{path:google.maps.SymbolPath.CIRCLE,scale:8,fillColor:'#FF6B00',fillOpacity:1,strokeColor:'#FFB347',strokeWeight:2}});m.addListener('click',()=>{const v={id:p.place_id,name:p.name,address:p.vicinity||'',rating:p.rating||0,reviews:p.user_ratings_total||0,price:'€'.repeat(Math.max(1,p.price_level||2)),openNow:p.opening_hours?.open_now??null,photo:p.photos?.[0]?.getUrl({maxWidth:400})||'',lat:p.geometry.location.lat(),lng:p.geometry.location.lng()};openDetailDirect(v);});visMarkers.push(m);});$('map-bar').textContent=`🗺️ ${res.length} locali sulla mappa`;});}
+function gmAuthFailure(){toast('⚠️ Google Maps API non valida');}
+let visMapInit=false,visMarkers=[];function initVisMap(){if(!window.google||!google.maps){toast('⚠️ Mappa non disponibile');return;}if(visMapInit)return;visMapInit=true;const center=userLoc||{lat:44.4949,lng:11.3426};visMap=new google.maps.Map($('map-view'),{center,zoom:15,styles:[{elementType:'geometry',stylers:[{color:'#1a0b2e'}]},{elementType:'labels.text.fill',stylers:[{color:'#FFB347'}]},{elementType:'labels.text.stroke',stylers:[{color:'#1a0b2e'}]},{featureType:'road',elementType:'geometry',stylers:[{color:'#2d1b4e'}]},{featureType:'water',elementType:'geometry',stylers:[{color:'#0a0010'}]},{featureType:'poi',stylers:[{visibility:'off'}]}],disableDefaultUI:true,zoomControl:true});$('map-bar').textContent='📍 Caricamento locali...';const loc=userLoc||{lat:44.4949,lng:11.3426};const ps=new google.maps.places.PlacesService(visMap);ps.nearbySearch({location:loc,radius:1500,type:'restaurant'},(res,st)=>{if(st!=='OK')return;visMarkers.forEach(m=>m.setMap(null));visMarkers=[];res.slice(0,20).forEach(p=>{const m=new google.maps.Marker({map:visMap,position:p.geometry.location,title:p.name,icon:{path:google.maps.SymbolPath.CIRCLE,scale:8,fillColor:'#FF6B00',fillOpacity:1,strokeColor:'#FFB347',strokeWeight:2}});m.addListener('click',()=>{const v={id:p.place_id,name:p.name,address:p.vicinity||'',rating:p.rating||0,reviews:p.user_ratings_total||0,price:'€'.repeat(Math.max(1,p.price_level||2)),openNow:p.opening_hours?.open_now??null,photo:p.photos?.[0]?.getUrl({maxWidth:400})||'',lat:p.geometry.location.lat(),lng:p.geometry.location.lng()};openDetailDirect(v);});visMarkers.push(m);});$('map-bar').textContent=`🗺️ ${res.length} locali sulla mappa`;});}
 function recenterMap(){if(!visMap)return;const center=userLoc||{lat:44.4949,lng:11.3426};visMap.setCenter(center);visMap.setZoom(15);}
-
 function renderChips(){const c=$('chips');c.innerHTML='';CATS.forEach(cat=>{const b=document.createElement('button');b.className='chip'+(cat.id===state.activeCat?' active':'');b.innerHTML=`${cat.icon} ${cat.label}`;b.onclick=()=>{state.activeCat=cat.id;document.querySelectorAll('.chip').forEach(x=>x.classList.remove('active'));b.classList.add('active');getNearby();};c.appendChild(b);});}
 function showSkeleton(){$('results-list').innerHTML='<div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>';}
 function hideSkeleton(){$('results-list').innerHTML='';}
 function showEmpty(){$('empty-state').style.display='block';}
 function clearSearch(){$('search-input').value='';$('search-clear').style.display='none';VENUES=[];renderResults();}
 $('search-input').addEventListener('input',e=>{const val=e.target.value.trim();$('search-clear').style.display=val?'grid':'none';if(val.length>=3){searchAPI(val);}if(!val){VENUES=[];renderResults();}});
-
 function doNearby(){navigate('search');toast('📍 Cerco vicino a te...');getNearby()}
-function getNearby(){const loc=userLoc||map?.getCenter();if(!loc||!placesService)return;showSkeleton();const types=state.activeCat==='all'?['restaurant','cafe','bakery']:[state.activeCat];let all=[],done=0;types.forEach(type=>{placesService.nearbySearch({location:loc,radius:2000,type},(r,s)=>{if(s==='OK')all=[...all,...r];if(++done===types.length){const seen=new Set();updateVenues(all.filter(v=>{if(seen.has(v.place_id))return false;seen.add(v.place_id);return true}))}});});}
-function searchAPI(q){if(!placesService){toast('⌛ Maps si sta caricando...');return;}clearTimeout(debT);debT=setTimeout(()=>{showSkeleton();const qLow=q.trim().toLowerCase();const isCity=qLow.split(' ').length<=2&&!['pizza','sushi','ristor','bar','caff','brunch','gelat','taco','ramen','burger'].some(kw=>qLow.includes(kw));const finalQ=isCity?`ristoranti a ${q}`:q;placesService.textSearch({query:finalQ,location:userLoc||map.getCenter(),radius:8000},(r,s)=>{if(s!=='OK'||!r){hideSkeleton();showEmpty();return}const allowed=['restaurant','cafe','bar','bakery','meal_takeaway','meal_delivery'];const filtered=r.filter(p=>p.types?.some(t=>allowed.includes(t)));if(filtered.length)updateVenues(filtered);else{getNearby();toast('🔄 Mostro locali vicini')}});},600);}
-
+function getNearby(){const loc=userLoc||map?.getCenter?.();if(!loc||!placesService){toast('⚠️ Posizione non disponibile');return;}showSkeleton();const types=state.activeCat==='all'?['restaurant','cafe','bakery']:[state.activeCat];let all=[],done=0;types.forEach(type=>{placesService.nearbySearch({location:loc,radius:2000,type},(r,s)=>{if(s==='OK')all=[...all,...r];if(++done===types.length){const seen=new Set();updateVenues(all.filter(v=>{if(seen.has(v.place_id))return false;seen.add(v.place_id);return true}))}});});}
+function searchAPI(q){if(!window.google||!placesService){toast('⌛ Google Maps non ancora pronto');return;}clearTimeout(debT);debT=setTimeout(()=>{showSkeleton();const qLow=q.trim().toLowerCase();const isCity=qLow.split(' ').length<=2&&!['pizza','sushi','ristor','bar','caff','brunch','gelat','taco','ramen','burger'].some(kw=>qLow.includes(kw));const finalQ=isCity?`ristoranti a ${q}`:q;placesService.textSearch({query:finalQ,location:userLoc||map.getCenter(),radius:8000},(r,s)=>{if(s!=='OK'||!r){hideSkeleton();showEmpty();return}const allowed=['restaurant','cafe','bar','bakery','meal_takeaway','meal_delivery'];const filtered=r.filter(p=>p.types?.some(t=>allowed.includes(t)));if(filtered.length)updateVenues(filtered);else{getNearby();toast('🔄 Mostro locali vicini')}});},600);}
 function doSearch(q){$('search-input').value=q;$('search-clear').style.display='block';saveHistory(q);searchAPI(q);navigate('search');}
 function doMood(q){navigate('search');doSearch(q)}
 function surpriseMe(){const moods=['sushi romantico','pizza gourmet','brunch instagrammabile','ramen autentico','aperitivo rooftop','bistrot locale','gelato artigianale','tacos street food'];const q=moods[Math.floor(Math.random()*moods.length)];toast('🪐 Orbo sceglie: '+q);doSearch(q);}
-
 function startVoice(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){toast('⚠️ Voce non supportata');return}const rec=new SR();rec.lang='it-IT';rec.interimResults=false;const btn=$('voice-btn');btn.classList.add('recording');btn.textContent='🔴';toast('🎤 Parla ora...');rec.onresult=e=>{const q=e.results[0][0].transcript;$('search-input').value=q;$('search-clear').style.display='block';toast('🎤 "'+q+'"');doSearch(q);};rec.onerror=()=>toast('⚠️ Errore microfono');rec.onend=()=>{btn.classList.remove('recording');btn.textContent='🎤';};rec.start();}
-
-function updateVenues(list){
-  VENUES=list.map(p=>({
-    place_id:p.place_id,
-    name:p.name,
-    rating:p.rating||0,
-    vicinity:p.vicinity||'',
-    price:'€'.repeat(Math.max(1,p.price_level||2)),
-    openNow:p.opening_hours?.open_now??null,
-    photo:p.photos?.[0]?.getUrl({maxWidth:600,maxHeight:400}) || 'https://placehold.co/600x400/1a0b2e/FFB347?text=ORBO',
-    lat:p.geometry.location.lat(),
-    lng:p.geometry.location.lng(),
-    reviews:p.user_ratings_total||0
-  }));
-  VENUES.forEach(v=>v.score=orboScore(v));
-  VENUES.sort((a,b)=>b.score-a.score);
-  renderResults();
-}
-
-function renderResults(){
-  hideSkeleton();
-  const list=$('results-list');
-  if(!VENUES.length){$('empty-state').style.display='block';list.innerHTML='';$('results-count').textContent='0 risultati';return;}
-  $('empty-state').style.display='none';
-  $('results-count').textContent=`${VENUES.length} risultati`;
-  list.innerHTML=VENUES.map(v=>`
-    <div class="result-card" onclick="openDetail('${v.place_id}')">
-      <div class="rc-img">
-        <img src="${v.photo}" alt="${escapeHtml(v.name)}" loading="lazy" onerror="this.src='https://placehold.co/600x400/1a0b2e/FFB347?text=ORBO'">
-        <div class="rc-img-overlay"></div>
-        ${v.openNow!==null?`<span class="rc-open ${v.openNow?'open':'closed'}">${v.openNow?'Aperto':'Chiuso'}</span>`:''}
-        <span class="rc-score">⭐ ${v.score}</span>
-      </div>
-      <div class="rc-body">
-        <div class="rc-name">${escapeHtml(v.name)}</div>
-        <div class="rc-address">${escapeHtml(v.vicinity||'')}</div>
-        <div class="rc-rating"><span class="rc-stars">⭐</span><span class="rc-num">${v.rating?.toFixed(1)||'-'}</span></div>
-        ${v.dist?`<div class="rc-dist">${v.dist} km da te</div>`:''}
-      </div>
-    </div>``).join('');
-}
-
-function openDetail(pid){const v=VENUES.find(x=>x.place_id===pid);if(!v)return;openDetailDirect(v);}
+function updateVenues(list){VENUES=list.map(p=>({place_id:p.place_id,name:p.name,rating:p.rating||0,vicinity:p.vicinity||'',price:'€'.repeat(Math.max(1,p.price_level||2)),openNow:p.opening_hours?.open_now??null,photo:p.photos?.[0]?.getUrl({maxWidth:600,maxHeight:400})||'https://placehold.co/600x400/1a0b2e/FFB347?text=ORBO',lat:p.geometry.location.lat(),lng:p.geometry.location.lng(),reviews:p.user_ratings_total||0}));VENUES.forEach(v=>v.score=orboScore(v));VENUES.sort((a,b)=>b.score-a.score);renderResults();}
+function renderResults(){hideSkeleton();const list=$('results-list');if(!VENUES.length){$('empty-state').style.display='block';list.innerHTML='';$('results-count').textContent='0 risultati';return;}$('empty-state').style.display='none';$('results-count').textContent=`${VENUES.length} risultati`;list.innerHTML=VENUES.map(v=>`<div class="result-card" onclick="openDetail('${v.place_id}')"><div class="rc-img"><img src="${v.photo}" alt="${escapeHtml(v.name)}" loading="lazy" onerror="this.src='https://placehold.co/600x400/1a0b2e/FFB347?text=ORBO'"><div class="rc-img-overlay"></div>${v.openNow!==null?`<span class="rc-open ${v.openNow?'open':'closed'}">${v.openNow?'Aperto':'Chiuso'}</span>`:''}<span class="rc-score">⭐ ${v.score}</span></div><div class="rc-body"><div class="rc-name">${escapeHtml(v.name)}</div><div class="rc-address">${escapeHtml(v.vicinity||'')}</div><div class="rc-rating"><span class="rc-stars">⭐</span><span class="rc-num">${v.rating?.toFixed(1)||'-'}</span></div>${v.dist?`<div class="rc-dist">${v.dist} km da te</div>`:''}</div></div>`).join('');}
+function openDetail(pid){let v=VENUES.find(x=>x.place_id===pid);if(v){openDetailDirect(v);return;}if(!placesService)return;placesService.getDetails({placeId:pid,fields:['place_id','name','rating','user_ratings_total','formatted_address','geometry','photos','price_level','opening_hours']},(place,status)=>{if(status!=='OK'||!place)return;const tempVenue={place_id:place.place_id,id:place.place_id,name:place.name,rating:place.rating||0,vicinity:place.formatted_address||'',price:'€'.repeat(Math.max(1,place.price_level||2)),openNow:place.opening_hours?.open_now??null,photo:place.photos?.[0]?.getUrl({maxWidth:600,maxHeight:400})||'',lat:place.geometry?.location?.lat?.()||0,lng:place.geometry?.location?.lng?.()||0,reviews:place.user_ratings_total||0};openDetailDirect(tempVenue);});}
 function openDetailDirect(v){if(!placesService)return;placesService.getDetails({placeId:v.id||v.place_id,fields:['name','rating','user_ratings_total','formatted_phone_number','website','opening_hours','reviews','photos','formatted_address','price_level']},(place,st)=>{if(st!=='OK')return;$('modal-img').src=place.photos?.[0]?.getUrl({maxWidth:900})||v.photo||'';const price='€'.repeat(place.price_level||1);const score=v.score||0;const todayIdx=new Date().getDay();const hours=place.opening_hours?.weekday_text?.map((h,i)=>`<div class="hours-day ${i===(todayIdx===0?6:todayIdx-1)?'today':''}">${escapeHtml(h)}</div>`).join('')||'<div class="hours-day" style="opacity:.45">Orari non disponibili</div>';const reviews=place.reviews?.slice(0,3).map(r=>`<div class="review-item"><div class="review-author">${escapeHtml(r.author_name)}</div><div class="review-stars">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</div><div class="review-text">${escapeHtml(r.text)}</div></div>`).join('')||'<div style="opacity:.4;font-size:13px">Nessuna recensione</div>';const isFav=state.favs.includes(v.id||v.place_id);$('modal-body').innerHTML=`<div class="modal-top-row"><div class="modal-name">${escapeHtml(place.name)}</div><button class="modal-fav-btn ${isFav?'active':''}" onclick="toggleFav('${v.id||v.place_id}')">${isFav?'❤️':'🤍'}</button></div><div class="modal-meta"><span class="modal-stars">${'★'.repeat(Math.round(place.rating||4))}</span><span class="modal-rnum">${place.rating?.toFixed(1)||'-'} ${place.user_ratings_total?'('+place.user_ratings_total+')':''}</span><span class="modal-price">${price}</span><span class="modal-open-badge ${v.openNow?'open':'closed'}">${v.openNow?'Aperto ora':'Chiuso'}</span></div><div class="modal-actions"><a class="ma-btn primary" href="https://www.google.com/maps/dir/?api=1&destination=${v.lat},${v.lng}" target="_blank">🗺️ Indicazioni</a>${place.formatted_phone_number?`<a class="ma-btn secondary" href="tel:${place.formatted_phone_number}">📞 Chiama</a>`:''}${place.website?`<a class="ma-btn secondary" href="${place.website}" target="_blank">🌐 Sito</a>`:''}</div><div class="modal-section"><div class="modal-section-title">📍 Indirizzo</div><p style="font-size:13px;color:rgba(255,179,71,0.65)">${escapeHtml(place.formatted_address||v.address)}</p></div><div class="modal-section"><div class="modal-section-title">🕐 Orari</div>${hours}</div><div class="modal-section"><div class="modal-section-title">💬 Recensioni</div>${reviews}</div>`;$('detail-modal').classList.add('open');});}
-
-function toggleFav(id){const i=state.favs.indexOf(id);i>-1?(state.favs.splice(i,1),toast('💔 Rimosso')):(state.favs.push(id),toast('❤️ Salvato!'));localStorage.setItem('orbo_favs',JSON.stringify(state.favs));renderFavs();renderResults();}
-function renderFavs(){const l=$('favs-list');if(!state.favs.length){l.innerHTML='';$('favs-empty').classList.remove('hidden');return;}$('favs-empty').classList.add('hidden');l.innerHTML=state.favs.map(id=>{const v=VENUES.find(x=>x.place_id===id);if(!v)return'';return`<div class="result-card" onclick="openDetail('${v.place_id}')"><div class="rc-img"><img src="${v.photo}" alt="${escapeHtml(v.name)}"><div class="rc-img-overlay"></div></div><div class="rc-body"><div class="rc-name">${escapeHtml(v.name)}</div><div class="rc-address">${escapeHtml(v.vicinity)}</div><div class="rc-footer"><button class="rc-info-btn" onclick="event.stopPropagation();toggleFav('${v.place_id}')">❌ Rimuovi</button></div></div></div>`}).join('');}
-
+function toggleFav(id){const venue=VENUES.find(v=>v.place_id===id);const i=state.favs.indexOf(id);if(i>-1){state.favs.splice(i,1);state.favData=state.favData.filter(v=>v.place_id!==id);toast('💔 Rimosso');}else{state.favs.push(id);if(venue){state.favData.push(venue);}toast('❤️ Salvato!');}localStorage.setItem('orbo_favs',JSON.stringify(state.favs));localStorage.setItem('orbo_favdata',JSON.stringify(state.favData));renderFavs();renderResults();}
+function renderFavs(){const l=$('favs-list');if(!state.favData.length){l.innerHTML='';$('favs-empty').classList.remove('hidden');return;}$('favs-empty').classList.add('hidden');l.innerHTML=state.favData.map(v=>{return`<div class="result-card" onclick="openDetail('${v.place_id}')"><div class="rc-img"><img src="${v.photo}" alt="${escapeHtml(v.name)}"><div class="rc-img-overlay"></div></div><div class="rc-body"><div class="rc-name">${escapeHtml(v.name)}</div><div class="rc-address">${escapeHtml(v.vicinity)}</div><div class="rc-footer"><button class="rc-info-btn" onclick="event.stopPropagation();toggleFav('${v.place_id}')">❌ Rimuovi</button></div></div></div>`;}).join('');}
 function renderTopRated(){if(!userLoc){$('toprated-empty').style.display='block';$('toprated-list').innerHTML='';return;}const loc=userLoc;placesService.nearbySearch({location:loc,radius:2000,type:'restaurant'},(res,st)=>{if(st!=='OK'||!res.length){$('toprated-empty').style.display='block';return;}$('toprated-empty').style.display='none';const sorted=res.filter(p=>p.rating).sort((a,b)=>(b.rating||0)-(a.rating||0)).slice(0,10);$('toprated-list').innerHTML=sorted.map((p,i)=>{const rank=i===0?'gold':i===1?'silver':i===2?'bronze':'other';return`<div class="tr-card" onclick="openDetail('${p.place_id}')"><div class="tr-img"><img src="${p.photos?.[0]?.getUrl({maxWidth:400})||'https://placehold.co/400x300/1a0b2e/FFB347?text=ORBO'}" alt="${escapeHtml(p.name)}"><span class="tr-rank ${rank}">${i+1}</span></div><div class="tr-body"><div class="tr-name">${escapeHtml(p.name)}</div><div class="tr-addr">${escapeHtml(p.vicinity||'')}</div><div class="tr-score-row"><span class="tr-stars">⭐</span><span class="tr-num">${p.rating?.toFixed(1)}</span>${p.opening_hours?.open_now!==undefined?`<span class="tr-open-badge ${p.opening_hours.open_now?'open':'closed'}">${p.opening_hours.open_now?'Aperto':'Chiuso'}</span>`:''}</div></div></div>`}).join('');});}
-
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();closeMobileNav();}});
 </script>
-
-<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB4eYidHtLV4fXThKSZCS6ejH8Urpf2Km4&libraries=places,geometry&callback=initMap"></script>
+<script>
+function gmAuthFailure(){toast('⚠️ Google Maps API non valida');}
+</script>
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB4eYidHtLV4fXThKSZCS6ejH8Urpf2Km4&libraries=places,geometry&callback=initMap" onerror="toast('❌ Errore caricamento Google Maps')"></script>
 </body>
 </html>
