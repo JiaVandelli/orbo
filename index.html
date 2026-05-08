@@ -27,8 +27,146 @@
   window.addEventListener('unhandledrejection',function(event){if(errorSent)return;errorSent=true;var reason=event.reason;sendEvent('error',{message:(reason instanceof Error)?reason.message:String(reason),type:'unhandled_promise_rejection',auto_captured:true});});
   window.playablesSDK={complete:function(score){sendEvent('game_ended',{score:score,completed:true});},error:function(message){if(errorSent)return;errorSent=true;sendEvent('error',{message:message||'Unknown error',auto_captured:false});},sendEvent:function(eventName,payload){if(!eventName||typeof eventName!=='string')return;sendEvent(eventName,payload);}};
   if(originalRAF){originalRAF.call(window,onFrame);}
-})();</script>
-<script>window.Intl=window.Intl||{};Intl.t=function(s){return(Intl._locale&&Intl._locale[s])||s;};</script>
+})();function closeModal(){ $('detail-modal').classList.remove('open'); }
+
+function toggleFav(id){
+  const index = state.favs.indexOf(id);
+  if(index > -1){ state.favs.splice(index,1); toast('💔 Rimosso dai preferiti'); }
+  else{ state.favs.push(id); toast('❤️ Salvato'); }
+  localStorage.setItem('orbo_favs', JSON.stringify(state.favs));
+  document.querySelectorAll('.modal-fav-btn').forEach(b=>{ b.classList.toggle('active'); });
+}
+
+
+function clearSearch(){
+  $('search-input').value = '';
+  $('search-clear').style.display = 'none';
+  VENUES = [];
+  renderResults();
+}
+
+
+$('search-input').addEventListener('input',e=>{
+  const val = e.target.value.trim();
+  $('search-clear').style.display = val ? 'grid' : 'none';
+  if(val.length >= 2){ searchAPI(val); }
+  if(!val){ VENUES = []; renderResults(); }
+});
+
+
+function renderTopRated(){
+  const list = $('toprated-list');
+  if(!VENUES.length){ $('toprated-empty').style.display='block'; list.innerHTML=''; return; }
+  $('toprated-empty').style.display='none';
+  const sorted = [...VENUES].sort((a,b)=>b.rating-a.rating).slice(0,10);
+  list.innerHTML = sorted.map((v,i)=>`
+    <div class="tr-card" onclick="openDetail('${v.place_id}')">
+      <div class="tr-img">
+        <img src="${v.photo}" alt="${v.name}">
+        <div class="tr-rank ${i===0?'gold':i===1?'silver':i===2?'bronze':'other'}">${i+1}</div>
+      </div>
+      <div class="tr-body">
+        <div class="tr-name">${v.name}</div>
+        <div class="tr-addr">${v.vicinity}</div>
+        <div class="tr-score-row"><span class="tr-stars">⭐</span><span class="tr-num">${v.rating?.toFixed(1)||'-'}</span></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+
+function renderFavs(){
+  const list = $('favs-list');
+  const favs = VENUES.filter(v=> state.favs.includes(v.place_id));
+  if(!favs.length){ $('favs-empty').classList.remove('hidden'); list.innerHTML=''; return; }
+  $('favs-empty').classList.add('hidden');
+  list.innerHTML = favs.map(v=>`
+    <div class="result-card" onclick="openDetail('${v.place_id}')">
+      <div class="rc-img"><img src="${v.photo}"></div>
+      <div class="rc-body"><div class="rc-name">${v.name}</div><div class="rc-address">${v.vicinity}</div></div>
+    </div>
+  `).join('');
+}
+
+
+function surpriseMe(){
+  if(!VENUES.length){ getNearby(); setTimeout(()=>{ surpriseMe(); },1200); return; }
+  const random = VENUES[Math.floor(Math.random()*VENUES.length)];
+  openDetail(random.place_id);
+  toast('🪐 Orbo ha scelto per te');
+}
+
+</script>
+<script>window.Intl=window.Intl||{};Intl.t=function(s){return(Intl._locale&&Intl._locale[s])||s;};function closeModal(){ $('detail-modal').classList.remove('open'); }
+
+function toggleFav(id){
+  const index = state.favs.indexOf(id);
+  if(index > -1){ state.favs.splice(index,1); toast('💔 Rimosso dai preferiti'); }
+  else{ state.favs.push(id); toast('❤️ Salvato'); }
+  localStorage.setItem('orbo_favs', JSON.stringify(state.favs));
+  document.querySelectorAll('.modal-fav-btn').forEach(b=>{ b.classList.toggle('active'); });
+}
+
+
+function clearSearch(){
+  $('search-input').value = '';
+  $('search-clear').style.display = 'none';
+  VENUES = [];
+  renderResults();
+}
+
+
+$('search-input').addEventListener('input',e=>{
+  const val = e.target.value.trim();
+  $('search-clear').style.display = val ? 'grid' : 'none';
+  if(val.length >= 2){ searchAPI(val); }
+  if(!val){ VENUES = []; renderResults(); }
+});
+
+
+function renderTopRated(){
+  const list = $('toprated-list');
+  if(!VENUES.length){ $('toprated-empty').style.display='block'; list.innerHTML=''; return; }
+  $('toprated-empty').style.display='none';
+  const sorted = [...VENUES].sort((a,b)=>b.rating-a.rating).slice(0,10);
+  list.innerHTML = sorted.map((v,i)=>`
+    <div class="tr-card" onclick="openDetail('${v.place_id}')">
+      <div class="tr-img">
+        <img src="${v.photo}" alt="${v.name}">
+        <div class="tr-rank ${i===0?'gold':i===1?'silver':i===2?'bronze':'other'}">${i+1}</div>
+      </div>
+      <div class="tr-body">
+        <div class="tr-name">${v.name}</div>
+        <div class="tr-addr">${v.vicinity}</div>
+        <div class="tr-score-row"><span class="tr-stars">⭐</span><span class="tr-num">${v.rating?.toFixed(1)||'-'}</span></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+
+function renderFavs(){
+  const list = $('favs-list');
+  const favs = VENUES.filter(v=> state.favs.includes(v.place_id));
+  if(!favs.length){ $('favs-empty').classList.remove('hidden'); list.innerHTML=''; return; }
+  $('favs-empty').classList.add('hidden');
+  list.innerHTML = favs.map(v=>`
+    <div class="result-card" onclick="openDetail('${v.place_id}')">
+      <div class="rc-img"><img src="${v.photo}"></div>
+      <div class="rc-body"><div class="rc-name">${v.name}</div><div class="rc-address">${v.vicinity}</div></div>
+    </div>
+  `).join('');
+}
+
+
+function surpriseMe(){
+  if(!VENUES.length){ getNearby(); setTimeout(()=>{ surpriseMe(); },1200); return; }
+  const random = VENUES[Math.floor(Math.random()*VENUES.length)];
+  openDetail(random.place_id);
+  toast('🪐 Orbo ha scelto per te');
+}
+
+</script>
 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -256,7 +394,7 @@ img{display:block;width:100%;height:100%;object-fit:cover}
 .nav-item{padding:14px 18px;border-radius:14px;color:rgba(255,179,71,0.65);font-size:1rem;font-weight:600;text-align:left;transition:.15s}
 .nav-item:hover,.nav-item.active{color:#FFB347;background:rgba(255,140,0,0.1)}
 
-#gmap{position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0}
+
 
 ::-webkit-scrollbar{width:8px}
 ::-webkit-scrollbar-track{background:#0a0010}
@@ -275,6 +413,7 @@ button:active{transform:scale(.97)}
   .result-card{grid-template-columns:100px 1fr}
   .tr-card{grid-template-columns:90px 1fr}
 }
+.hidden{display:none !important;}
 </style>
 </head>
 <body>
@@ -498,7 +637,7 @@ button:active{transform:scale(.97)}
   </div>
 </div>
 
-<div id="gmap"></div>
+<div id="gmap" style="width:1px;height:1px;opacity:0;position:fixed"></div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -520,7 +659,7 @@ let visMapInit=false,visMarkers=[];function initVisMap(){if(visMapInit)return;vi
 function recenterMap(){if(!visMap)return;const center=userLoc||{lat:44.4949,lng:11.3426};visMap.setCenter(center);visMap.setZoom(15);}
 function doNearby(){navigate('search');toast('📍 Cerco vicino a te...');getNearby()}
 function getNearby(){const loc=userLoc||map?.getCenter();if(!loc||!placesService)return;showSkeleton();const types=state.activeCat==='all'?['restaurant','cafe','bakery']:[state.activeCat];let all=[],done=0;types.forEach(type=>{placesService.nearbySearch({location:loc,radius:2000,type},(r,s)=>{if(s==='OK')all=[...all,...r];if(++done===types.length){const seen=new Set();updateVenues(all.filter(v=>{if(seen.has(v.place_id))return false;seen.add(v.place_id);return true}))}});});}
-function searchAPI(q){clearTimeout(debT);debT=setTimeout(()=>{showSkeleton();const qLow=q.trim().toLowerCase();const isCity=qLow.split(' ').length<=2&&!['pizza','sushi','ristor','bar','caff','brunch','gelat','taco','ramen','burger'].some(kw=>qLow.includes(kw));const finalQ=isCity?`ristoranti a ${q}`:q;placesService.textSearch({query:finalQ,location:userLoc||map.getCenter(),radius:8000},(r,s)=>{if(s!=='OK'||!r){hideSkeleton();showEmpty();return}const allowed=['restaurant','cafe','bar','bakery','meal_takeaway','meal_delivery'];const filtered=r.filter(p=>p.types?.some(t=>allowed.includes(t)));if(filtered.length)updateVenues(filtered);else{getNearby();toast('🔄 Mostro locali vicini')}});},320);}
+function searchAPI(q){ if(!placesService){ toast('⌛ Maps si sta caricando...'); return; }clearTimeout(debT);debT=setTimeout(()=>{showSkeleton();const qLow=q.trim().toLowerCase();const isCity=qLow.split(' ').length<=2&&!['pizza','sushi','ristor','bar','caff','brunch','gelat','taco','ramen','burger'].some(kw=>qLow.includes(kw));const finalQ=isCity?`ristoranti a ${q}`:q;placesService.textSearch({query:finalQ,location:userLoc||map.getCenter(),radius:8000},(r,s)=>{if(s!=='OK'||!r){hideSkeleton();showEmpty();return}const allowed=['restaurant','cafe','bar','bakery','meal_takeaway','meal_delivery'];const filtered=r.filter(p=>p.types?.some(t=>allowed.includes(t)));if(filtered.length)updateVenues(filtered);else{getNearby();toast('🔄 Mostro locali vicini')}});},320);}
 function startVoice(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){toast('⚠️ Voce non supportata');return}const rec=new SR();rec.lang='it-IT';rec.interimResults=false;const btn=$('voice-btn');btn.classList.add('recording');btn.textContent='🔴';toast('🎤 Parla ora...');rec.onresult=e=>{const q=e.results[0][0].transcript;$('search-input').value=q;$('search-clear').style.display='block';toast('🎤 "'+q+'"');searchAPI(q);};rec.onerror=()=>toast('⚠️ Errore microfono');rec.onend=()=>{btn.classList.remove('recording');btn.textContent='🎤';};rec.start();}
 // Funzioni mancanti semplificate per demo
 function renderChips(){const c=$('chips');c.innerHTML='';CATS.forEach(cat=>{const b=document.createElement('button');b.className='chip'+(cat.id===state.activeCat?' active':'');b.innerHTML=`${cat.icon} ${cat.label}`;b.onclick=()=>{state.activeCat=cat.id;document.querySelectorAll('.chip').forEach(x=>x.classList.remove('active'));b.classList.add('active');getNearby();};c.appendChild(b);});}
@@ -537,7 +676,7 @@ function renderResults(){
   list.innerHTML=VENUES.map(v=>`
     <div class="result-card" onclick="openDetail('${v.place_id}')">
       <div class="rc-img">
-        <img src="${v.photo||'./fallback.jpg'}" alt="${v.name}" loading="lazy">
+        <img src="${v.photo||'https://placehold.co/600x400/1a0b2e/FFB347?text=ORBO'}" alt="${v.name}" loading="lazy">
         <div class="rc-img-overlay"></div>
         ${v.openNow!==null?`<span class="rc-open ${v.openNow?'open':'closed'}">${v.openNow?'Aperto':'Chiuso'}</span>`:''}
       </div>
@@ -563,12 +702,37 @@ function openDetail(id){
       reviews:p.user_ratings_total||0,
       price:'€'.repeat(Math.max(1,p.price_level||2)),
       openNow:p.opening_hours?.isOpen?.()??place.openNow,
-      photo:p.photos?.[0]?.getUrl({maxWidth:800})||place.photo||'./fallback.jpg',
+      photo:p.photos?.[0]?.getUrl({maxWidth:800})||place.photo||'https://placehold.co/600x400/1a0b2e/FFB347?text=ORBO',
       lat:p.geometry.location.lat(),
       lng:p.geometry.location.lng()
     };
     openDetailDirect(v);
   });
+}
+
+function openDetailDirect(v){
+  $('modal-img').src = v.photo || 'https://placehold.co/600x400/1a0b2e/FFB347?text=ORBO';
+  const isFav = state.favs.includes(v.id);
+  $('modal-body').innerHTML = `
+    <div class="modal-top-row">
+      <div>
+        <div class="modal-name">${v.name}</div>
+        <div class="modal-meta">
+          <span class="modal-stars">⭐ ${v.rating?.toFixed(1) || '-'}</span>
+          <span class="modal-rnum">(${v.reviews || 0})</span>
+          <span class="modal-price">${v.price || '€€'}</span>
+          ${v.openNow !== null ? `<span class="modal-open-badge ${v.openNow ? 'open':'closed'}">${v.openNow ? 'Aperto':'Chiuso'}</span>` : ''}
+        </div>
+      </div>
+      <button class="modal-fav-btn ${isFav ? 'active':''}" onclick="toggleFav('${v.id}')">❤️</button>
+    </div>
+    <div style="color:rgba(255,179,71,.6);line-height:1.6;margin-bottom:20px;">${v.address || ''}</div>
+    <div class="modal-actions">
+      <a class="ma-btn primary" target="_blank" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(v.name)}">🗺️ Apri Maps</a>
+      <button class="ma-btn secondary" onclick="toggleFav('${v.id}')">❤️ Preferito</button>
+    </div>
+  `;
+  $('detail-modal').classList.add('open');
 }
 
 function updateVenues(list){
@@ -579,18 +743,156 @@ function updateVenues(list){
     vicinity:p.vicinity||'',
     price:'€'.repeat(Math.max(1,p.price_level||2)),
     openNow:p.opening_hours?.open_now??null,
-    photo:p.photos?.[0]?.getUrl({maxWidth:600, maxHeight:400}) || './fallback.jpg',
+    photo:p.photos?.[0]?.getUrl({maxWidth:600, maxHeight:400}) || 'https://placehold.co/600x400/1a0b2e/FFB347?text=ORBO',
     lat:p.geometry.location.lat(),
     lng:p.geometry.location.lng(),
     dist:userLoc?`${((google.maps.geometry?.spherical?.computeDistanceBetween?google.maps.geometry.spherical.computeDistanceBetween(new google.maps.LatLng(userLoc),p.geometry.location):0)/1000).toFixed(1)} km`:'' 
   }));
   renderResults();
-  renderMapMarkers();
+  if(typeof renderMapMarkers === 'function'){ renderMapMarkers(); }
+}
+
+function closeModal(){ $('detail-modal').classList.remove('open'); }
+
+function toggleFav(id){
+  const index = state.favs.indexOf(id);
+  if(index > -1){ state.favs.splice(index,1); toast('💔 Rimosso dai preferiti'); }
+  else{ state.favs.push(id); toast('❤️ Salvato'); }
+  localStorage.setItem('orbo_favs', JSON.stringify(state.favs));
+  document.querySelectorAll('.modal-fav-btn').forEach(b=>{ b.classList.toggle('active'); });
+}
+
+
+function clearSearch(){
+  $('search-input').value = '';
+  $('search-clear').style.display = 'none';
+  VENUES = [];
+  renderResults();
+}
+
+
+$('search-input').addEventListener('input',e=>{
+  const val = e.target.value.trim();
+  $('search-clear').style.display = val ? 'grid' : 'none';
+  if(val.length >= 2){ searchAPI(val); }
+  if(!val){ VENUES = []; renderResults(); }
+});
+
+
+function renderTopRated(){
+  const list = $('toprated-list');
+  if(!VENUES.length){ $('toprated-empty').style.display='block'; list.innerHTML=''; return; }
+  $('toprated-empty').style.display='none';
+  const sorted = [...VENUES].sort((a,b)=>b.rating-a.rating).slice(0,10);
+  list.innerHTML = sorted.map((v,i)=>`
+    <div class="tr-card" onclick="openDetail('${v.place_id}')">
+      <div class="tr-img">
+        <img src="${v.photo}" alt="${v.name}">
+        <div class="tr-rank ${i===0?'gold':i===1?'silver':i===2?'bronze':'other'}">${i+1}</div>
+      </div>
+      <div class="tr-body">
+        <div class="tr-name">${v.name}</div>
+        <div class="tr-addr">${v.vicinity}</div>
+        <div class="tr-score-row"><span class="tr-stars">⭐</span><span class="tr-num">${v.rating?.toFixed(1)||'-'}</span></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+
+function renderFavs(){
+  const list = $('favs-list');
+  const favs = VENUES.filter(v=> state.favs.includes(v.place_id));
+  if(!favs.length){ $('favs-empty').classList.remove('hidden'); list.innerHTML=''; return; }
+  $('favs-empty').classList.add('hidden');
+  list.innerHTML = favs.map(v=>`
+    <div class="result-card" onclick="openDetail('${v.place_id}')">
+      <div class="rc-img"><img src="${v.photo}"></div>
+      <div class="rc-body"><div class="rc-name">${v.name}</div><div class="rc-address">${v.vicinity}</div></div>
+    </div>
+  `).join('');
+}
+
+
+function surpriseMe(){
+  if(!VENUES.length){ getNearby(); setTimeout(()=>{ surpriseMe(); },1200); return; }
+  const random = VENUES[Math.floor(Math.random()*VENUES.length)];
+  openDetail(random.place_id);
+  toast('🪐 Orbo ha scelto per te');
 }
 
 </script>
 
 <!-- IMPORTANTE: Sostituisci AIzaSyB4eYidHtLV4fXThKSZCS6ejH8Urpf2Km4 con la tua chiave Google Maps -->
-<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB4eYidHtLV4fXThKSZCS6ejH8Urpf2Km4&libraries=places,geometry&callback=initMap"></script>
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB4eYidHtLV4fXThKSZCS6ejH8Urpf2Km4&libraries=places,geometry&callback=initMap">function closeModal(){ $('detail-modal').classList.remove('open'); }
+
+function toggleFav(id){
+  const index = state.favs.indexOf(id);
+  if(index > -1){ state.favs.splice(index,1); toast('💔 Rimosso dai preferiti'); }
+  else{ state.favs.push(id); toast('❤️ Salvato'); }
+  localStorage.setItem('orbo_favs', JSON.stringify(state.favs));
+  document.querySelectorAll('.modal-fav-btn').forEach(b=>{ b.classList.toggle('active'); });
+}
+
+
+function clearSearch(){
+  $('search-input').value = '';
+  $('search-clear').style.display = 'none';
+  VENUES = [];
+  renderResults();
+}
+
+
+$('search-input').addEventListener('input',e=>{
+  const val = e.target.value.trim();
+  $('search-clear').style.display = val ? 'grid' : 'none';
+  if(val.length >= 2){ searchAPI(val); }
+  if(!val){ VENUES = []; renderResults(); }
+});
+
+
+function renderTopRated(){
+  const list = $('toprated-list');
+  if(!VENUES.length){ $('toprated-empty').style.display='block'; list.innerHTML=''; return; }
+  $('toprated-empty').style.display='none';
+  const sorted = [...VENUES].sort((a,b)=>b.rating-a.rating).slice(0,10);
+  list.innerHTML = sorted.map((v,i)=>`
+    <div class="tr-card" onclick="openDetail('${v.place_id}')">
+      <div class="tr-img">
+        <img src="${v.photo}" alt="${v.name}">
+        <div class="tr-rank ${i===0?'gold':i===1?'silver':i===2?'bronze':'other'}">${i+1}</div>
+      </div>
+      <div class="tr-body">
+        <div class="tr-name">${v.name}</div>
+        <div class="tr-addr">${v.vicinity}</div>
+        <div class="tr-score-row"><span class="tr-stars">⭐</span><span class="tr-num">${v.rating?.toFixed(1)||'-'}</span></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+
+function renderFavs(){
+  const list = $('favs-list');
+  const favs = VENUES.filter(v=> state.favs.includes(v.place_id));
+  if(!favs.length){ $('favs-empty').classList.remove('hidden'); list.innerHTML=''; return; }
+  $('favs-empty').classList.add('hidden');
+  list.innerHTML = favs.map(v=>`
+    <div class="result-card" onclick="openDetail('${v.place_id}')">
+      <div class="rc-img"><img src="${v.photo}"></div>
+      <div class="rc-body"><div class="rc-name">${v.name}</div><div class="rc-address">${v.vicinity}</div></div>
+    </div>
+  `).join('');
+}
+
+
+function surpriseMe(){
+  if(!VENUES.length){ getNearby(); setTimeout(()=>{ surpriseMe(); },1200); return; }
+  const random = VENUES[Math.floor(Math.random()*VENUES.length)];
+  openDetail(random.place_id);
+  toast('🪐 Orbo ha scelto per te');
+}
+
+</script>
 </body>
 </html>
