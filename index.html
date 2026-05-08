@@ -1,6 +1,197 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
+<!-- Playables SDK -->
+<script>// Playables SDK v1.0.0
+// Game lifecycle bridge: rAF-based game-ready detection + event communication
+(function() {
+  'use strict';
+
+  // Idempotency: skip if already initialized (e.g., server-side injection
+  // followed by client-side inject-javascript via the Bloks webview component).
+  if (window.playablesSDK) return;
+
+  var HANDLER_NAME = 'playablesGameEventHandler';
+  var ANDROID_BRIDGE_NAME = '_MetaPlayablesBridge';
+  var RAF_FRAME_THRESHOLD = 3;
+
+  var gameReadySent = false;
+  var firstInteractionSent = false;
+  var errorSent = false;
+  var frameCount = 0;
+  var originalRAF = window.requestAnimationFrame;
+
+  // --- Transport Layer ---
+
+  function hasIOSBridge() {
+    return !!(window.webkit &&
+              window.webkit.messageHandlers &&
+              window.webkit.messageHandlers[HANDLER_NAME]);
+  }
+
+  function hasAndroidBridge() {
+    return !!(window[ANDROID_BRIDGE_NAME] &&
+              typeof window[ANDROID_BRIDGE_NAME].postEvent === 'function');
+  }
+
+  function isInIframe() {
+    return !!(window.parent && window.parent !== window);
+  }
+
+  function sendEvent(eventName, payload) {
+    var message = {
+      type: eventName,
+      payload: payload || {},
+      timestamp: Date.now()
+    };
+
+    if (hasIOSBridge()) {
+      try {
+        window.webkit.messageHandlers[HANDLER_NAME].postMessage(message);
+      } catch (e) { /* ignore */ }
+      return;
+    }
+
+    if (hasAndroidBridge()) {
+    try {
+      var p = payload || {};
+      p.__secureToken = window.__fbAndroidBridgeAuthToken || '';
+      p.timestamp = message.timestamp;
+      window[ANDROID_BRIDGE_NAME].postEvent(
+        eventName,
+        JSON.stringify(p)
+      );
+    } catch (e) { /* ignore */ }
+    return;
+  }
+
+    if (isInIframe()) {
+      try {
+        window.parent.postMessage(message, '*');
+      } catch (e) { /* ignore */ }
+      return;
+    }
+  }
+
+  // --- rAF Game-Ready Detection ---
+
+  function onFrame() {
+    if (gameReadySent) return;
+
+    frameCount++;
+    if (frameCount >= RAF_FRAME_THRESHOLD) {
+      gameReadySent = true;
+      sendEvent('game_ready', {
+        frame_count: frameCount,
+        detected_at: Date.now()
+      });
+      return;
+    }
+
+    originalRAF.call(window, onFrame);
+  }
+
+  if (originalRAF) {
+    window.requestAnimationFrame = function(callback) {
+      if (!gameReadySent) {
+        return originalRAF.call(window, function(timestamp) {
+          frameCount++;
+          if (frameCount >= RAF_FRAME_THRESHOLD && !gameReadySent) {
+            gameReadySent = true;
+            sendEvent('game_ready', {
+              frame_count: frameCount,
+              detected_at: Date.now()
+            });
+          }
+          callback(timestamp);
+        });
+      }
+      return originalRAF.call(window, callback);
+    };
+  }
+
+  // --- First User Interaction Detection ---
+
+  function setupFirstInteractionDetection() {
+    var events = ['touchstart', 'mousedown', 'keydown'];
+
+    function onFirstInteraction() {
+      if (firstInteractionSent) return;
+      firstInteractionSent = true;
+      sendEvent('user_interaction_start', null);
+
+      for (var i = 0; i < events.length; i++) {
+        document.removeEventListener(events[i], onFirstInteraction, true);
+      }
+    }
+
+    for (var i = 0; i < events.length; i++) {
+      document.addEventListener(events[i], onFirstInteraction, true);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupFirstInteractionDetection);
+  } else {
+    setupFirstInteractionDetection();
+  }
+
+  // --- Auto Error Capture ---
+
+  window.addEventListener('error', function(event) {
+    if (errorSent) return;
+    errorSent = true;
+    sendEvent('error', {
+      message: event.message || 'Unknown error',
+      source: event.filename || '',
+      lineno: event.lineno || 0,
+      colno: event.colno || 0,
+      auto_captured: true
+    });
+  });
+
+  window.addEventListener('unhandledrejection', function(event) {
+    if (errorSent) return;
+    errorSent = true;
+    var reason = event.reason;
+    sendEvent('error', {
+      message: (reason instanceof Error) ? reason.message : String(reason),
+      type: 'unhandled_promise_rejection',
+      auto_captured: true
+    });
+  });
+
+  // --- Public API ---
+
+  window.playablesSDK = {
+    complete: function(score) {
+      sendEvent('game_ended', {
+        score: score,
+        completed: true
+      });
+    },
+
+    error: function(message) {
+      if (errorSent) return;
+      errorSent = true;
+      sendEvent('error', {
+        message: message || 'Unknown error',
+        auto_captured: false
+      });
+    },
+
+    sendEvent: function(eventName, payload) {
+      if (!eventName || typeof eventName !== 'string') return;
+      sendEvent(eventName, payload);
+    }
+  };
+
+  // Kick off rAF detection in case no game code calls rAF immediately
+  if (originalRAF) {
+    originalRAF.call(window, onFrame);
+  }
+})();</script>
+<script>window.Intl=window.Intl||{};Intl.t=function(s){return(Intl._locale&&Intl._locale[s])||s;};</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Orbo — Il gusto ti orbita</title>
@@ -476,7 +667,7 @@ button:active{transform:scale(.97)}
 // CANVAS, CURSOR, PARTICLES, COUNTER... (codice completo di Claude)
 (function(){const c=document.getElementById('bg-canvas'),ctx=c.getContext('2d');let W,H,stars=[];function resize(){W=c.width=innerWidth;H=c.height=innerHeight;stars=[];const N=innerWidth<768?70:140;for(let i=0;i<N;i++)stars.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.2+.2,a:Math.random(),s:Math.random()*.004+.001})}resize();addEventListener('resize',resize);(function draw(){ctx.clearRect(0,0,W,H);stars.forEach(s=>{s.a+=s.s;if(s.a>1)s.a=0;ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fillStyle=`rgba(255,200,120,${s.a*.7})`;ctx.fill()});requestAnimationFrame(draw)})();})();
 if(innerWidth>=768){const g=document.getElementById('cursor-glow');Object.assign(g.style,{width:'240px',height:'240px',borderRadius:'50%',background:'radial-gradient(circle,rgba(255,140,0,.15),transparent 70%)',filter:'blur(26px)',transform:'translate(-50%,-50%)',opacity:'0',transition:'opacity .3s'});addEventListener('mousemove',e=>{g.style.opacity='.9';g.style.left=e.clientX+'px';g.style.top=e.clientY+'px'});addEventListener('mouseout',()=>g.style.opacity='0');}
-(function(){const c=document.getElementById('particles');for(let i=0;i<28;i++){const s=document.createElement('span');s.style.cssText=`left:${Math.random()*100}%;bottom:0;animation-delay:${Math.random()*10}s;animation-duration:${7+Math.random()*8}s`;c.appendChild(s)}})();
+(function(){const c=document.getElementById('particles');for(let i=0;i<12;i++){const s=document.createElement('span');s.style.cssText=`left:${Math.random()*100}%;bottom:0;animation-delay:${Math.random()*10}s;animation-duration:${7+Math.random()*8}s`;c.appendChild(s)}})();
 (function(){const obs=new IntersectionObserver(entries=>{if(!entries[0].isIntersecting)return;document.querySelectorAll('.stat-num').forEach(el=>{const tgt=+el.dataset.count;let n=0;const step=()=>{n=Math.min(n+tgt/50,tgt);el.textContent=Math.ceil(n)+(tgt===15?'k':'');if(n<tgt)requestAnimationFrame(step)};step();});obs.disconnect();},{threshold:.2});const s=document.querySelector('.stats-row');if(s)obs.observe(s);})();
 
 let map,visMap,placesService,userLoc=null,VENUES=[],TOP_VENUES=[],debT;
@@ -498,19 +689,26 @@ function renderChips(){const c=$('chips');c.innerHTML='';CATS.forEach(cat=>{cons
 function showSkeleton(){$('results-list').innerHTML='<div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>';}
 function hideSkeleton(){}
 function showEmpty(){$('empty-state').style.display='block';}
-function updateVenues(v){VENUES=v;$('results-list').innerHTML=v.map(p=>`<div class="result-card" onclick="openDetailDirect({id:'${p.place_id}',name:\`${p.name}\`,address:'${p.vicinity||''}',rating:${p.rating||0},reviews:${p.user_ratings_total||0}})"><div class="rc-img"><img src="${p.photos?.[0]?.getUrl({maxWidth:300})||'https://via.placeholder.com/300'}" alt=""></div><div class="rc-body"><div class="rc-name">${p.name}</div><div class="rc-address">${p.vicinity||''}</div><div class="rc-rating"><span class="rc-stars">⭐</span><span class="rc-num">${p.rating||'-'}</span></div></div></div>`).join('');$('results-count').textContent=`${v.length} risultati`;$('empty-state').style.display='none';}
-function openDetailDirect(v){$('detail-modal').classList.add('open');$('modal-img').src=v.photo||'https://via.placeholder.com/600';$('modal-body').innerHTML=`<div class="modal-top-row"><div class="modal-name">${v.name}</div></div><div class="modal-meta"><span class="modal-stars">⭐ ${v.rating||'-'}</span><span class="modal-rnum">${v.reviews||0} recensioni</span></div><p style="color:rgba(255,179,71,0.6);margin-bottom:20px">${v.address||''}</p><div class="modal-actions"><a class="ma-btn primary" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(v.name+' '+v.address)}" target="_blank">📍 Naviga</a><button class="ma-btn secondary" onclick="toggleFav('${v.id}','${v.name.replace(/'/g,"")}')">❤️ Salva</button></div>`;}
-function closeModal(){$('detail-modal').classList.remove('open');}
-function toggleFav(id,name){const i=state.favs.findIndex(f=>f.id===id);if(i>=0){state.favs.splice(i,1);toast('Rimosso dai preferiti');}else{state.favs.push({id,name});toast('Aggiunto ai preferiti ❤️');}localStorage.setItem('orbo_favs',JSON.stringify(state.favs));}
-function renderFavs(){const l=$('favs-list');if(!state.favs.length){$('favs-empty').style.display='block';l.innerHTML='';return;}$('favs-empty').style.display='none';l.innerHTML=state.favs.map(f=>`<div class="result-card"><div class="rc-body"><div class="rc-name">${f.name}</div></div></div>`).join('');}
-function renderTopRated(){if(!userLoc){$('toprated-empty').style.display='block';return;}$('toprated-empty').style.display='none';getNearby();}
-function clearSearch(){$('search-input').value='';$('search-clear').style.display='none';}
-function surpriseMe(){toast('🪐 Orbo sceglie per te...');doNearby();}
-$('menu-btn').onclick=()=>$('mobile-nav').classList.toggle('open');
-$('search-input').addEventListener('input',e=>{const v=e.target.value;$('search-clear').style.display=v?'block':'none';if(v.length>2)searchAPI(v);});
+function updateVenues(list){
+  VENUES=list.map(p=>({
+    place_id:p.place_id,
+    name:p.name,
+    rating:p.rating||0,
+    vicinity:p.vicinity||'',
+    price:'€'.repeat(Math.max(1,p.price_level||2)),
+    openNow:p.opening_hours?.open_now??null,
+    photo:p.photos && p.photos[0] ? p.photos[0].getUrl({maxWidth:600, maxHeight:400}) : 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600',
+    lat:p.geometry.location.lat(),
+    lng:p.geometry.location.lng(),
+    dist:userLoc?`${((google.maps.geometry?.spherical?.computeDistanceBetween?google.maps.geometry.spherical.computeDistanceBetween(new google.maps.LatLng(userLoc),p.geometry.location):0)/1000).toFixed(1)} km`:'' 
+  }));
+  renderResults();
+  renderMapMarkers();
+}
+
 </script>
 
-<!-- IMPORTANTE: Sostituisci YOUR_API_KEY con la tua chiave Google Maps -->
-<script async defer src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=places&callback=initMap"></script>
+<!-- IMPORTANTE: Sostituisci __ORBO_KEY__ con la tua chiave Google Maps -->
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=__ORBO_KEY__&libraries=places&callback=initMap"></script>
 </body>
 </html>
