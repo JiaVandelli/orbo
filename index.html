@@ -540,7 +540,7 @@ function loadGoogleMaps(){
     mapsLoading=true;
     window._mapsReady=()=>{mapsLoaded=true;initMap();mapsCallbacks.forEach(cb=>cb());mapsCallbacks=[]};
     const s=document.createElement('script');
-    s.src='https://maps.googleapis.com/maps/api/js?key=YOUR_RESTRICTED_KEY_HERE&libraries=places&callback=_mapsReady&language=it&region=IT';
+    s.src='https://maps.googleapis.com/maps/api/js?key=AIzaSyB4eYidHtLV4fXThKSZCS6ejH8Urpf2Km4&libraries=places&callback=_mapsReady&language=it&region=IT';
     s.async=true;s.defer=true;
     s.onerror=()=>{toast('⚠️ Impossibile caricare le mappe');mapsLoading=false;reject()};
     document.body.appendChild(s);
