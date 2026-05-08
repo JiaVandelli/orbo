@@ -525,8 +525,52 @@ function startVoice(){const SR=window.SpeechRecognition||window.webkitSpeechReco
 // Funzioni mancanti semplificate per demo
 function renderChips(){const c=$('chips');c.innerHTML='';CATS.forEach(cat=>{const b=document.createElement('button');b.className='chip'+(cat.id===state.activeCat?' active':'');b.innerHTML=`${cat.icon} ${cat.label}`;b.onclick=()=>{state.activeCat=cat.id;document.querySelectorAll('.chip').forEach(x=>x.classList.remove('active'));b.classList.add('active');getNearby();};c.appendChild(b);});}
 function showSkeleton(){$('results-list').innerHTML='<div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>';}
-function hideSkeleton(){}
+function hideSkeleton(){$('results-list').innerHTML='';}
 function showEmpty(){$('empty-state').style.display='block';}
+
+function renderResults(){
+  hideSkeleton();
+  const list=$('results-list');
+  if(!VENUES.length){$('empty-state').style.display='block';list.innerHTML='';$('results-count').textContent='0 risultati';return;}
+  $('empty-state').style.display='none';
+  $('results-count').textContent=`${VENUES.length} risultati`;
+  list.innerHTML=VENUES.map(v=>`
+    <div class="result-card" onclick="openDetail('${v.place_id}')">
+      <div class="rc-img">
+        <img src="${v.photo||'./fallback.jpg'}" alt="${v.name}" loading="lazy">
+        <div class="rc-img-overlay"></div>
+        ${v.openNow!==null?`<span class="rc-open ${v.openNow?'open':'closed'}">${v.openNow?'Aperto':'Chiuso'}</span>`:''}
+      </div>
+      <div class="rc-body">
+        <div class="rc-name">${v.name}</div>
+        <div class="rc-address">${v.vicinity||''}</div>
+        <div class="rc-rating"><span class="rc-stars">⭐</span><span class="rc-num">${v.rating?.toFixed(1)||'-'}</span></div>
+        ${v.dist?`<div class="rc-dist">${v.dist}</div>`:''}
+      </div>
+    </div>`).join('');
+}
+
+function openDetail(id){
+  const place=VENUES.find(v=>v.place_id===id);
+  if(!place) return;
+  placesService.getDetails({placeId:id,fields:['name','formatted_address','rating','user_ratings_total','photos','opening_hours','price_level','geometry','website','formatted_phone_number','reviews']},(p,s)=>{
+    if(s!=='OK') return;
+    const v={
+      id,
+      name:p.name,
+      address:p.formatted_address||place.vicinity,
+      rating:p.rating||place.rating,
+      reviews:p.user_ratings_total||0,
+      price:'€'.repeat(Math.max(1,p.price_level||2)),
+      openNow:p.opening_hours?.isOpen?.()??place.openNow,
+      photo:p.photos?.[0]?.getUrl({maxWidth:800})||place.photo||'./fallback.jpg',
+      lat:p.geometry.location.lat(),
+      lng:p.geometry.location.lng()
+    };
+    openDetailDirect(v);
+  });
+}
+
 function updateVenues(list){
   VENUES=list.map(p=>({
     place_id:p.place_id,
@@ -535,7 +579,7 @@ function updateVenues(list){
     vicinity:p.vicinity||'',
     price:'€'.repeat(Math.max(1,p.price_level||2)),
     openNow:p.opening_hours?.open_now??null,
-    photo:p.photos && p.photos[0] ? p.photos[0].getUrl({maxWidth:600, maxHeight:400}) : 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600',
+    photo:p.photos?.[0]?.getUrl({maxWidth:600, maxHeight:400}) || './fallback.jpg',
     lat:p.geometry.location.lat(),
     lng:p.geometry.location.lng(),
     dist:userLoc?`${((google.maps.geometry?.spherical?.computeDistanceBetween?google.maps.geometry.spherical.computeDistanceBetween(new google.maps.LatLng(userLoc),p.geometry.location):0)/1000).toFixed(1)} km`:'' 
@@ -546,7 +590,7 @@ function updateVenues(list){
 
 </script>
 
-<!-- IMPORTANTE: Sostituisci __ORBO_KEY__ con la tua chiave Google Maps -->
-<script async defer src="https://maps.googleapis.com/maps/api/js?key=__ORBO_KEY__&libraries=places&callback=initMap"></script>
+<!-- IMPORTANTE: Sostituisci AIzaSyB4eYidHtLV4fXThKSZCS6ejH8Urpf2Km4 con la tua chiave Google Maps -->
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB4eYidHtLV4fXThKSZCS6ejH8Urpf2Km4&libraries=places,geometry&callback=initMap"></script>
 </body>
 </html>
