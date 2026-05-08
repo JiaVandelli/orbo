@@ -1,39 +1,11 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-<!-- Playables SDK -->
-<script>// Playables SDK v1.0.0
-// Game lifecycle bridge: rAF-based game-ready detection + event communication
-(function() {
-  'use strict';
-  if (window.playablesSDK) return;
-  var HANDLER_NAME = 'playablesGameEventHandler';
-  var ANDROID_BRIDGE_NAME = '_MetaPlayablesBridge';
-  var RAF_FRAME_THRESHOLD = 3;
-  var gameReadySent = false;
-  var firstInteractionSent = false;
-  var errorSent = false;
-  var frameCount = 0;
-  var originalRAF = window.requestAnimationFrame;
-  function hasIOSBridge(){return!!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers[HANDLER_NAME]);}
-  function hasAndroidBridge(){return!!(window[ANDROID_BRIDGE_NAME] && typeof window[ANDROID_BRIDGE_NAME].postEvent === 'function');}
-  function isInIframe(){return!!(window.parent && window.parent!== window);}
-  function sendEvent(eventName, payload){var message={type:eventName,payload:payload||{},timestamp:Date.now()};if(hasIOSBridge()){try{window.webkit.messageHandlers[HANDLER_NAME].postMessage(message);}catch(e){}return;}if(hasAndroidBridge()){try{var p=payload||{};p.__secureToken=window.__fbAndroidBridgeAuthToken||'';p.timestamp=message.timestamp;window[ANDROID_BRIDGE_NAME].postEvent(eventName,JSON.stringify(p));}catch(e){}return;}if(isInIframe()){try{window.parent.postMessage(message,'*');}catch(e){}return;}}
-  function onFrame(){if(gameReadySent)return;frameCount++;if(frameCount>=RAF_FRAME_THRESHOLD){gameReadySent=true;sendEvent('game_ready',{frame_count:frameCount,detected_at:Date.now()});return;}originalRAF.call(window,onFrame);}
-  if(originalRAF){window.requestAnimationFrame=function(callback){if(!gameReadySent){return originalRAF.call(window,function(timestamp){frameCount++;if(frameCount>=RAF_FRAME_THRESHOLD&&!gameReadySent){gameReadySent=true;sendEvent('game_ready',{frame_count:frameCount,detected_at:Date.now()});}callback(timestamp);});}return originalRAF.call(window,callback);};}
-  function setupFirstInteractionDetection(){var events=['touchstart','mousedown','keydown'];function onFirstInteraction(){if(firstInteractionSent)return;firstInteractionSent=true;sendEvent('user_interaction_start',null);for(var i=0;i<events.length;i++){document.removeEventListener(events[i],onFirstInteraction,true);}}for(var i=0;i<events.length;i++){document.addEventListener(events[i],onFirstInteraction,true);}}
-  if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',setupFirstInteractionDetection);}else{setupFirstInteractionDetection();}
-  window.addEventListener('error',function(event){if(errorSent)return;errorSent=true;sendEvent('error',{message:event.message||'Unknown error',source:event.filename||'',lineno:event.lineno||0,colno:event.colno||0,auto_captured:true});});
-  window.addEventListener('unhandledrejection',function(event){if(errorSent)return;errorSent=true;var reason=event.reason;sendEvent('error',{message:(reason instanceof Error)?reason.message:String(reason),type:'unhandled_promise_rejection',auto_captured:true});});
-  window.playablesSDK={complete:function(score){sendEvent('game_ended',{score:score,completed:true});},error:function(message){if(errorSent)return;errorSent=true;sendEvent('error',{message:message||'Unknown error',auto_captured:false});},sendEvent:function(eventName,payload){if(!eventName||typeof eventName!=='string')return;sendEvent(eventName,payload);}};
-  if(originalRAF){originalRAF.call(window,onFrame);}
-})();</script>
-<script>window.Intl=window.Intl||{};Intl.t=function(s){return(Intl._locale&&Intl._locale[s])||s;};</script>
-
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Orbo — Il gusto ti orbita</title>
 <meta name="theme-color" content="#ff6b00">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -93,38 +65,43 @@ img{display:block;width:100%;height:100%;object-fit:cover}
 @keyframes scrollX{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 .app-grid-section{position:relative;z-index:1;background:linear-gradient(180deg,#0a0010,#0f051a);padding:36px 20px 56px}
 .app-grid-title{font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:rgba(255,179,71,0.35);text-align:center;margin-bottom:18px}
-.app-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px;max-width:580px;margin:0 auto}
-.app-tile{display:flex;flex-direction:column;align-items:flex-start;gap:7px;padding:20px 18px;border-radius:22px;background:linear-gradient(135deg,rgba(45,27,78,0.85),rgba(15,5,26,0.85));border:1px solid rgba(255,140,0,0.2);cursor:pointer;transition:.25s;position:relative;overflow:hidden;backdrop-filter:blur(12px)}
-.app-tile::before{content:"";position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,140,0,0.06),transparent);opacity:0;transition:.25s}
+.app-grid{display:grid;grid-template-columns:1fr;max-width:360px;margin:0 auto;gap:16px}
+.app-tile{display:flex;flex-direction:row;align-items:center;gap:18px;padding:28px 24px;border-radius:22px;background:linear-gradient(135deg,rgba(45,27,78,0.85),rgba(15,5,26,0.85));border:1px solid rgba(255,140,0,0.2);cursor:pointer;transition:.25s;position:relative;overflow:hidden.app-tile::before{content:"";position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,140,0,0.06),transparent);opacity:0;transition:.25s}
 .app-tile:hover{transform:translateY(-4px) scale(1.02);box-shadow:0 14px 36px rgba(255,140,0,0.22);border-color:rgba(255,140,0,0.45)}
 .app-tile:hover::before{opacity:1}
 .app-tile:active{transform:scale(.97)}
-.at-icon{font-size:2rem;filter:drop-shadow(0 0 8px rgba(255,140,0,0.5))}
+.at-icon{font-size:2.6rem;filter:drop-shadow(0 0 8px rgba(255,140,0,0.5))}
 .at-kicker{font-size:9px;font-weight:900;color:#FF8C00;letter-spacing:2px;text-transform:uppercase}
 .at-title{font-size:16px;font-weight:900;background:linear-gradient(135deg,#FFE0A0,#FF8C00);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1.2}
 .at-sub{font-size:11px;color:rgba(255,179,71,0.4);line-height:1.4}
-.at-new{position:absolute;top:11px;right:11px;padding:2px 7px;border-radius:999px;background:linear-gradient(135deg,#FF6B00,#FFB347);color:#1a0b2e;font-size:9px;font-weight:900}
 .view-inner{padding:24px 18px 80px;max-width:800px;margin:0 auto}
 .view-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
 .view-title{font-size:24px;font-weight:800;background:linear-gradient(135deg,#FFE0A0,#FF8C00);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .back-btn{display:flex;align-items:center;gap:6px;color:rgba(255,179,71,0.55);font-size:.9rem;font-weight:600;transition:.15s;padding:8px 14px;border-radius:10px;border:1px solid rgba(255,140,0,0.18)}
 .back-btn:hover{color:#FFB347;border-color:rgba(255,140,0,0.4)}
-.search-bar{display:flex;align-items:center;gap:10px;background:rgba(45,27,78,0.8);border:1.5px solid rgba(255,140,0,0.25);border-radius:18px;padding:0 14px 0 18px;margin-bottom:14px;backdrop-filter:blur(12px);transition:.2s;position:sticky;top:70px;z-index:20}
+.history-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;min-height:0}
+.history-chip{padding:5px 12px;border-radius:999px;background:rgba(34,211,238,0.07);border:1px solid rgba(34,211,238,0.18);color:rgba(34,211,238,0.8);font-size:.78rem;font-weight:600;cursor:pointer;transition:.15s}
+.history-chip:hover{background:rgba(34,211,238,0.14)}
+.search-bar-wrap{position:sticky;top:70px;z-index:20;padding:8px 0 4px;background:linear-gradient(#0a0010,transparent)}
+.search-bar{display:flex;align-items:center;gap:12px;background:rgba(45,27,78,0.9);border:1.5px solid rgba(255,140,0,0.25);border-radius:18px;padding:0 14px 0 18px;backdrop-filter:blur(12px);transition:.2s}
 .search-bar:focus-within{border-color:rgba(255,140,0,0.6);box-shadow:0 0 0 3px rgba(255,140,0,0.08)}
 .search-bar input{flex:1;height:56px;background:transparent;color:#fff;font-size:1rem;outline:none}
 .search-bar input::placeholder{color:rgba(255,179,71,0.35)}
+.search-bar-actions{display:flex;gap:6px;align-items:center}
 .sb-btn{width:36px;height:36px;display:grid;place-items:center;border-radius:10px;background:rgba(255,140,0,0.1);border:1px solid rgba(255,140,0,0.2);font-size:1rem;transition:.18s;flex-shrink:0}
 .sb-btn:hover{background:rgba(255,140,0,0.22)}
-.sb-btn.recording{background:rgba(255,60,60,0.25);border-color:rgba(255,60,60,0.5);animation:recPulse 1s infinite}
-@keyframes recPulse{0%,100%{box-shadow:0 0 0 rgba(255,60,60,0)}50%{box-shadow:0 0 14px rgba(255,60,60,0.5)}}
-.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
-.chip{padding:8px 16px;border-radius:999px;border:1.5px solid rgba(255,140,0,0.22);background:rgba(26,11,46,0.7);color:rgba(255,179,71,0.6);font-size:.85rem;font-weight:600;cursor:pointer;transition:.18s}
+.sb-btn.recording{background:rgba(255,60,60,0.25);border-color:rgba(255,60,60,0.5);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 rgba(255,60,60,0)}50%{box-shadow:0 0 12px rgba(255,60,60,0.5)}}
+/* CHIPS */
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
+.chip{padding:8px 16px;border-radius:999px;border:1.5px solid rgba(255,140,0,0.2);background:rgba(26,11,46,0.7);color:rgba(255,179,71,0.6);font-size:.85rem;font-weight:600;cursor:pointer;transition:.18s}
 .chip:hover{border-color:rgba(255,140,0,0.5);color:#FFB347}
 .chip.active{background:linear-gradient(135deg,#FF6B00,#FF8C00);color:#1a0b2e;border-color:transparent;box-shadow:0 4px 16px rgba(255,107,0,0.35)}
-.results-count{font-size:.85rem;color:rgba(255,179,71,0.45);margin-bottom:14px;font-weight:600}
+.results-toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.results-count{font-size:.85rem;color:rgba(255,179,71,0.45);font-weight:600}
 .result-card{background:linear-gradient(135deg,rgba(45,27,78,0.85),rgba(20,8,38,0.85));border:1px solid rgba(255,140,0,0.18);border-radius:22px;overflow:hidden;margin-bottom:14px;display:grid;grid-template-columns:130px 1fr;cursor:pointer;transition:.22s;backdrop-filter:blur(12px);position:relative}
-.result-card::after{content:"";position:absolute;inset:0;background:linear-gradient(120deg,transparent 20%,rgba(255,255,255,0.04) 40%,transparent 60%);transform:translateX(-120%);transition:transform.7s ease;pointer-events:none}
 .result-card:hover{transform:translateY(-3px);box-shadow:0 12px 36px rgba(255,140,0,0.22);border-color:rgba(255,140,0,0.4)}
+.result-card::after{content:"";position:absolute;inset:0;background:linear-gradient(120deg,transparent 20%,rgba(255,255,255,0.04) 40%,transparent 60%);transform:translateX(-120%);transition:transform.7s ease;pointer-events:none}
 .result-card:hover::after{transform:translateX(120%)}
 .rc-img{position:relative;min-height:130px}
 .rc-img img{height:100%;object-fit:cover;transition:transform.4s ease}
@@ -135,6 +112,7 @@ img{display:block;width:100%;height:100%;object-fit:cover}
 .rc-open.open{background:rgba(46,213,115,0.2);color:#7FFFC0;border:1px solid rgba(46,213,115,0.3);animation:livePulse 2.5s infinite}
 .rc-open.closed{background:rgba(255,80,80,0.15);color:#FF9090;border:1px solid rgba(255,80,80,0.2)}
 @keyframes livePulse{0%,100%{box-shadow:none}50%{box-shadow:0 0 14px rgba(46,213,115,0.4)}}
+.rc-score{position:absolute;top:10px;right:10px;padding:3px 8px;border-radius:8px;font-size:.68rem;font-weight:800;background:linear-gradient(135deg,rgba(255,107,0,0.9),rgba(255,179,71,0.9));color:#1a0b2e}
 .rc-body{padding:14px 16px;display:flex;flex-direction:column;gap:3px}
 .rc-name{font-size:1rem;font-weight:800;color:#FFE0A0;line-height:1.2}
 .rc-address{font-size:.76rem;color:rgba(255,179,71,0.42);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -228,18 +206,16 @@ body::before{content:"";position:fixed;inset:-20%;background:radial-gradient(cir
 @keyframes bgMove{0%{transform:translate3d(0,0,0) scale(1)}100%{transform:translate3d(3%,-2%,0) scale(1.08)}}
 button:active{transform:scale(.97)}
 .result-card,.tr-card,.app-tile,.btn-primary,.btn-ghost{will-change:transform;transform:translateZ(0);backface-visibility:hidden}
-@media(max-width:520px){
-  .orbit-ring,.food-orbits{width:320px;height:320px;margin:-160px 0 0 -160px}
-  @keyframes orbit{from{transform:rotate(0deg) translate(158px) rotate(0deg)}to{transform:rotate(360deg) translate(158px) rotate(-360deg)}}
-  .hero-logo-wrap{width:140px;height:140px}
-  .result-card{grid-template-columns:100px 1fr}
-  .tr-card{grid-template-columns:90px 1fr}
-}
 .hidden{display:none !important;}
+@media(max-width:520px){
+ .orbit-ring,.food-orbits{width:320px;height:320px;margin:-160px 0 0 -160px}
+ @keyframes orbit{from{transform:rotate(0deg) translate(158px) rotate(0deg)}to{transform:rotate(360deg) translate(158px) rotate(-360deg)}}
+ .hero-logo-wrap{width:140px;height:140px}
+ .result-card{grid-template-columns:100px 1fr}
+ .tr-card{grid-template-columns:90px 1fr}
+}
 </style>
-</head>
-<body>
-
+</head><body>
 <canvas id="bg-canvas"></canvas>
 <div id="cursor-glow"></div>
 
@@ -248,14 +224,14 @@ button:active{transform:scale(.97)}
     <defs>
       <linearGradient id="t" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ffb347"/><stop offset="100%" stop-color="#ff8c00"/></linearGradient>
       <linearGradient id="l" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#cc5500"/><stop offset="100%" stop-color="#e06500"/></linearGradient>
-      <linearGradient id="r2" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#ff7c20"/><stop offset="100%" stop-color="#ff9a40"/></linearGradient>
+      <linearGradient id="r" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#ff7c20"/><stop offset="100%" stop-color="#ff9a40"/></linearGradient>
       <filter id="gf"><feGaussianBlur stdDeviation="1.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
       <path id="op" d="M60,12 C82,12 96,30 96,55 C96,80 82,98 60,98 C38,98 24,80 24,55 C24,30 38,12 60,12 Z"/>
     </defs>
     <ellipse cx="60" cy="108" rx="28" ry="6" fill="rgba(180,80,0,.18)"/>
     <polygon points="60,25 90,40 60,55 30,40" fill="url(#t)"/>
     <polygon points="30,40 60,55 60,85 30,70" fill="url(#l)"/>
-    <polygon points="60,55 90,40 90,70 60,85" fill="url(#r2)"/>
+    <polygon points="60,55 90,40 90,70 60,85" fill="url(#r)"/>
     <text font-family="Arial Black" font-size="14" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="#FFE4A3" filter="url(#gf)"><animateMotion dur="8s" repeatCount="indefinite"><mpath href="#op"/></animateMotion>O</text>
     <text font-family="Arial Black" font-size="14" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="#FFD080" filter="url(#gf)"><animateMotion dur="8s" repeatCount="indefinite" begin="-2s"><mpath href="#op"/></animateMotion>R</text>
     <text font-family="Arial Black" font-size="14" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="#FFB347" filter="url(#gf)"><animateMotion dur="8s" repeatCount="indefinite" begin="-4s"><mpath href="#op"/></animateMotion>B</text>
@@ -295,7 +271,7 @@ button:active{transform:scale(.97)}
           <defs>
             <linearGradient id="t2" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ffb347"/><stop offset="100%" stop-color="#ff8c00"/></linearGradient>
             <linearGradient id="l2" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#cc5500"/><stop offset="100%" stop-color="#e06500"/></linearGradient>
-            <linearGradient id="r3" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#ff7c20"/><stop offset="100%" stop-color="#ff9a40"/></linearGradient>
+            <linearGradient id="r2" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#ff7c20"/><stop offset="100%" stop-color="#ff9a40"/></linearGradient>
             <filter id="g2"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
             <path id="p2" d="M60,12 C82,12 96,30 96,55 C96,80 82,98 60,98 C38,98 24,80 24,55 C24,30 38,12 60,12 Z"/>
           </defs>
@@ -303,7 +279,7 @@ button:active{transform:scale(.97)}
           <g filter="drop-shadow(0 6px 16px rgba(180,60,0,0.4))">
             <polygon points="60,25 90,40 60,55 30,40" fill="url(#t2)"/>
             <polygon points="30,40 60,55 60,85 30,70" fill="url(#l2)"/>
-            <polygon points="60,55 90,40 90,70 60,85" fill="url(#r3)"/>
+            <polygon points="60,55 90,40 90,70 60,85" fill="url(#r2)"/>
           </g>
           <polyline points="60,25 90,40 90,70 60,85 30,70 30,40 60,25" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="0.5"/>
           <text font-family="Arial Black" font-size="15" font-weight="900" text-anchor="middle" dominant-baseline="middle" fill="#FFE4A3" filter="url(#g2)"><animateMotion dur="8s" repeatCount="indefinite"><mpath href="#p2"/></animateMotion>O</text>
@@ -344,25 +320,25 @@ button:active{transform:scale(.97)}
 
     <div class="app-grid-section">
       <p class="app-grid-title">✦ Scegli il tuo mood ✦</p>
-      <div class="app-grid" style="grid-template-columns:1fr;max-width:360px;gap:16px">
-        <div class="app-tile" onclick="searchAPI('pizza')" style="padding:28px 24px;flex-direction:row;align-items:center;gap:18px">
-          <span class="at-icon" style="font-size:2.6rem">🍕</span>
+      <div class="app-grid">
+        <div class="app-tile" onclick="searchAPI('pizza')">
+          <span class="at-icon">🍕</span>
           <div>
             <span class="at-kicker">CLASSICO</span>
             <span class="at-title">Pizza Napoletana</span>
             <span class="at-sub">Forno a legna vicino a te</span>
           </div>
         </div>
-        <div class="app-tile" onclick="searchAPI('sushi')" style="padding:28px 24px;flex-direction:row;align-items:center;gap:18px">
-          <span class="at-icon" style="font-size:2.6rem">🍣</span>
+        <div class="app-tile" onclick="searchAPI('sushi')">
+          <span class="at-icon">🍣</span>
           <div>
             <span class="at-kicker">FRESCO</span>
             <span class="at-title">Sushi Bar</span>
             <span class="at-sub">Crudo selezionato</span>
           </div>
         </div>
-        <div class="app-tile" onclick="surpriseMe()" style="padding:28px 24px;flex-direction:row;align-items:center;gap:18px;background:linear-gradient(135deg,rgba(255,107,0,0.25),rgba(45,27,78,0.85));border-color:rgba(255,140,0,0.5)">
-          <span class="at-icon" style="font-size:2.6rem">🪐</span>
+        <div class="app-tile" onclick="surpriseMe()" style="background:linear-gradient(135deg,rgba(255,107,0,0.25),rgba(45,27,78,0.85));border-color:rgba(255,140,0,0.5)">
+          <span class="at-icon">🪐</span>
           <div>
             <span class="at-kicker">AI MODE</span>
             <span class="at-title">Sorprendimi</span>
@@ -378,23 +354,28 @@ button:active{transform:scale(.97)}
         <button class="chip" onclick="navigate('favs')">❤️ Preferiti</button>
       </div>
     </div>
-
   </section>
-
   <section class="view" id="view-search">
     <div class="view-inner">
       <div class="view-header">
         <h2 class="view-title">🔍 Cerca</h2>
         <button class="back-btn" onclick="navigate('home')">← Home</button>
       </div>
-      <div class="search-bar">
-        <span style="font-size:1.2rem">🔍</span>
-        <input id="search-input" placeholder="Pizza, sushi, romantico, brunch..." autocomplete="off">
-        <button class="sb-btn" id="voice-btn" onclick="startVoice()" title="Voce">🎤</button>
-        <button class="sb-btn" id="search-clear" style="display:none" onclick="clearSearch()">✕</button>
+      <div class="history-row" id="history-row"></div>
+      <div class="search-bar-wrap">
+        <div class="search-bar">
+          <span style="font-size:1.2rem">🔍</span>
+          <input id="search-input" placeholder="Pizza, sushi, romantico, brunch..." autocomplete="off">
+          <div class="search-bar-actions">
+            <button class="sb-btn" id="voice-btn" onclick="startVoice()" title="Voce">🎤</button>
+            <button class="sb-btn" id="search-clear" style="display:none" onclick="clearSearch()">✕</button>
+          </div>
+        </div>
       </div>
       <div class="chips" id="chips"></div>
-      <p class="results-count" id="results-count"></p>
+      <div class="results-toolbar">
+        <p class="results-count" id="results-count"></p>
+      </div>
       <div id="results-list"></div>
       <div class="empty-state" id="empty-state">
         <div class="empty-icon">🍽️</div>
@@ -445,7 +426,9 @@ button:active{transform:scale(.97)}
       <button class="map-recenter" onclick="recenterMap()" title="Centra mappa">🎯</button>
     </div>
   </section>
-</main><div class="modal" id="detail-modal" onclick="if(event.target===this)closeModal()">
+</main>
+
+<div class="modal" id="detail-modal" onclick="if(event.target===this)closeModal()">
   <div class="modal-sheet">
     <div class="modal-handle"></div>
     <div class="modal-img-wrap">
@@ -465,35 +448,36 @@ function escapeHtml(str=''){return String(str).replace(/[&<>"']/g,m=>({'&':'&amp
 const lowPerf = window.innerWidth < 768;
 let animationId;
 
-// CANVAS STELLE
 (function(){const c=document.getElementById('bg-canvas'),ctx=c.getContext('2d');let W,H,stars=[];function resize(){W=c.width=innerWidth;H=c.height=innerHeight;stars=[];const N=lowPerf?60:140;for(let i=0;i<N;i++)stars.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.2+.2,a:Math.random(),s:Math.random()*.004+.001})}resize();addEventListener('resize',resize);function draw(){ctx.clearRect(0,0,W,H);stars.forEach(s=>{s.a+=s.s;if(s.a>1)s.a=0;ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fillStyle=`rgba(255,200,120,${s.a*.7})`;ctx.fill()});animationId=requestAnimationFrame(draw)}draw();document.addEventListener('visibilitychange',()=>{if(document.hidden){cancelAnimationFrame(animationId);}else{draw();}});if(lowPerf){document.getElementById('cursor-glow').style.display='none';}})();
 
-// CURSOR GLOW
-if(innerWidth>=768){const g=document.getElementById('cursor-glow');Object.assign(g.style,{width:'240px',height:'240px',borderRadius:'50%',background:'radial-gradient(circle,rgba(255,140,0,.15),transparent 70%)',filter:'blur(26px)',transform:'translate(-50%,-50%)',opacity:'0',transition:'opacity .3s'});addEventListener('mousemove',e=>{g.style.opacity='.9';g.style.left=e.clientX+'px';g.style.top=e.clientY+'px'});addEventListener('mouseout',()=>g.style.opacity='0');}
+if(innerWidth>=768){const g=document.getElementById('cursor-glow');Object.assign(g.style,{width:'240px',height:'240px',borderRadius:'50%',background:'radial-gradient(circle,rgba(255,140,0,.15),transparent 70%)',filter:'blur(26px)',transform:'translate(-50%,-50%)',opacity:'0',transition:'opacity.3s'});addEventListener('mousemove',e=>{g.style.opacity='.9';g.style.left=e.clientX+'px';g.style.top=e.clientY+'px'});addEventListener('mouseout',()=>g.style.opacity='0');}
 
-// PARTICELLE
 (function(){const c=document.getElementById('particles');for(let i=0;i<12;i++){const s=document.createElement('span');s.style.cssText=`left:${Math.random()*100}%;bottom:0;animation-delay:${Math.random()*10}s;animation-duration:${7+Math.random()*8}s`;c.appendChild(s)}})();
 
-// VARIABILI GLOBALI
 let map,visMap,placesService,userLoc=null,VENUES=[],debT;
 const CATS=[{id:'all',label:'Tutto',icon:'✦'},{id:'restaurant',label:'Ristoranti',icon:'🍝'},{id:'cafe',label:'Bar & Caffè',icon:'☕'},{id:'bakery',label:'Pasticcerie',icon:'🧁'},{id:'meal_takeaway',label:'Take Away',icon:'📦'}];
-const state={favs:JSON.parse(localStorage.getItem('orbo_favs')||'[]'),activeCat:'all'};
+const state={favs:JSON.parse(localStorage.getItem('orbo_favs')||'[]'),activeCat:'all',history:JSON.parse(localStorage.getItem('orbo_history')||'[]')};
 
 let tT;function toast(m){const el=$('toast');clearTimeout(tT);el.textContent=m;el.classList.add('show');tT=setTimeout(()=>el.classList.remove('show'),2600)}
-function navigate(v){document.querySelectorAll('.view').forEach(s=>s.classList.toggle('active',s.id==='view-'+v));document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));closeMobileNav();window.scrollTo({top:0,behavior:'smooth'});if(v==='search')setTimeout(()=>$('search-input')?.focus(),300);if(v==='toprated')renderTopRated();if(v==='favs')renderFavs();if(v==='mappa')initVisMap();}
+function navigate(v){document.querySelectorAll('.view').forEach(s=>s.classList.toggle('active',s.id==='view-'+v));document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));closeMobileNav();window.scrollTo({top:0,behavior:'smooth'});if(v==='search'){renderHistory();setTimeout(()=>$('search-input')?.focus(),300);}if(v==='toprated')renderTopRated();if(v==='favs')renderFavs();if(v==='mappa')initVisMap();}
 function closeMobileNav(){const n=$('mobile-nav');n.classList.remove('open')}
 function closeModal(){$('detail-modal').classList.remove('open');}
 
 $('menu-btn').onclick=()=>$('mobile-nav').classList.toggle('open');
 $('logo-btn').onclick=()=>navigate('home');
 
-// MAPS INIT
+function saveHistory(q){if(!q||q.length<2)return;state.history=[q,...state.history.filter(x=>x!==q)].slice(0,5);localStorage.setItem('orbo_history',JSON.stringify(state.history));}
+function renderHistory(){const row=$('history-row');if(!row)return;if(!state.history.length){row.innerHTML='';return}row.innerHTML=state.history.map(h=>`<button class="history-chip" onclick="doSearch('${h.replace(/'/g,"\\'")}')">🕐 ${escapeHtml(h)}</button>`).join('');}
+
+function distanza(a,b,c,d){const R=6371,dLa=(c-a)*Math.PI/180,dLo=(d-b)*Math.PI/180;const x=Math.sin(dLa/2)**2+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(dLo/2)**2;return +(R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x))).toFixed(1);}
+
+function orboScore(v){let s=0;if(v.rating)s+=v.rating*14;if(v.reviews)s+=Math.min(v.reviews,1000)/1000*18;if(v.openNow===true)s+=10;if(v.price==='€'||v.price==='€€')s+=4;if(userLoc&&v.lat){const d=distanza(userLoc.lat,userLoc.lng,v.lat,v.lng);s+=Math.max(0,(3-d)*6)}return Math.round(s);}
+
 function initMap(){map=new google.maps.Map($('gmap'),{center:{lat:44.4949,lng:11.3426},zoom:15});placesService=new google.maps.places.PlacesService(map);renderChips();if(navigator.geolocation){navigator.geolocation.getCurrentPosition(p=>{userLoc={lat:p.coords.latitude,lng:p.coords.longitude};map.setCenter(userLoc);toast('📍 Posizione rilevata!')},()=>toast('⚠️ GPS non disponibile'));}const h=new Date().getHours();const greetings=['☀️ Buongiorno, fame cosmica?','🌤️ Buona giornata!','🍝 Pronto per qualcosa di buono?','🍹 Aperitivo in arrivo?','🌙 Cena perfetta stasera?'];setTimeout(()=>toast(greetings[h<10?0:h<12?1:h<15?2:h<20?3:4]),1000);}window.initMap=initMap;
 
 let visMapInit=false,visMarkers=[];function initVisMap(){if(visMapInit)return;visMapInit=true;const center=userLoc||{lat:44.4949,lng:11.3426};visMap=new google.maps.Map($('map-view'),{center,zoom:15,styles:[{elementType:'geometry',stylers:[{color:'#1a0b2e'}]},{elementType:'labels.text.fill',stylers:[{color:'#FFB347'}]},{elementType:'labels.text.stroke',stylers:[{color:'#1a0b2e'}]},{featureType:'road',elementType:'geometry',stylers:[{color:'#2d1b4e'}]},{featureType:'water',elementType:'geometry',stylers:[{color:'#0a0010'}]},{featureType:'poi',stylers:[{visibility:'off'}]}],disableDefaultUI:true,zoomControl:true});$('map-bar').textContent='📍 Caricamento locali...';const loc=userLoc||{lat:44.4949,lng:11.3426};const ps=new google.maps.places.PlacesService(visMap);ps.nearbySearch({location:loc,radius:1500,type:'restaurant'},(res,st)=>{if(st!=='OK')return;visMarkers.forEach(m=>m.setMap(null));visMarkers=[];res.slice(0,20).forEach(p=>{const m=new google.maps.Marker({map:visMap,position:p.geometry.location,title:p.name,icon:{path:google.maps.SymbolPath.CIRCLE,scale:8,fillColor:'#FF6B00',fillOpacity:1,strokeColor:'#FFB347',strokeWeight:2}});m.addListener('click',()=>{const v={id:p.place_id,name:p.name,address:p.vicinity||'',rating:p.rating||0,reviews:p.user_ratings_total||0,price:'€'.repeat(Math.max(1,p.price_level||2)),openNow:p.opening_hours?.open_now??null,photo:p.photos?.[0]?.getUrl({maxWidth:400})||'',lat:p.geometry.location.lat(),lng:p.geometry.location.lng()};openDetailDirect(v);});visMarkers.push(m);});$('map-bar').textContent=`🗺️ ${res.length} locali sulla mappa`;});}
 function recenterMap(){if(!visMap)return;const center=userLoc||{lat:44.4949,lng:11.3426};visMap.setCenter(center);visMap.setZoom(15);}
 
-// SEARCH
 function renderChips(){const c=$('chips');c.innerHTML='';CATS.forEach(cat=>{const b=document.createElement('button');b.className='chip'+(cat.id===state.activeCat?' active':'');b.innerHTML=`${cat.icon} ${cat.label}`;b.onclick=()=>{state.activeCat=cat.id;document.querySelectorAll('.chip').forEach(x=>x.classList.remove('active'));b.classList.add('active');getNearby();};c.appendChild(b);});}
 function showSkeleton(){$('results-list').innerHTML='<div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>';}
 function hideSkeleton(){$('results-list').innerHTML='';}
@@ -505,7 +489,11 @@ function doNearby(){navigate('search');toast('📍 Cerco vicino a te...');getNea
 function getNearby(){const loc=userLoc||map?.getCenter();if(!loc||!placesService)return;showSkeleton();const types=state.activeCat==='all'?['restaurant','cafe','bakery']:[state.activeCat];let all=[],done=0;types.forEach(type=>{placesService.nearbySearch({location:loc,radius:2000,type},(r,s)=>{if(s==='OK')all=[...all,...r];if(++done===types.length){const seen=new Set();updateVenues(all.filter(v=>{if(seen.has(v.place_id))return false;seen.add(v.place_id);return true}))}});});}
 function searchAPI(q){if(!placesService){toast('⌛ Maps si sta caricando...');return;}clearTimeout(debT);debT=setTimeout(()=>{showSkeleton();const qLow=q.trim().toLowerCase();const isCity=qLow.split(' ').length<=2&&!['pizza','sushi','ristor','bar','caff','brunch','gelat','taco','ramen','burger'].some(kw=>qLow.includes(kw));const finalQ=isCity?`ristoranti a ${q}`:q;placesService.textSearch({query:finalQ,location:userLoc||map.getCenter(),radius:8000},(r,s)=>{if(s!=='OK'||!r){hideSkeleton();showEmpty();return}const allowed=['restaurant','cafe','bar','bakery','meal_takeaway','meal_delivery'];const filtered=r.filter(p=>p.types?.some(t=>allowed.includes(t)));if(filtered.length)updateVenues(filtered);else{getNearby();toast('🔄 Mostro locali vicini')}});},600);}
 
-function startVoice(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){toast('⚠️ Voce non supportata');return}const rec=new SR();rec.lang='it-IT';rec.interimResults=false;const btn=$('voice-btn');btn.classList.add('recording');btn.textContent='🔴';toast('🎤 Parla ora...');rec.onresult=e=>{const q=e.results[0][0].transcript;$('search-input').value=q;$('search-clear').style.display='block';toast('🎤 "'+q+'"');searchAPI(q);};rec.onerror=()=>toast('⚠️ Errore microfono');rec.onend=()=>{btn.classList.remove('recording');btn.textContent='🎤';};rec.start();}
+function doSearch(q){$('search-input').value=q;$('search-clear').style.display='block';saveHistory(q);searchAPI(q);navigate('search');}
+function doMood(q){navigate('search');doSearch(q)}
+function surpriseMe(){const moods=['sushi romantico','pizza gourmet','brunch instagrammabile','ramen autentico','aperitivo rooftop','bistrot locale','gelato artigianale','tacos street food'];const q=moods[Math.floor(Math.random()*moods.length)];toast('🪐 Orbo sceglie: '+q);doSearch(q);}
+
+function startVoice(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){toast('⚠️ Voce non supportata');return}const rec=new SR();rec.lang='it-IT';rec.interimResults=false;const btn=$('voice-btn');btn.classList.add('recording');btn.textContent='🔴';toast('🎤 Parla ora...');rec.onresult=e=>{const q=e.results[0][0].transcript;$('search-input').value=q;$('search-clear').style.display='block';toast('🎤 "'+q+'"');doSearch(q);};rec.onerror=()=>toast('⚠️ Errore microfono');rec.onend=()=>{btn.classList.remove('recording');btn.textContent='🎤';};rec.start();}
 
 function updateVenues(list){
   VENUES=list.map(p=>({
@@ -518,8 +506,10 @@ function updateVenues(list){
     photo:p.photos?.[0]?.getUrl({maxWidth:600,maxHeight:400}) || 'https://placehold.co/600x400/1a0b2e/FFB347?text=ORBO',
     lat:p.geometry.location.lat(),
     lng:p.geometry.location.lng(),
-    dist:userLoc?`${((google.maps.geometry?.spherical?.computeDistanceBetween?google.maps.geometry.spherical.computeDistanceBetween(new google.maps.LatLng(userLoc),p.geometry.location):0)/1000).toFixed(1)} km`:'' 
+    reviews:p.user_ratings_total||0
   }));
+  VENUES.forEach(v=>v.score=orboScore(v));
+  VENUES.sort((a,b)=>b.score-a.score);
   renderResults();
 }
 
@@ -532,75 +522,31 @@ function renderResults(){
   list.innerHTML=VENUES.map(v=>`
     <div class="result-card" onclick="openDetail('${v.place_id}')">
       <div class="rc-img">
-        <img src="${v.photo}" alt="${escapeHtml(v.name)}" loading="lazy">
+        <img src="${v.photo}" alt="${escapeHtml(v.name)}" loading="lazy" onerror="this.src='https://placehold.co/600x400/1a0b2e/FFB347?text=ORBO'">
         <div class="rc-img-overlay"></div>
         ${v.openNow!==null?`<span class="rc-open ${v.openNow?'open':'closed'}">${v.openNow?'Aperto':'Chiuso'}</span>`:''}
+        <span class="rc-score">⭐ ${v.score}</span>
       </div>
       <div class="rc-body">
         <div class="rc-name">${escapeHtml(v.name)}</div>
         <div class="rc-address">${escapeHtml(v.vicinity||'')}</div>
         <div class="rc-rating"><span class="rc-stars">⭐</span><span class="rc-num">${v.rating?.toFixed(1)||'-'}</span></div>
-        ${v.dist?`<div class="rc-dist">${v.dist}</div>`:''}
+        ${v.dist?`<div class="rc-dist">${v.dist} km da te</div>`:''}
       </div>
-    </div>`).join('');
+    </div>``).join('');
 }
 
-function openDetail(id){
-  const place=VENUES.find(v=>v.place_id===id);
-  if(!place) return;
-  placesService.getDetails({placeId:id,fields:['name','formatted_address','rating','user_ratings_total','photos','opening_hours','price_level','geometry','website','formatted_phone_number','reviews']},(p,s)=>{
-    if(s!=='OK') return;
-    const v={
-      id,
-      name:p.name,
-      address:p.formatted_address||place.vicinity,
-      rating:p.rating||place.rating,
-      reviews:p.user_ratings_total||0,
-      price:'€'.repeat(Math.max(1,p.price_level||2)),
-      openNow:p.opening_hours?.isOpen?.()??place.openNow,
-      photo:p.photos?.[0]?.getUrl({maxWidth:800})||place.photo||'https://placehold.co/600x400/1a0b2e/FFB347?text=ORBO',
-      lat:p.geometry.location.lat(),
-      lng:p.geometry.location.lng()
-    };
-    openDetailDirect(v);
-  });
-}
+function openDetail(pid){const v=VENUES.find(x=>x.place_id===pid);if(!v)return;openDetailDirect(v);}
+function openDetailDirect(v){if(!placesService)return;placesService.getDetails({placeId:v.id||v.place_id,fields:['name','rating','user_ratings_total','formatted_phone_number','website','opening_hours','reviews','photos','formatted_address','price_level']},(place,st)=>{if(st!=='OK')return;$('modal-img').src=place.photos?.[0]?.getUrl({maxWidth:900})||v.photo||'';const price='€'.repeat(place.price_level||1);const score=v.score||0;const todayIdx=new Date().getDay();const hours=place.opening_hours?.weekday_text?.map((h,i)=>`<div class="hours-day ${i===(todayIdx===0?6:todayIdx-1)?'today':''}">${escapeHtml(h)}</div>`).join('')||'<div class="hours-day" style="opacity:.45">Orari non disponibili</div>';const reviews=place.reviews?.slice(0,3).map(r=>`<div class="review-item"><div class="review-author">${escapeHtml(r.author_name)}</div><div class="review-stars">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</div><div class="review-text">${escapeHtml(r.text)}</div></div>`).join('')||'<div style="opacity:.4;font-size:13px">Nessuna recensione</div>';const isFav=state.favs.includes(v.id||v.place_id);$('modal-body').innerHTML=`<div class="modal-top-row"><div class="modal-name">${escapeHtml(place.name)}</div><button class="modal-fav-btn ${isFav?'active':''}" onclick="toggleFav('${v.id||v.place_id}')">${isFav?'❤️':'🤍'}</button></div><div class="modal-meta"><span class="modal-stars">${'★'.repeat(Math.round(place.rating||4))}</span><span class="modal-rnum">${place.rating?.toFixed(1)||'-'} ${place.user_ratings_total?'('+place.user_ratings_total+')':''}</span><span class="modal-price">${price}</span><span class="modal-open-badge ${v.openNow?'open':'closed'}">${v.openNow?'Aperto ora':'Chiuso'}</span></div><div class="modal-actions"><a class="ma-btn primary" href="https://www.google.com/maps/dir/?api=1&destination=${v.lat},${v.lng}" target="_blank">🗺️ Indicazioni</a>${place.formatted_phone_number?`<a class="ma-btn secondary" href="tel:${place.formatted_phone_number}">📞 Chiama</a>`:''}${place.website?`<a class="ma-btn secondary" href="${place.website}" target="_blank">🌐 Sito</a>`:''}</div><div class="modal-section"><div class="modal-section-title">📍 Indirizzo</div><p style="font-size:13px;color:rgba(255,179,71,0.65)">${escapeHtml(place.formatted_address||v.address)}</p></div><div class="modal-section"><div class="modal-section-title">🕐 Orari</div>${hours}</div><div class="modal-section"><div class="modal-section-title">💬 Recensioni</div>${reviews}</div>`;$('detail-modal').classList.add('open');});}
 
-function openDetailDirect(v){
-  $('modal-img').src = v.photo || 'https://placehold.co/600x400/1a0b2e/FFB347?text=ORBO';
-  const isFav = state.favs.some(f=>f.place_id===v.id);
-  $('modal-body').innerHTML = `<div class="modal-top-row"><div><div class="modal-name">${escapeHtml(v.name)}</div><div class="modal-meta"><span class="modal-stars">⭐ ${v.rating?.toFixed(1)||'-'}</span><span class="modal-rnum">(${v.reviews||0})</span><span class="modal-price">${v.price||'€€'}</span>${v.openNow!==null?`<span class="modal-open-badge ${v.openNow?'open':'closed'}">${v.openNow?'Aperto':'Chiuso'}</span>`:''}</div></div><button class="modal-fav-btn ${isFav?'active':''}" onclick="toggleFav('${v.id}')">❤️</button></div><div style="color:rgba(255,179,71,.6);line-height:1.6;margin-bottom:20px;">${escapeHtml(v.address||'')}</div><div class="modal-actions"><a class="ma-btn primary" target="_blank" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(v.name)}">🗺️ Apri Maps</a><button class="ma-btn secondary" onclick="toggleFav('${v.id}')">❤️ Preferito</button></div>`;
-  $('detail-modal').classList.add('open');
-}
+function toggleFav(id){const i=state.favs.indexOf(id);i>-1?(state.favs.splice(i,1),toast('💔 Rimosso')):(state.favs.push(id),toast('❤️ Salvato!'));localStorage.setItem('orbo_favs',JSON.stringify(state.favs));renderFavs();renderResults();}
+function renderFavs(){const l=$('favs-list');if(!state.favs.length){l.innerHTML='';$('favs-empty').classList.remove('hidden');return;}$('favs-empty').classList.add('hidden');l.innerHTML=state.favs.map(id=>{const v=VENUES.find(x=>x.place_id===id);if(!v)return'';return`<div class="result-card" onclick="openDetail('${v.place_id}')"><div class="rc-img"><img src="${v.photo}" alt="${escapeHtml(v.name)}"><div class="rc-img-overlay"></div></div><div class="rc-body"><div class="rc-name">${escapeHtml(v.name)}</div><div class="rc-address">${escapeHtml(v.vicinity)}</div><div class="rc-footer"><button class="rc-info-btn" onclick="event.stopPropagation();toggleFav('${v.place_id}')">❌ Rimuovi</button></div></div></div>`}).join('');}
 
-function toggleFav(id){
-  const venue = VENUES.find(v=>v.place_id===id) || state.favs.find(f=>f.place_id===id);
-  if(!venue) return;
-  const existing = state.favs.find(f=>f.place_id===id);
-  if(existing){state.favs = state.favs.filter(f=>f.place_id!==id);toast('💔 Rimosso dai preferiti');}
-  else {state.favs.push(venue);toast('❤️ Salvato');}
-  localStorage.setItem('orbo_favs', JSON.stringify(state.favs));
-  document.querySelectorAll('.modal-fav-btn').forEach(b=>b.classList.toggle('active'));
-}
+function renderTopRated(){if(!userLoc){$('toprated-empty').style.display='block';$('toprated-list').innerHTML='';return;}const loc=userLoc;placesService.nearbySearch({location:loc,radius:2000,type:'restaurant'},(res,st)=>{if(st!=='OK'||!res.length){$('toprated-empty').style.display='block';return;}$('toprated-empty').style.display='none';const sorted=res.filter(p=>p.rating).sort((a,b)=>(b.rating||0)-(a.rating||0)).slice(0,10);$('toprated-list').innerHTML=sorted.map((p,i)=>{const rank=i===0?'gold':i===1?'silver':i===2?'bronze':'other';return`<div class="tr-card" onclick="openDetail('${p.place_id}')"><div class="tr-img"><img src="${p.photos?.[0]?.getUrl({maxWidth:400})||'https://placehold.co/400x300/1a0b2e/FFB347?text=ORBO'}" alt="${escapeHtml(p.name)}"><span class="tr-rank ${rank}">${i+1}</span></div><div class="tr-body"><div class="tr-name">${escapeHtml(p.name)}</div><div class="tr-addr">${escapeHtml(p.vicinity||'')}</div><div class="tr-score-row"><span class="tr-stars">⭐</span><span class="tr-num">${p.rating?.toFixed(1)}</span>${p.opening_hours?.open_now!==undefined?`<span class="tr-open-badge ${p.opening_hours.open_now?'open':'closed'}">${p.opening_hours.open_now?'Aperto':'Chiuso'}</span>`:''}</div></div></div>`}).join('');});}
 
-function renderTopRated(){
-  const list=$('toprated-list');if(!VENUES.length){$('toprated-empty').style.display='block';list.innerHTML='';return;}$('toprated-empty').style.display='none';
-  const sorted=[...VENUES].sort((a,b)=>b.rating-a.rating).slice(0,10);
-  list.innerHTML=sorted.map((v,i)=>`<div class="tr-card" onclick="openDetail('${v.place_id}')"><div class="tr-img"><img src="${v.photo}" alt="${escapeHtml(v.name)}"><div class="tr-rank ${i===0?'gold':i===1?'silver':i===2?'bronze':'other'}">${i+1}</div></div><div class="tr-body"><div class="tr-name">${escapeHtml(v.name)}</div><div class="tr-addr">${escapeHtml(v.vicinity||'')}</div><div class="tr-score-row"><span class="tr-stars">⭐</span><span class="tr-num">${v.rating?.toFixed(1)||'-'}</span>${v.openNow!==null?`<span class="tr-open-badge ${v.openNow?'open':'closed'}">${v.openNow?'Aperto':'Chiuso'}</span>`:''}</div></div></div>`).join('');
-}
-
-function renderFavs(){
-  const list=$('favs-list');if(!state.favs.length){$('favs-empty').classList.remove('hidden');list.innerHTML='';return;}$('favs-empty').classList.add('hidden');
-  list.innerHTML=state.favs.map(v=>`<div class="result-card" onclick="openDetail('${v.place_id}')"><div class="rc-img"><img src="${v.photo}"></div><div class="rc-body"><div class="rc-name">${escapeHtml(v.name)}</div><div class="rc-address">${escapeHtml(v.vicinity||'')}</div></div></div>`).join('');
-}
-
-function surpriseMe(){
-  if(!VENUES.length){toast('📍 Carico locali...');getNearby();setTimeout(()=>{if(VENUES.length){const r=VENUES[Math.floor(Math.random()*VENUES.length)];openDetail(r.place_id);}else{toast('⚠️ Nessun locale trovato');}},1500);return;}
-  const r=VENUES[Math.floor(Math.random()*VENUES.length)];openDetail(r.place_id);toast('🪐 Orbo ha scelto per te');
-}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();closeMobileNav();}});
 </script>
 
 <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB4eYidHtLV4fXThKSZCS6ejH8Urpf2Km4&libraries=places,geometry&callback=initMap"></script>
 </body>
 </html>
-
