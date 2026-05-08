@@ -66,7 +66,8 @@ img{display:block;width:100%;height:100%;object-fit:cover}
 .app-grid-section{position:relative;z-index:1;background:linear-gradient(180deg,#0a0010,#0f051a);padding:36px 20px 56px}
 .app-grid-title{font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:rgba(255,179,71,0.35);text-align:center;margin-bottom:18px}
 .app-grid{display:grid;grid-template-columns:1fr;max-width:360px;margin:0 auto;gap:16px}
-.app-tile{display:flex;flex-direction:row;align-items:center;gap:18px;padding:28px 24px;border-radius:22px;background:linear-gradient(135deg,rgba(45,27,78,0.85),rgba(15,5,26,0.85));border:1px solid rgba(255,140,0,0.2);cursor:pointer;transition:.25s;position:relative;overflow:hidden.app-tile::before{content:"";position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,140,0,0.06),transparent);opacity:0;transition:.25s}
+.app-tile{display:flex;flex-direction:row;align-items:center;gap:18px;padding:28px 24px;border-radius:22px;background:linear-gradient(135deg,rgba(45,27,78,0.85),rgba(15,5,26,0.85));border:1px solid rgba(255,140,0,0.2);cursor:pointer;transition:.25s;position:relative;overflow:hidden}
+.app-tile::before{content:"";position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,140,0,0.06),transparent);opacity:0;transition:.25s}
 .app-tile:hover{transform:translateY(-4px) scale(1.02);box-shadow:0 14px 36px rgba(255,140,0,0.22);border-color:rgba(255,140,0,0.45)}
 .app-tile:hover::before{opacity:1}
 .app-tile:active{transform:scale(.97)}
