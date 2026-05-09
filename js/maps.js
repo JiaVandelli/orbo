@@ -25,7 +25,7 @@ function loadGoogleMaps() {
       mapsCallbacks.length = 0;
     };
     const s = document.createElement('script');
-    s.src = 'https://maps.googleapis.com/maps/api/js?key=YOUR_RESTRICTED_KEY_HERE&libraries=places&callback=_mapsReady&language=it&region=IT';
+    s.src = 'https://maps.googleapis.com/maps/api/js?key=AIzaSyB4eYidHtLV4fXThKSZCS6ejH8Urpf2Km4&libraries=places&callback=_mapsReady&language=it&region=IT';
     s.async = true; s.defer = true;
     s.onerror = () => {
       showMapsLoader(false);
