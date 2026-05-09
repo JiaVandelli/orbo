@@ -111,56 +111,49 @@ function showDetail(placeId) {
   if (!v || !App.placesService) return;
   App.placesService.getDetails({
     placeId,
-    fields: ['name','rating','user_ratings_total','formatted_phone_number','website','opening_hours','reviews','photos','formatted_address','price_level']
+    fields: ['name','rating','user_ratings_total','formatted_phone_number','website','opening_hours','photos','formatted_address','price_level']
   }, (place, st) => {
     if (st === 'OVER_QUERY_LIMIT') { toast('⚠️ Limite API raggiunto'); return; }
     if (st !== 'OK') return;
 
     $('modal-img').src = place.photos?.[0]?.getUrl({maxWidth: 900}) || v.photo || '';
-    const price    = '€'.repeat(Math.max(1, place.price_level || 1));
+    const price = '€'.repeat(Math.max(1, place.price_level || 1));
     const todayIdx = new Date().getDay();
 
     const hours = place.opening_hours?.weekday_text
       ?.map((h, i) => `<div class="hours-row ${i===(todayIdx===0?6:todayIdx-1)?'today':''}">${esc(h)}</div>`)
       .join('') || '<div class="hours-row" style="opacity:.45">Orari non disponibili</div>';
 
-    const reviews = place.reviews?.slice(0, 3).map(r => `
-      <div class="review-item">
-        <div class="review-author">${esc(r.author_name)}</div>
-        <div class="review-stars" aria-label="${r.rating} stelle su 5">
-          ${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}
+    const totalReviews = place.user_ratings_total || 0;
+    const reviewsBlock = totalReviews > 0 ? `
+      <div class="reviews-cta">
+        <div class="reviews-cta-text">
+          <strong>${totalReviews.toLocaleString('it-IT')} recensioni</strong> verificate su Google
         </div>
-        <div class="review-text">${esc(r.text)}</div>
-      </div>`).join('') || '<div style="opacity:.4;font-size:13px">Nessuna recensione</div>';
+        <a class="reviews-cta-btn" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.name + ' ' + (place.formatted_address || ''))}&query_place_id=${placeId}" target="_blank" rel="noopener">
+          📖 Leggi tutte le recensioni
+        </a>
+      </div>` : '<div style="opacity:.5;font-size:14px">Nessuna recensione disponibile</div>';
 
-    const isFav        = App.state.favs.includes(placeId);
+    const isFav = App.state.favs.includes(placeId);
     const ratingDisplay = place.rating != null ? place.rating.toFixed(1) : '-';
 
     $('modal-body').innerHTML = `
       <div class="modal-title" id="modal-title-text">${esc(place.name)}</div>
       <div class="modal-rating">
         <span class="modal-stars" aria-hidden="true">${'★'.repeat(Math.round(place.rating || 0) || 4)}</span>
-        <span style="color:rgba(255,179,71,0.6);font-size:13px">
-          ${ratingDisplay} · ${esc(price)}${place.user_ratings_total ? ' · ' + place.user_ratings_total + ' rec.' : ''}
-        </span>
+        <span>${ratingDisplay} · ${esc(price)}${totalReviews ? ' · ' + totalReviews.toLocaleString('it-IT') + ' rec.' : ''}</span>
         <span class="modal-score">⭐ Orbo ${v.score}</span>
       </div>
       <div class="modal-actions">
-        <a class="ma-btn primary" href="https://www.google.com/maps/dir/?api=1&destination=${v.lat},${v.lng}"
-           target="_blank" rel="noopener noreferrer">🗺️ Indicazioni</a>
+        <a class="ma-btn primary" href="https://www.google.com/maps/dir/?api=1&destination=${v.lat},${v.lng}" target="_blank" rel="noopener noreferrer">🗺️ Indicazioni</a>
         ${place.formatted_phone_number ? `<a class="ma-btn secondary" href="tel:${esc(place.formatted_phone_number)}">📞 Chiama</a>` : ''}
         ${place.website ? `<a class="ma-btn secondary" href="${esc(place.website)}" target="_blank" rel="noopener noreferrer">🌐 Sito</a>` : ''}
-        <button class="ma-btn secondary${isFav?' active':''}" id="modal-fav"
-                aria-pressed="${isFav}" data-fav-id="${esc(placeId)}">
-          ${isFav ? '❤️ Salvato' : '🤍 Salva'}
-        </button>
+        <button class="ma-btn secondary${isFav?' active':''}" id="modal-fav" aria-pressed="${isFav}" data-fav-id="${esc(placeId)}">${isFav ? '❤️ Salvato' : '🤍 Salva'}</button>
       </div>
-      <div class="modal-section">
-        <div class="modal-section-title">📍 Indirizzo</div>
-        <p style="font-size:13px;color:rgba(255,179,71,0.65)">${esc(place.formatted_address || v.address)}</p>
-      </div>
+      <div class="modal-section"><div class="modal-section-title">📍 Indirizzo</div><p>${esc(place.formatted_address || v.address)}</p></div>
       <div class="modal-section"><div class="modal-section-title">🕐 Orari</div>${hours}</div>
-      <div class="modal-section"><div class="modal-section-title">💬 Recensioni</div>${reviews}</div>`;
+      <div class="modal-section"><div class="modal-section-title">💬 Recensioni</div>${reviewsBlock}</div>`;
 
     $('detail-modal').classList.add('open');
     document.body.style.overflow = 'hidden';
