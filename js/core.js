@@ -1,17 +1,17 @@
 'use strict';
 
-// ── SHARED STATE ─────────────────────────────────
 const App = {
-  venues:        [],
-  userLoc:       null,
-  map:           null,
+  venues: [],
+  userLoc: null,
+  map: null,
   placesService: null,
-  debT:          null,
+  debT: null,
   lastRenderKey: '',
-  searchCache:   new Map(),
+  lastQuery: '',
+  searchCache: new Map(),
   state: {
-    favs:      (()=>{ try{ return JSON.parse(localStorage.getItem('orbo_favs')||'[]') }catch{ return [] } })(),
-    history:   (()=>{ try{ return JSON.parse(localStorage.getItem('orbo_history')||'[]') }catch{ return [] } })(),
+    favs: (()=>{ try{ return JSON.parse(localStorage.getItem('orbo_favs')||'[]') }catch{ return [] } })(),
+    history: (()=>{ try{ return JSON.parse(localStorage.getItem('orbo_history')||'[]') }catch{ return [] } })(),
     activeCat: 'all'
   }
 };
