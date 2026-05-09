@@ -196,3 +196,24 @@ button:active{transform:scale(.97)}
 .result-card,.quick-card,.btn-primary,.btn-ghost{will-change:transform;transform:translateZ(0);backface-visibility:hidden}
 @media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 @media(max-width:520px){.hero-logo-wrap{width:140px;height:140px}.result-card{grid-template-columns:100px 1fr}}
+/* ── FIX MODAL GERARCHIA 2026 ──────────────────── */
+.modal-sheet{background:linear-gradient(180deg,#1f1038,#12071f)}
+.modal-title{font-size:22px;font-weight:900;color:#fff;line-height:1.25;margin-bottom:8px}
+.modal-rating{margin-bottom:18px}
+.modal-rating>span:nth-child(2){color:rgba(255,215,170,0.75);font-size:13.5px;font-weight:600}
+
+.modal-section{margin-top:20px;padding-top:18px;border-top:1px solid rgba(255,140,0,0.12)}
+.modal-section-title{font-size:11px;text-transform:uppercase;letter-spacing:1.8px;color:rgba(255,179,71,0.5);margin-bottom:10px;font-weight:800}
+
+.hours-row{font-size:14px;color:rgba(220,200,255,0.65);line-height:1.8;padding:4px 0;transition:.15s}
+.hours-row.today{color:#FFB347;font-weight:800;background:rgba(255,140,0,0.08);margin:0 -12px;padding:4px 12px;border-radius:8px;border-left:3px solid #FF8C00}
+
+/* recensioni rimosse, sostituite da bottone */
+.reviews-cta{display:flex;flex-direction:column;gap:10px;padding:16px;background:rgba(255,140,0,0.06);border:1px solid rgba(255,140,0,0.18);border-radius:14px;margin-top:8px}
+.reviews-cta-text{font-size:14px;color:rgba(255,220,190,0.85);line-height:1.5}
+.reviews-cta-text strong{color:#FFB347;font-weight:800}
+.reviews-cta-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 18px;background:linear-gradient(135deg,#FF6B00,#FFB347);color:#1a0b2e;border-radius:12px;font-weight:800;font-size:14px;text-decoration:none;transition:.2s;box-shadow:0 4px 16px rgba(255,107,0,0.3)}
+.reviews-cta-btn:hover{transform:translateY(-2px);box-shadow:0 6px 22px rgba(255,107,0,0.45)}
+
+/* indirizzo più leggibile */
+.modal-section p{font-size:14px;color:rgba(220,200,255,0.8);line-height:1.6}
