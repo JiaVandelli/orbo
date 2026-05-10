@@ -2,8 +2,8 @@ name: Aggiorna Orbo News
 
 on:
   schedule:
-    - cron: '0 7 * * *'  # ogni giorno alle 9:00 italiane (7 UTC)
-  workflow_dispatch:  # puoi lanciarlo a mano quando vuoi
+    - cron: '0 7 * * *'  # 9:00 italiane
+  workflow_dispatch:
 
 jobs:
   update:
@@ -16,6 +16,9 @@ jobs:
         with:
           node-version: '20'
       
+      - name: Install deps
+        run: npm install
+      
       - name: Fetch news
         run: node scripts/fetch-news.js
       
@@ -24,5 +27,9 @@ jobs:
           git config user.name "Orbo Bot"
           git config user.email "bot@orbo.app"
           git add data/news.json
-          git diff --quiet || git commit -m "📰 Aggiornamento news $(date +'%d/%m')"
-          git push
+          if ! git diff --cached --quiet; then
+            git commit -m "📰 Aggiornamento news $(date +'%d/%m')"
+            git push
+          else
+            echo "Nessuna modifica"
+          fi
