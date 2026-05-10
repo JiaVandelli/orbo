@@ -19,19 +19,19 @@ const App = {
 const CACHE_MAX  = 40;
 const FOOD_TYPES = ['restaurant','cafe','bakery','meal_takeaway','bar','food'];
 const CATS = [
-  {id:'all',          label:'Tutti',      icon:'🔥', query:'ristorante'},
-  {id:'pizza',        label:'Pizza',      icon:'🍕', query:'pizzeria'},
-  {id:'sushi',        label:'Sushi',      icon:'🍣', query:'sushi'},
-  {id:'burger',       label:'Burger',     icon:'🍔', query:'hamburger'},
-  {id:'date',         label:'Date night', icon:'💕', query:'ristorante romantico'},
-  {id:'chill',        label:'Chill',      icon:'🌙', query:'locale tranquillo'},
-  {id:'insta',        label:'Instagram',  icon:'📸', query:'ristorante design'},
-  {id:'cheap',        label:'Economico',  icon:'💸', query:'ristorante economico'},
-  {id:'laptop',       label:'Studio',     icon:'💻', query:'cafe wifi'},
-  {id:'late',         label:'Notturno',   icon:'🌃', query:'aperto fino tardi'}
+  {id:'all',          label:'Tutti',      icon:'ðŸ”¥', query:'ristorante'},
+  {id:'pizza',        label:'Pizza',      icon:'ðŸ•', query:'pizzeria'},
+  {id:'sushi',        label:'Sushi',      icon:'ðŸ£', query:'sushi'},
+  {id:'burger',       label:'Burger',     icon:'ðŸ”', query:'hamburger'},
+  {id:'date',         label:'Date night', icon:'ðŸ’•', query:'ristorante romantico'},
+  {id:'chill',        label:'Chill',      icon:'ðŸŒ™', query:'locale tranquillo'},
+  {id:'insta',        label:'Instagram',  icon:'ðŸ“¸', query:'ristorante design'},
+  {id:'cheap',        label:'Economico',  icon:'ðŸ’¸', query:'ristorante economico'},
+  {id:'laptop',       label:'Studio',     icon:'ðŸ’»', query:'cafe wifi'},
+  {id:'late',         label:'Notturno',   icon:'ðŸŒƒ', query:'aperto fino tardi'}
 ];
 
-// ── UTILS ─────────────────────────────────────────
+// â”€â”€ UTILS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const $ = id => document.getElementById(id);
 
 function esc(s = '') {
@@ -43,7 +43,7 @@ function esc(s = '') {
 function saveFavs() { try{ localStorage.setItem('orbo_favs',    JSON.stringify(App.state.favs))    }catch{} }
 function saveHist() { try{ localStorage.setItem('orbo_history', JSON.stringify(App.state.history)) }catch{} }
 
-// ── GEO CACHE (1 ora) ─────────────────────────────
+// â”€â”€ GEO CACHE (1 ora) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function getCachedGeo() {
   try {
     const raw = sessionStorage.getItem('orbo_geo');
@@ -58,7 +58,7 @@ function setCachedGeo(lat, lng) {
   try { sessionStorage.setItem('orbo_geo', JSON.stringify({lat, lng, ts: Date.now()})) } catch {}
 }
 
-// ── CANVAS STELLE ─────────────────────────────────
+// â”€â”€ CANVAS STELLE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const canvasCtrl = (() => {
   const c = $('bg-canvas');
   if (!c) return { setActive: () => {} };
@@ -100,20 +100,36 @@ const canvasCtrl = (() => {
   return { setActive };
 })();
 
-// ── CURSOR GLOW ───────────────────────────────────
+// â”€â”€ CURSOR GLOW â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 if (window.innerWidth >= 768) {
   const glow = $('cursor-glow');
   Object.assign(glow.style, {
     width:'260px', height:'260px', borderRadius:'50%',
     background:'radial-gradient(circle,rgba(255,140,0,.15),transparent 70%)',
     filter:'blur(28px)', transform:'translate(-50%,-50%)',
-    opacity:'0', transition:'opacity .3s'
+    opacity:'0', transition:'opacity .3s',
+    position:'fixed', pointerEvents:'none', left:'0', top:'0', zIndex:'-1'
   });
-  addEventListener('mousemove', e => { glow.style.opacity='.9'; glow.style.left=e.clientX+'px'; glow.style.top=e.clientY+'px'; });
-  addEventListener('mouseout',  () => { glow.style.opacity = '0'; });
+  
+  let rafId = null;
+  let mouseX = 0, mouseY = 0;
+  
+  addEventListener('mousemove', e => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+    glow.style.opacity = '.9';
+    
+    if (rafId) return;
+    rafId = requestAnimationFrame(() => {
+      glow.style.transform = `translate(${mouseX - 130}px, ${mouseY - 130}px)`;
+      rafId = null;
+    });
+  });
+  
+  addEventListener('mouseout', () => { glow.style.opacity = '0'; });
 }
 
-// ── PARTICELLE ────────────────────────────────────
+// â”€â”€ PARTICELLE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 (() => {
   const c = $('particles'), frag = document.createDocumentFragment();
   Array.from({length: 28}, () => {
@@ -124,7 +140,7 @@ if (window.innerWidth >= 768) {
   c.appendChild(frag);
 })();
 
-// ── COUNTER STATS ─────────────────────────────────
+// â”€â”€ COUNTER STATS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function animateStats() {
   document.querySelectorAll('.stat-num').forEach(el => {
     const tgt = +el.dataset.count, suf = tgt === 15 ? 'k' : '';
@@ -142,7 +158,7 @@ const statsObs = new IntersectionObserver(entries => {
 }, {threshold: .2});
 statsObs.observe($('stats-row'));
 
-// ── TOAST ─────────────────────────────────────────
+// â”€â”€ TOAST â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 let toastTimer;
 function toast(msg) {
   const el = $('toast');
@@ -152,7 +168,7 @@ function toast(msg) {
   toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
 }
 
-// ── NAVIGATE ──────────────────────────────────────
+// â”€â”€ NAVIGATE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function navigate(v) {
   document.querySelectorAll('.view').forEach(s => s.classList.toggle('active', s.id === 'view-' + v));
   canvasCtrl.setActive(v === 'home' && !document.hidden);
@@ -166,7 +182,7 @@ function closeMobileNav() {
   $('menu-btn').setAttribute('aria-expanded', 'false');
 }
 
-// ── STORIA RICERCHE ───────────────────────────────
+// â”€â”€ STORIA RICERCHE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function saveHistory(q) {
   if (!q || q.length < 2) return;
   App.state.history = [q, ...App.state.history.filter(x => x !== q)].slice(0, 5);
@@ -180,7 +196,7 @@ function renderHistory() {
   App.state.history.forEach(h => {
     const btn = document.createElement('button');
     btn.className = 'history-chip';
-    btn.textContent = '🕐 ' + h;
+    btn.textContent = 'ðŸ• ' + h;
     btn.setAttribute('aria-label', 'Cerca di nuovo: ' + h);
     btn.onclick = () => doSearch(h);
     frag.appendChild(btn);
@@ -189,7 +205,7 @@ function renderHistory() {
   row.appendChild(frag);
 }
 
-// ── HAVERSINE ─────────────────────────────────────
+// â”€â”€ HAVERSINE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function distanza(la1, lo1, la2, lo2) {
   const R = 6371, dLa = (la2-la1)*Math.PI/180, dLo = (lo2-lo1)*Math.PI/180;
   const a = Math.sin(dLa/2)**2 + Math.cos(la1*Math.PI/180)*Math.cos(la2*Math.PI/180)*Math.sin(dLo/2)**2;
@@ -200,7 +216,7 @@ function openMaps(lat, lng) {
   window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank', 'noopener');
 }
 
-// ── EVENTI GLOBALI ────────────────────────────────
+// â”€â”€ EVENTI GLOBALI â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 $('menu-btn').addEventListener('click', () => {
   const n = $('mobile-nav'), open = n.classList.toggle('open');
   n.style.display = open ? 'flex' : 'none';
@@ -214,5 +230,5 @@ document.addEventListener('keydown', e => {
     else closeMobileNav();
   }
 });
-addEventListener('offline', () => toast('📡 Connessione persa'));
-addEventListener('online',  () => toast('🚀 Connessione ristabilita'));
+addEventListener('offline', () => toast('ðŸ“¡ Connessione persa'));
+addEventListener('online',  () => toast('ðŸš€ Connessione ristabilita'));
