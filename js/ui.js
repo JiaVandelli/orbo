@@ -1,6 +1,6 @@
 'use strict';
 
-// ── CHIPS ─────────────────────────────────────────
+// â”€â”€ CHIPS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function renderChips() {
   const frag = document.createDocumentFragment();
   CATS.forEach(cat => {
@@ -20,19 +20,19 @@ function setCat(id, el) {
     c.classList.remove('active'); c.setAttribute('aria-pressed', 'false');
   });
   el.classList.add('active'); el.setAttribute('aria-pressed', 'true');
-  
+
   const cat = CATS.find(c => c.id === id);
   const query = cat?.query || id;
-  
+
   const q = $('search-input').value.trim();
   if (q.length >= 3) {
     searchAPI(q);
   } else {
-    searchAPI(query); // ← QUESTO è il cambio chiave
+    searchAPI(query); // â† QUESTO Ã¨ il cambio chiave
   }
 }
 
-// ── EVENT DELEGATION LISTA ────────────────────────
+// â”€â”€ EVENT DELEGATION LISTA â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 (() => {
   const list = $('results-list');
   list.addEventListener('click', e => {
@@ -50,19 +50,21 @@ function setCat(id, el) {
     if (card) { e.preventDefault(); showDetail(card.dataset.id); }
   });
 })();
+
 function getVibeTag() {
   const map = {
-    date: '💕 Romantico',
-    chill: '🌙 Tranquillo', 
-    insta: '📸 Instagrammabile',
-    cheap: '💸 Economico',
-    laptop: '💻 WiFi',
-    late: '🌃 Aperto tardi'
+    date: 'ðŸ’• Romantico',
+    chill: 'ðŸŒ™ Tranquillo', 
+    insta: 'ðŸ“¸ Instagrammabile',
+    cheap: 'ðŸ’¸ Economico',
+    laptop: 'ðŸ’» WiFi',
+    late: 'ðŸŒƒ Aperto tardi'
   };
   const tag = map[App.state.activeCat];
-  return tag ? <div class="rc-vibe">${tag}</div> : '';
+  return tag ? `<div class="rc-vibe">${tag}</div>` : '';
 }
-// ── RENDER CARDS ──────────────────────────────────
+
+// â”€â”€ RENDER CARDS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function renderResults() {
   const list = $('results-list'), cnt = $('results-count'), empty = $('empty-state');
   hideSkeleton();
@@ -75,7 +77,7 @@ function renderResults() {
   App.lastRenderKey = key;
 
   empty.style.display = 'none';
-  cnt.textContent = `${App.venues.length} locali trovati 🔥`;
+  cnt.textContent = `${App.venues.length} locali trovati ðŸ”¥`;
 
   const frag = document.createDocumentFragment();
   App.venues.forEach((v, i) => {
@@ -99,22 +101,22 @@ function renderResults() {
         ${v.openNow != null ? `<span class="rc-open ${v.openNow?'open':'closed'}">${v.openNow?'Aperto':'Chiuso'}</span>` : ''}
       </div>
       <div class="rc-body">
-        <div class="rc-name">${esc(v.name)} <span class="rc-score-inline">⭐ ${v.score}</span></div>
+        <div class="rc-name">${esc(v.name)} <span class="rc-score-inline">â­ ${v.score}</span></div>
         ${getVibeTag()}
         <div class="rc-address" title="${esc(v.address)}">${esc(v.address)}</div>
         <div class="rc-rating">
-          <span class="rc-stars" aria-hidden="true">${'★'.repeat(Math.round(v.rating) || 4)}</span>
+          <span class="rc-stars" aria-hidden="true">${'â˜…'.repeat(Math.round(v.rating) || 4)}</span>
           <span class="rc-num">${v.rating && v.rating > 0 ? v.rating.toFixed(1) : 'N/A'}${v.reviews ? ' (' + v.reviews + ')' : ''}</span>
         </div>
-        ${dist != null ? `<div class="rc-dist">📍 ${dist} km da te</div>` : ''}
+        ${dist != null ? `<div class="rc-dist">ðŸ“ ${dist} km da te</div>` : ''}
         <div class="rc-footer">
           <div class="rc-actions">
-            <button class="rc-btn go"     aria-label="Indicazioni per ${esc(v.name)}">🗺️ Vai</button>
-            <button class="rc-btn detail" aria-label="Info su ${esc(v.name)}">ℹ️ Info</button>
+            <button class="rc-btn go"     aria-label="Indicazioni per ${esc(v.name)}">ðŸ—ºï¸ Vai</button>
+            <button class="rc-btn detail" aria-label="Info su ${esc(v.name)}">â„¹ï¸ Info</button>
           </div>
           <button class="fav-btn ${isFav?'active':''}" aria-pressed="${isFav}"
                   aria-label="${isFav?'Rimuovi dai':'Aggiungi ai'} preferiti">
-            ${isFav ? '❤️' : '🤍'}
+            ${isFav ? 'â¤ï¸' : 'ðŸ¤'}
           </button>
         </div>
       </div>`;
@@ -124,7 +126,7 @@ function renderResults() {
   list.appendChild(frag);
 }
 
-// ── DETAIL MODAL ──────────────────────────────────
+// â”€â”€ DETAIL MODAL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function showDetail(placeId) {
   const v = App.venues.find(x => x.id === placeId);
   if (!v || !App.placesService) return;
@@ -132,11 +134,11 @@ function showDetail(placeId) {
     placeId,
     fields: ['name','rating','user_ratings_total','formatted_phone_number','website','opening_hours','photos','formatted_address','price_level']
   }, (place, st) => {
-    if (st === 'OVER_QUERY_LIMIT') { toast('⚠️ Limite API raggiunto'); return; }
+    if (st === 'OVER_QUERY_LIMIT') { toast('âš ï¸ Limite API raggiunto'); return; }
     if (st !== 'OK') return;
 
     $('modal-img').src = place.photos?.[0]?.getUrl({maxWidth: 900}) || v.photo || '';
-    const price = '€'.repeat(Math.max(1, place.price_level || 1));
+    const price = 'â‚¬'.repeat(Math.max(1, place.price_level || 1));
     const todayIdx = new Date().getDay();
 
     const hours = place.opening_hours?.weekday_text
@@ -150,7 +152,7 @@ function showDetail(placeId) {
           <strong>${totalReviews.toLocaleString('it-IT')} recensioni</strong> verificate su Google
         </div>
         <a class="reviews-cta-btn" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.name + ' ' + (place.formatted_address || ''))}&query_place_id=${placeId}" target="_blank" rel="noopener">
-          📖 Leggi tutte le recensioni
+          ðŸ“– Leggi tutte le recensioni
         </a>
       </div>` : '<div style="opacity:.5;font-size:14px">Nessuna recensione disponibile</div>';
 
@@ -160,19 +162,19 @@ function showDetail(placeId) {
     $('modal-body').innerHTML = `
       <div class="modal-title" id="modal-title-text">${esc(place.name)}</div>
       <div class="modal-rating">
-        <span class="modal-stars" aria-hidden="true">${'★'.repeat(Math.round(place.rating || 0) || 4)}</span>
-        <span>${ratingDisplay} · ${esc(price)}${totalReviews ? ' · ' + totalReviews.toLocaleString('it-IT') + ' rec.' : ''}</span>
-        <span class="modal-score">⭐ Orbo ${v.score}</span>
+        <span class="modal-stars" aria-hidden="true">${'â˜…'.repeat(Math.round(place.rating || 0) || 4)}</span>
+        <span>${ratingDisplay} Â· ${esc(price)}${totalReviews ? ' Â· ' + totalReviews.toLocaleString('it-IT') + ' rec.' : ''}</span>
+        <span class="modal-score">â­ Orbo ${v.score}</span>
       </div>
       <div class="modal-actions">
-        <a class="ma-btn primary" href="https://www.google.com/maps/dir/?api=1&destination=${v.lat},${v.lng}" target="_blank" rel="noopener noreferrer">🗺️ Indicazioni</a>
-        ${place.formatted_phone_number ? `<a class="ma-btn secondary" href="tel:${esc(place.formatted_phone_number)}">📞 Chiama</a>` : ''}
-        ${place.website ? `<a class="ma-btn secondary" href="${esc(place.website)}" target="_blank" rel="noopener noreferrer">🌐 Sito</a>` : ''}
-        <button class="ma-btn secondary${isFav?' active':''}" id="modal-fav" aria-pressed="${isFav}" data-fav-id="${esc(placeId)}">${isFav ? '❤️ Salvato' : '🤍 Salva'}</button>
+        <a class="ma-btn primary" href="https://www.google.com/maps/dir/?api=1&destination=${v.lat},${v.lng}" target="_blank" rel="noopener noreferrer">ðŸ—ºï¸ Indicazioni</a>
+        ${place.formatted_phone_number ? `<a class="ma-btn secondary" href="tel:${esc(place.formatted_phone_number)}">ðŸ“ž Chiama</a>` : ''}
+        ${place.website ? `<a class="ma-btn secondary" href="${esc(place.website)}" target="_blank" rel="noopener noreferrer">ðŸŒ Sito</a>` : ''}
+        <button class="ma-btn secondary${isFav?' active':''}" id="modal-fav" aria-pressed="${isFav}" data-fav-id="${esc(placeId)}">${isFav ? 'â¤ï¸ Salvato' : 'ðŸ¤ Salva'}</button>
       </div>
-      <div class="modal-section"><div class="modal-section-title">📍 Indirizzo</div><p>${esc(place.formatted_address || v.address)}</p></div>
-      <div class="modal-section"><div class="modal-section-title">🕐 Orari</div>${hours}</div>
-      <div class="modal-section"><div class="modal-section-title">💬 Recensioni</div>${reviewsBlock}</div>`;
+      <div class="modal-section"><div class="modal-section-title">ðŸ“ Indirizzo</div><p>${esc(place.formatted_address || v.address)}</p></div>
+      <div class="modal-section"><div class="modal-section-title">ðŸ• Orari</div>${hours}</div>
+      <div class="modal-section"><div class="modal-section-title">ðŸ’¬ Recensioni</div>${reviewsBlock}</div>`;
 
     $('detail-modal').classList.add('open');
     document.body.style.overflow = 'hidden';
@@ -201,21 +203,21 @@ $('detail-modal').addEventListener('keydown', e => {
   else            { if (document.activeElement===last)  { e.preventDefault(); first.focus(); } }
 });
 
-// ── PREFERITI ─────────────────────────────────────
+// â”€â”€ PREFERITI â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function toggleFav(id, btn) {
   const idx = App.state.favs.indexOf(id);
   if (idx > -1) {
     App.state.favs.splice(idx, 1);
-    btn.textContent = '🤍'; btn.classList.remove('active');
+    btn.textContent = 'ðŸ¤'; btn.classList.remove('active');
     btn.setAttribute('aria-pressed', 'false');
     btn.setAttribute('aria-label', 'Aggiungi ai preferiti');
-    toast('💔 Rimosso dai preferiti');
+    toast('ðŸ’” Rimosso dai preferiti');
   } else {
     App.state.favs.push(id);
-    btn.textContent = '❤️'; btn.classList.add('active');
+    btn.textContent = 'â¤ï¸'; btn.classList.add('active');
     btn.setAttribute('aria-pressed', 'true');
     btn.setAttribute('aria-label', 'Rimuovi dai preferiti');
-    toast('❤️ Salvato nei preferiti!');
+    toast('â¤ï¸ Salvato nei preferiti!');
   }
   saveFavs();
 }
@@ -227,15 +229,15 @@ function toggleFavModal(id) {
   const btn = $('modal-fav');
   if (btn) {
     const now = App.state.favs.includes(id);
-    btn.textContent = now ? '❤️ Salvato' : '🤍 Salva';
+    btn.textContent = now ? 'â¤ï¸ Salvato' : 'ðŸ¤ Salva';
     btn.setAttribute('aria-pressed', String(now));
   }
-  toast(idx > -1 ? '💔 Rimosso' : '❤️ Salvato!');
+  toast(idx > -1 ? 'ðŸ’” Rimosso' : 'â¤ï¸ Salvato!');
   const card = document.querySelector(`.result-card[data-id="${CSS.escape(id)}"]`);
   if (card) {
     const fb = card.querySelector('.fav-btn'), now = App.state.favs.includes(id);
     if (fb) {
-      fb.textContent = now ? '❤️' : '🤍';
+      fb.textContent = now ? 'â¤ï¸' : 'ðŸ¤';
       fb.classList.toggle('active', now);
       fb.setAttribute('aria-pressed', String(now));
       fb.setAttribute('aria-label', (now ? 'Rimuovi dai' : 'Aggiungi ai') + ' preferiti');
@@ -243,7 +245,7 @@ function toggleFavModal(id) {
   }
 }
 
-// ── SKELETON / EMPTY / CLEAR ──────────────────────
+// â”€â”€ SKELETON / EMPTY / CLEAR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function showSkeleton() {
   $('results-list').innerHTML = Array.from({length: 4}, () => `
     <div class="skeleton-card" aria-hidden="true">
@@ -275,7 +277,7 @@ function clearSearch() {
   showEmpty();
 }
 
-// ── SEARCH INPUT EVENTS ───────────────────────────
+// â”€â”€ SEARCH INPUT EVENTS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 $('search-input').addEventListener('input', e => {
   const q = e.target.value.trim();
   $('search-clear').style.display = q ? 'block' : 'none';
@@ -290,34 +292,37 @@ $('search-input').addEventListener('keydown', e => {
   clearTimeout(App.debT);
   saveHistory(q);
   searchAPI(q);
-});// ── NUOVI PULSANTI FILTRO ───────────────────────
+});
+
+// â”€â”€ NUOVI PULSANTI FILTRO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 document.addEventListener('DOMContentLoaded', () => {
   const searchInput = $('search-input');
   if (!searchInput) return;
-  
+
   const searchBox = searchInput.parentElement;
   // evita duplicati se ricarichi
   if (document.querySelector('.search-tools')) return;
-  
+
   searchBox.insertAdjacentHTML('afterend', `
     <div class="search-tools">
       <button id="btn-filtro" class="tool-btn filtro">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M3 5h18l-7 8v6l-4 2v-8L3 5z" stroke="currentColor" stroke-width="2"/></svg>
         Filtra
       </button>
-      <button id="btn-extra" class="tool-btn ghost">🎲</button>
+      <button id="btn-extra" class="tool-btn ghost">ðŸŽ²</button>
     </div>
   `);
 
   $('btn-extra').onclick = () => {
-  const random = CATS[Math.floor(Math.random()*CATS.length)];
-  App.state.activeCat = random.id;
-  renderChips();  // <─ QUESTA RIGA È NUOVA
-  searchAPI(random.query);
-  toast(🎲 ${random.label}!);
-};
-  
- $('btn-filtro').onclick = () => {
-  $('chips').classList.toggle('chips-open');
-  toast('🎛️ Filtri vibe');
-};
+    const random = CATS[Math.floor(Math.random()*CATS.length)];
+    App.state.activeCat = random.id;
+    renderChips();
+    searchAPI(random.query);
+    toast(`ðŸŽ² ${random.label}!`);
+  };
+
+  $('btn-filtro').onclick = () => {
+    $('chips').classList.toggle('chips-open');
+    toast('ðŸŽ›ï¸ Filtri vibe');
+  };
+});
