@@ -88,7 +88,7 @@ function renderResults() {
     el.setAttribute('role', 'listitem');
     el.setAttribute('tabindex', '0');
     el.setAttribute('aria-label', esc(v.name));
-    el.style.animation = cardIn.4s ${i *.05}s ease both;
+    el.style.animation = cardIn .4s ${i * .05}s ease both;
     el.dataset.id = v.id;
     el.dataset.lat = v.lat;
     el.dataset.lng = v.lng;
