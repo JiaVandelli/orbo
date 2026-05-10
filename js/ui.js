@@ -78,10 +78,9 @@ function renderResults() {
         <div class="rc-img-overlay"></div>
         <span class="rc-badge">${esc(v.price)}</span>
         ${v.openNow != null ? `<span class="rc-open ${v.openNow?'open':'closed'}">${v.openNow?'Aperto':'Chiuso'}</span>` : ''}
-        <span class="rc-score">⭐ ${v.score}</span>
       </div>
       <div class="rc-body">
-        <div class="rc-name">${esc(v.name)}</div>
+        <div class="rc-name">${esc(v.name)} <span class="rc-score-inline">⭐ ${v.score}</span></div>
         <div class="rc-address" title="${esc(v.address)}">${esc(v.address)}</div>
         <div class="rc-rating">
           <span class="rc-stars" aria-hidden="true">${'★'.repeat(Math.round(v.rating) || 4)}</span>
