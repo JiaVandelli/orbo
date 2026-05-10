@@ -313,16 +313,14 @@ document.addEventListener('DOMContentLoaded', () => {
     </div>
   `);
 
-  $('btn-extra').onclick = () => {
+$('btn-extra').onclick = () => {
     const random = CATS[Math.floor(Math.random()*CATS.length)];
     App.state.activeCat = random.id;
-    renderChips();
     searchAPI(random.query);
     toast(🎲 ${random.label}!);
-  };
+  
 
-  $('btn-filtro').onclick = () => {
-    $('chips').classList.toggle('chips-open');
+ $('btn-filtro').onclick = () => {
+    $('chips').classList.toggle('chips-open'); // ← usa il CSS
     toast('🎛️ Filtri vibe');
   };
-}); 
