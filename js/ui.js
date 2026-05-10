@@ -50,7 +50,18 @@ function setCat(id, el) {
     if (card) { e.preventDefault(); showDetail(card.dataset.id); }
   });
 })();
-
+function getVibeTag() {
+  const map = {
+    date: '💕 Romantico',
+    chill: '🌙 Tranquillo',
+    insta: '📸 Instagrammabile',
+    cheap: '💸 Economico',
+    laptop: '💻 WiFi',
+    late: '🌃 Aperto tardi'
+  };
+  const tag = map[App.state.activeCat];
+  return tag ? `<div class="rc-vibe">${tag}</div>` : '';
+}
 // ── RENDER CARDS ──────────────────────────────────
 function renderResults() {
   const list = $('results-list'), cnt = $('results-count'), empty = $('empty-state');
@@ -89,6 +100,7 @@ function renderResults() {
       </div>
       <div class="rc-body">
         <div class="rc-name">${esc(v.name)} <span class="rc-score-inline">⭐ ${v.score}</span></div>
+        ${getVibeTag()}
         <div class="rc-address" title="${esc(v.address)}">${esc(v.address)}</div>
         <div class="rc-rating">
           <span class="rc-stars" aria-hidden="true">${'★'.repeat(Math.round(v.rating) || 4)}</span>
