@@ -20,8 +20,16 @@ function setCat(id, el) {
     c.classList.remove('active'); c.setAttribute('aria-pressed', 'false');
   });
   el.classList.add('active'); el.setAttribute('aria-pressed', 'true');
+  
+  const cat = CATS.find(c => c.id === id);
+  const query = cat?.query || id;
+  
   const q = $('search-input').value.trim();
-  if (q.length >= 3) searchAPI(q); else getNearby();
+  if (q.length >= 3) {
+    searchAPI(q);
+  } else {
+    searchAPI(query); // ← QUESTO è il cambio chiave
+  }
 }
 
 // ── EVENT DELEGATION LISTA ────────────────────────
