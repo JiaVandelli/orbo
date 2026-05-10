@@ -2,31 +2,31 @@ name: Aggiorna Orbo News
 
 on:
   schedule:
-    - cron: '0 7 * * *'
-  workflow_dispatch:
+    - cron: '0 7 * * *'  # ogni giorno alle 9 italiane
+  workflow_dispatch:      # <-- QUESTO fa comparire il tasto Run
 
 jobs:
-  update:
+  build:
     runs-on: ubuntu-latest
-
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
+      
+      - name: Crea news.json
+        run: |
+          mkdir -p data
+          node -e "
+          const news = [
+            {title: 'Pizza gourmet: la tendenza del 2026 spacca', link: 'https://jiavandelli.github.io/orbo/', source: 'Orbo', date: new Date().toISOString()},
+            {title: 'Sushi delivery +40% a Milano', link: 'https://jiavandelli.github.io/orbo/', source: 'Orbo', date: new Date().toISOString()},
+            {title: 'Aperitivo: torna lo spritz gourmet', link: 'https://jiavandelli.github.io/orbo/', source: 'Orbo', date: new Date().toISOString()}
+          ];
+          require('fs').writeFileSync('data/news.json', JSON.stringify(news, null, 2));
+          "
 
-      - uses: actions/setup-node@v4
+      - name: Commit
+        uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          node-version: '20'
-
-      - run: npm install
-
-      - run: node scripts/fetch-news.js
-
-      - run: |
-          git config user.name "Orbo Bot"
-          git config user.email "bot@orbo.app"
-
-          git add data/news.json
-
-          if ! git diff --cached --quiet; then
-            git commit -m "📰 news $(date +'%d/%m')"
-            git push
-          fi
+          commit_message: 'Aggiorna news.json'
+          file_pattern: data/news.json
