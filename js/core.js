@@ -6,7 +6,7 @@ const App = {
   map: null,
   placesService: null,
   debT: null,
-  lastRenderKey: '',
+  lastRenderKey,
   lastQuery: '',
   searchCache: new Map(),
   state: {
