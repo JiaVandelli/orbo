@@ -19,11 +19,16 @@ const App = {
 const CACHE_MAX  = 40;
 const FOOD_TYPES = ['restaurant','cafe','bakery','meal_takeaway','bar','food'];
 const CATS = [
-  {id:'all',          label:'Tutto',      icon:'✦'},
-  {id:'restaurant',   label:'Ristoranti', icon:'🍝'},
-  {id:'cafe',         label:'Bar & Caffè',icon:'☕'},
-  {id:'bakery',       label:'Pasticcerie',icon:'🧁'},
-  {id:'meal_takeaway',label:'Take Away',  icon:'📦'}
+  {id:'all',          label:'Tutti',      icon:'🔥', query:'ristorante'},
+  {id:'pizza',        label:'Pizza',      icon:'🍕', query:'pizzeria'},
+  {id:'sushi',        label:'Sushi',      icon:'🍣', query:'sushi'},
+  {id:'burger',       label:'Burger',     icon:'🍔', query:'hamburger'},
+  {id:'date',         label:'Date night', icon:'💕', query:'ristorante romantico'},
+  {id:'chill',        label:'Chill',      icon:'🌙', query:'locale tranquillo'},
+  {id:'insta',        label:'Instagram',  icon:'📸', query:'ristorante design'},
+  {id:'cheap',        label:'Economico',  icon:'💸', query:'ristorante economico'},
+  {id:'laptop',       label:'Studio',     icon:'💻', query:'cafe wifi'},
+  {id:'late',         label:'Notturno',   icon:'🌃', query:'aperto fino tardi'}
 ];
 
 // ── UTILS ─────────────────────────────────────────
