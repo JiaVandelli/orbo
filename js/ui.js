@@ -28,7 +28,7 @@ function setCat(id, el) {
   if (q.length >= 3) {
     searchAPI(q);
   } else {
-    searchAPI(query); // ← QUESTO è il cambio chiave
+    searchAPI(query);
   }
 }
 
@@ -88,7 +88,7 @@ function renderResults() {
     el.setAttribute('role', 'listitem');
     el.setAttribute('tabindex', '0');
     el.setAttribute('aria-label', esc(v.name));
-    el.style.animation = cardIn .4s ${i * .05}s ease both;
+    el.style.animation = cardIn.4s ${i *.05}s ease both;
     el.dataset.id = v.id;
     el.dataset.lat = v.lat;
     el.dataset.lng = v.lng;
@@ -187,12 +187,10 @@ function closeModal() {
   document.body.style.overflow = '';
 }
 
-// modal-fav usa data-fav-id, zero onclick inline
 $('modal-body').addEventListener('click', e => {
   if (e.target.id === 'modal-fav') toggleFavModal(e.target.dataset.favId);
 });
 
-// focus trap modale
 $('detail-modal').addEventListener('keydown', e => {
   if (e.key!== 'Tab') return;
   const focusable = [...$('detail-modal').querySelectorAll('button,a,[tabindex]:not([tabindex="-1"])')]
@@ -300,7 +298,6 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!searchInput) return;
 
   const searchBox = searchInput.parentElement;
-  // evita duplicati se ricarichi
   if (document.querySelector('.search-tools')) return;
 
   searchBox.insertAdjacentHTML('afterend', `
@@ -313,14 +310,16 @@ document.addEventListener('DOMContentLoaded', () => {
     </div>
   `);
 
-$('btn-extra').onclick = () => {
+  $('btn-extra').onclick = () => {
     const random = CATS[Math.floor(Math.random()*CATS.length)];
     App.state.activeCat = random.id;
+    renderChips();
     searchAPI(random.query);
     toast(🎲 ${random.label}!);
-  
+  };
 
- $('btn-filtro').onclick = () => {
-    $('chips').classList.toggle('chips-open'); // ← usa il CSS
+  $('btn-filtro').onclick = () => {
+    $('chips').classList.toggle('chips-open');
     toast('🎛️ Filtri vibe');
   };
+});
