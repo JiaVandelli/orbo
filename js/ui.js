@@ -61,7 +61,7 @@ function getVibeTag() {
     late: '🌃 Aperto tardi'
   };
   const tag = map[App.state.activeCat];
-  return tag? <div class="rc-vibe">${tag}</div> : '';
+  return tag? `<div class="rc-vibe">${tag}</div>` : '';
 }
 
 // ── RENDER CARDS ──────────────────────────────────
@@ -77,7 +77,7 @@ function renderResults() {
   App.lastRenderKey = key;
 
   empty.style.display = 'none';
-  cnt.textContent = ${App.venues.length} locali trovati 🔥;
+  cnt.textContent = `${App.venues.length} locali trovati 🔥`;
 
   const frag = document.createDocumentFragment();
   App.venues.forEach((v, i) => {
@@ -88,7 +88,7 @@ function renderResults() {
     el.setAttribute('role', 'listitem');
     el.setAttribute('tabindex', '0');
     el.setAttribute('aria-label', esc(v.name));
-    el.style.animation = cardIn.4s ${i *.05}s ease both;
+    el.style.animation = `cardIn.4s ${i *.05}s ease both`;
     el.dataset.id = v.id;
     el.dataset.lat = v.lat;
     el.dataset.lng = v.lng;
@@ -98,7 +98,7 @@ function renderResults() {
              onerror="this.src='https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400&h=300&fm=webp&q=60'">
         <div class="rc-img-overlay"></div>
         <span class="rc-badge">${esc(v.price)}</span>
-        ${v.openNow!= null? <span class="rc-open ${v.openNow?'open':'closed'}">${v.openNow?'Aperto':'Chiuso'}</span> : ''}
+        ${v.openNow!= null? `<span class="rc-open ${v.openNow?'open':'closed'}">${v.openNow?'Aperto':'Chiuso'}</span>` : ''}
       </div>
       <div class="rc-body">
         <div class="rc-name">${esc(v.name)} <span class="rc-score-inline">⭐ ${v.score}</span></div>
@@ -108,7 +108,7 @@ function renderResults() {
           <span class="rc-stars" aria-hidden="true">${'★'.repeat(Math.round(v.rating) || 4)}</span>
           <span class="rc-num">${v.rating && v.rating > 0? v.rating.toFixed(1) : 'N/A'}${v.reviews? ' (' + v.reviews + ')' : ''}</span>
         </div>
-        ${dist!= null? <div class="rc-dist">📍 ${dist} km da te</div> : ''}
+        ${dist!= null? `<div class="rc-dist">📍 ${dist} km da te</div>` : ''}
         <div class="rc-footer">
           <div class="rc-actions">
             <button class="rc-btn go" aria-label="Indicazioni per ${esc(v.name)}">🗺️ Vai</button>
@@ -142,8 +142,8 @@ function showDetail(placeId) {
     const todayIdx = new Date().getDay();
 
     const hours = place.opening_hours?.weekday_text
-     ?.map((h, i) => <div class="hours-row ${i===(todayIdx===0?6:todayIdx-1)?'today':''}">${esc(h)}</div>)
-     .join('') || '<div class="hours-row" style="opacity:.45">Orari non disponibili</div>';
+    ?.map((h, i) => `<div class="hours-row ${i===(todayIdx===0?6:todayIdx-1)?'today':''}">${esc(h)}</div>`)
+    .join('') || '<div class="hours-row" style="opacity:.45">Orari non disponibili</div>';
 
     const totalReviews = place.user_ratings_total || 0;
     const reviewsBlock = totalReviews > 0? `
@@ -168,8 +168,8 @@ function showDetail(placeId) {
       </div>
       <div class="modal-actions">
         <a class="ma-btn primary" href="https://www.google.com/maps/dir/?api=1&destination=${v.lat},${v.lng}" target="_blank" rel="noopener noreferrer">🗺️ Indicazioni</a>
-        ${place.formatted_phone_number? <a class="ma-btn secondary" href="tel:${esc(place.formatted_phone_number)}">📞 Chiama</a> : ''}
-        ${place.website? <a class="ma-btn secondary" href="${esc(place.website)}" target="_blank" rel="noopener noreferrer">🌐 Sito</a> : ''}
+        ${place.formatted_phone_number? `<a class="ma-btn secondary" href="tel:${esc(place.formatted_phone_number)}">📞 Chiama</a>` : ''}
+        ${place.website? `<a class="ma-btn secondary" href="${esc(place.website)}" target="_blank" rel="noopener noreferrer">🌐 Sito</a>` : ''}
         <button class="ma-btn secondary${isFav?' active':''}" id="modal-fav" aria-pressed="${isFav}" data-fav-id="${esc(placeId)}">${isFav? '❤️ Salvato' : '🤍 Salva'}</button>
       </div>
       <div class="modal-section"><div class="modal-section-title">📍 Indirizzo</div><p>${esc(place.formatted_address || v.address)}</p></div>
@@ -194,7 +194,7 @@ $('modal-body').addEventListener('click', e => {
 $('detail-modal').addEventListener('keydown', e => {
   if (e.key!== 'Tab') return;
   const focusable = [...$('detail-modal').querySelectorAll('button,a,[tabindex]:not([tabindex="-1"])')]
-   .filter(el =>!el.disabled && el.offsetParent!== null);
+  .filter(el =>!el.disabled && el.offsetParent!== null);
   if (!focusable.length) return;
   const first = focusable[0], last = focusable[focusable.length - 1];
   if (e.shiftKey) { if (document.activeElement===first) { e.preventDefault(); last.focus(); } }
@@ -231,7 +231,7 @@ function toggleFavModal(id) {
     btn.setAttribute('aria-pressed', String(now));
   }
   toast(idx > -1? '💔 Rimosso' : '❤️ Salvato!');
-  const card = document.querySelector(.result-card[data-id="${CSS.escape(id)}"]);
+  const card = document.querySelector(`.result-card[data-id="${CSS.escape(id)}"]`);
   if (card) {
     const fb = card.querySelector('.fav-btn'), now = App.state.favs.includes(id);
     if (fb) {
@@ -315,7 +315,7 @@ document.addEventListener('DOMContentLoaded', () => {
     App.state.activeCat = random.id;
     renderChips();
     searchAPI(random.query);
-    toast(🎲 ${random.label}!);
+    toast(`🎲 ${random.label}!`);
   };
 
   $('btn-filtro').onclick = () => {
