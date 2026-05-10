@@ -1,328 +1,234 @@
 'use strict';
 
-// â”€â”€ CHIPS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-function renderChips() {
-  const frag = document.createDocumentFragment();
-  CATS.forEach(cat => {
-    const btn = document.createElement('button');
-    btn.className = 'chip' + (cat.id === App.state.activeCat ? ' active' : '');
-    btn.textContent = cat.icon + ' ' + cat.label;
-    btn.setAttribute('aria-pressed', String(cat.id === App.state.activeCat));
-    btn.onclick = () => setCat(cat.id, btn);
-    frag.appendChild(btn);
-  });
-  const el = $('chips'); el.innerHTML = ''; el.appendChild(frag);
-}
-
-function setCat(id, el) {
-  App.state.activeCat = id;
-  document.querySelectorAll('.chip').forEach(c => {
-    c.classList.remove('active'); c.setAttribute('aria-pressed', 'false');
-  });
-  el.classList.add('active'); el.setAttribute('aria-pressed', 'true');
-
-  const cat = CATS.find(c => c.id === id);
-  const query = cat?.query || id;
-
-  const q = $('search-input').value.trim();
-  if (q.length >= 3) {
-    searchAPI(q);
-  } else {
-    searchAPI(query); // â† QUESTO Ã¨ il cambio chiave
+const App = {
+  venues: [],
+  userLoc: null,
+  map: null,
+  placesService: null,
+  debT: null,
+  lastRenderKey: '',
+  lastQuery: '',
+  searchCache: new Map(),
+  state: {
+    favs: (()=>{ try{ return JSON.parse(localStorage.getItem('orbo_favs')||'[]') }catch{ return [] } })(),
+    history: (()=>{ try{ return JSON.parse(localStorage.getItem('orbo_history')||'[]') }catch{ return [] } })(),
+    activeCat: 'all'
   }
+};
+
+const CACHE_MAX  = 40;
+const FOOD_TYPES = ['restaurant','cafe','bakery','meal_takeaway','bar','food'];
+const CATS = [
+  {id:'all',          label:'Tutti',      icon:'🔥', query:'ristorante'},
+  {id:'pizza',        label:'Pizza',      icon:'🍕', query:'pizzeria'},
+  {id:'sushi',        label:'Sushi',      icon:'🍣', query:'sushi'},
+  {id:'burger',       label:'Burger',     icon:'🍔', query:'hamburger'},
+  {id:'date',         label:'Date night', icon:'💕', query:'ristorante romantico'},
+  {id:'chill',        label:'Chill',      icon:'🌙', query:'locale tranquillo'},
+  {id:'insta',        label:'Instagram',  icon:'📸', query:'ristorante design'},
+  {id:'cheap',        label:'Economico',  icon:'💸', query:'ristorante economico'},
+  {id:'laptop',       label:'Studio',     icon:'💻', query:'cafe wifi'},
+  {id:'late',         label:'Notturno',   icon:'🌃', query:'aperto fino tardi'}
+];
+
+// ── UTILS ─────────────────────────────────────────
+const $ = id => document.getElementById(id);
+
+function esc(s = '') {
+  return String(s).replace(/[&<>"'`]/g, m => (
+    {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','`':'&#96;'}[m]
+  ));
 }
 
-// â”€â”€ EVENT DELEGATION LISTA â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-(() => {
-  const list = $('results-list');
-  list.addEventListener('click', e => {
-    const card = e.target.closest('.result-card');
-    if (!card) return;
-    const id = card.dataset.id;
-    if (e.target.closest('.rc-btn.go'))     { e.stopPropagation(); openMaps(parseFloat(card.dataset.lat), parseFloat(card.dataset.lng)); return; }
-    if (e.target.closest('.rc-btn.detail') || e.target.closest('.rc-img')) { e.stopPropagation(); showDetail(id); return; }
-    if (e.target.closest('.fav-btn'))       { e.stopPropagation(); toggleFav(id, e.target.closest('.fav-btn')); return; }
-    showDetail(id);
-  });
-  list.addEventListener('keydown', e => {
-    if (e.key !== 'Enter' && e.key !== ' ') return;
-    const card = e.target.closest('.result-card');
-    if (card) { e.preventDefault(); showDetail(card.dataset.id); }
-  });
+function saveFavs() { try{ localStorage.setItem('orbo_favs',    JSON.stringify(App.state.favs))    }catch{} }
+function saveHist() { try{ localStorage.setItem('orbo_history', JSON.stringify(App.state.history)) }catch{} }
+
+// ── GEO CACHE (1 ora) ─────────────────────────────
+function getCachedGeo() {
+  try {
+    const raw = sessionStorage.getItem('orbo_geo');
+    if (!raw) return null;
+    const {lat, lng, ts} = JSON.parse(raw);
+    if (Date.now() - ts < 3_600_000) return {lat, lng};
+    sessionStorage.removeItem('orbo_geo');
+  } catch {}
+  return null;
+}
+function setCachedGeo(lat, lng) {
+  try { sessionStorage.setItem('orbo_geo', JSON.stringify({lat, lng, ts: Date.now()})) } catch {}
+}
+
+// ── CANVAS STELLE ─────────────────────────────────
+const canvasCtrl = (() => {
+  const c = $('bg-canvas');
+  if (!c) return { setActive: () => {} };
+  const ctx = c.getContext('2d');
+  let W, H, stars = [], rafId = null, active = true;
+
+  function resize() {
+    W = c.width  = innerWidth;
+    H = c.height = innerHeight;
+    const n = window.innerWidth < 768 ? 15 : 60;
+    stars = Array.from({length: n}, () => ({
+      x: Math.random() * W, y: Math.random() * H,
+      r: Math.random() * 1.2 + .2,
+      a: Math.random(), speed: Math.random() * .004 + .001
+    }));
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    stars.forEach(s => {
+      s.a += s.speed;
+      if (s.a > 1) s.a = 0;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255,200,120,${s.a * .7})`;
+      ctx.fill();
+    });
+    if (active) rafId = requestAnimationFrame(draw);
+  }
+
+  function start() { if (!rafId && active) draw(); }
+  function stop()  { if (rafId) { cancelAnimationFrame(rafId); rafId = null; } }
+  function setActive(v) { active = v; v ? start() : stop(); }
+
+  resize();
+  addEventListener('resize', resize);
+  document.addEventListener('visibilitychange', () => setActive(!document.hidden));
+  start();
+  return { setActive };
 })();
 
-function getVibeTag() {
-  const map = {
-    date: 'ðŸ’• Romantico',
-    chill: 'ðŸŒ™ Tranquillo', 
-    insta: 'ðŸ“¸ Instagrammabile',
-    cheap: 'ðŸ’¸ Economico',
-    laptop: 'ðŸ’» WiFi',
-    late: 'ðŸŒƒ Aperto tardi'
-  };
-  const tag = map[App.state.activeCat];
-  return tag ? `<div class="rc-vibe">${tag}</div>` : '';
+// ── CURSOR GLOW ───────────────────────────────────
+if (window.innerWidth >= 768) {
+  const glow = $('cursor-glow');
+  Object.assign(glow.style, {
+    width:'260px', height:'260px', borderRadius:'50%',
+    background:'radial-gradient(circle,rgba(255,140,0,.15),transparent 70%)',
+    filter:'blur(28px)', transform:'translate(-50%,-50%)',
+    opacity:'0', transition:'opacity .3s',
+    position:'fixed', pointerEvents:'none', left:'0', top:'0', zIndex:'-1'
+  });
+  
+  let rafId = null;
+  let mouseX = 0, mouseY = 0;
+  
+  addEventListener('mousemove', e => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+    glow.style.opacity = '.9';
+    
+    if (rafId) return;
+    rafId = requestAnimationFrame(() => {
+      glow.style.transform = `translate(${mouseX - 130}px, ${mouseY - 130}px)`;
+      rafId = null;
+    });
+  });
+  
+  addEventListener('mouseout', () => { glow.style.opacity = '0'; });
 }
 
-// â”€â”€ RENDER CARDS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-function renderResults() {
-  const list = $('results-list'), cnt = $('results-count'), empty = $('empty-state');
-  hideSkeleton();
-  if (!App.venues.length) {
-    empty.style.display = 'block'; list.innerHTML = ''; cnt.textContent = ''; App.lastRenderKey = '';
-    return;
-  }
-  const key = App.venues.map(v => v.id).join(',');
-  if (key === App.lastRenderKey) return;
-  App.lastRenderKey = key;
+// ── PARTICELLE ────────────────────────────────────
+(() => {
+  const c = $('particles'), frag = document.createDocumentFragment();
+  Array.from({length: 28}, () => {
+    const s = document.createElement('span');
+    s.style.cssText = `left:${Math.random()*100}%;bottom:0;animation-delay:${Math.random()*10}s;animation-duration:${7+Math.random()*8}s`;
+    frag.appendChild(s);
+  });
+  c.appendChild(frag);
+})();
 
-  empty.style.display = 'none';
-  cnt.textContent = `${App.venues.length} locali trovati ðŸ”¥`;
+// ── COUNTER STATS ─────────────────────────────────
+function animateStats() {
+  document.querySelectorAll('.stat-num').forEach(el => {
+    const tgt = +el.dataset.count, suf = tgt === 15 ? 'k' : '';
+    let n = 0;
+    const step = () => {
+      n = Math.min(n + Math.max(1, tgt / 50), tgt);
+      el.textContent = Math.ceil(n) + suf;
+      if (n < tgt) requestAnimationFrame(step);
+    };
+    step();
+  });
+}
+const statsObs = new IntersectionObserver(entries => {
+  if (entries[0].isIntersecting) { animateStats(); statsObs.disconnect(); }
+}, {threshold: .2});
+statsObs.observe($('stats-row'));
 
+// ── TOAST ─────────────────────────────────────────
+let toastTimer;
+function toast(msg) {
+  const el = $('toast');
+  clearTimeout(toastTimer);
+  el.textContent = msg;
+  el.classList.add('show');
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+// ── NAVIGATE ──────────────────────────────────────
+function navigate(v) {
+  document.querySelectorAll('.view').forEach(s => s.classList.toggle('active', s.id === 'view-' + v));
+  canvasCtrl.setActive(v === 'home' && !document.hidden);
+  if (v === 'search') { renderHistory(); setTimeout(() => $('search-input')?.focus(), 300); }
+}
+
+function closeMobileNav() {
+  const n = $('mobile-nav');
+  n.classList.remove('open');
+  n.style.display = 'none';
+  $('menu-btn').setAttribute('aria-expanded', 'false');
+}
+
+// ── STORIA RICERCHE ───────────────────────────────
+function saveHistory(q) {
+  if (!q || q.length < 2) return;
+  App.state.history = [q, ...App.state.history.filter(x => x !== q)].slice(0, 5);
+  saveHist();
+}
+
+function renderHistory() {
+  const row = $('history-row');
+  if (!row || !App.state.history.length) { if (row) row.innerHTML = ''; return; }
   const frag = document.createDocumentFragment();
-  App.venues.forEach((v, i) => {
-    const dist   = App.userLoc ? distanza(App.userLoc.lat, App.userLoc.lng, v.lat, v.lng) : null;
-    const isFav  = App.state.favs.includes(v.id);
-    const el     = document.createElement('article');
-    el.className = 'result-card';
-    el.setAttribute('role', 'listitem');
-    el.setAttribute('tabindex', '0');
-    el.setAttribute('aria-label', esc(v.name));
-    el.style.animation = `cardIn .4s ${i * .05}s ease both`;
-    el.dataset.id  = v.id;
-    el.dataset.lat = v.lat;
-    el.dataset.lng = v.lng;
-    el.innerHTML = `
-      <div class="rc-img">
-        <img src="${esc(v.photo)}" loading="lazy" width="400" height="300" alt="${esc(v.name)}"
-             onerror="this.src='https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400&h=300&fm=webp&q=60'">
-        <div class="rc-img-overlay"></div>
-        <span class="rc-badge">${esc(v.price)}</span>
-        ${v.openNow != null ? `<span class="rc-open ${v.openNow?'open':'closed'}">${v.openNow?'Aperto':'Chiuso'}</span>` : ''}
-      </div>
-      <div class="rc-body">
-        <div class="rc-name">${esc(v.name)} <span class="rc-score-inline">â­ ${v.score}</span></div>
-        ${getVibeTag()}
-        <div class="rc-address" title="${esc(v.address)}">${esc(v.address)}</div>
-        <div class="rc-rating">
-          <span class="rc-stars" aria-hidden="true">${'â˜…'.repeat(Math.round(v.rating) || 4)}</span>
-          <span class="rc-num">${v.rating && v.rating > 0 ? v.rating.toFixed(1) : 'N/A'}${v.reviews ? ' (' + v.reviews + ')' : ''}</span>
-        </div>
-        ${dist != null ? `<div class="rc-dist">ðŸ“ ${dist} km da te</div>` : ''}
-        <div class="rc-footer">
-          <div class="rc-actions">
-            <button class="rc-btn go"     aria-label="Indicazioni per ${esc(v.name)}">ðŸ—ºï¸ Vai</button>
-            <button class="rc-btn detail" aria-label="Info su ${esc(v.name)}">â„¹ï¸ Info</button>
-          </div>
-          <button class="fav-btn ${isFav?'active':''}" aria-pressed="${isFav}"
-                  aria-label="${isFav?'Rimuovi dai':'Aggiungi ai'} preferiti">
-            ${isFav ? 'â¤ï¸' : 'ðŸ¤'}
-          </button>
-        </div>
-      </div>`;
-    frag.appendChild(el);
+  App.state.history.forEach(h => {
+    const btn = document.createElement('button');
+    btn.className = 'history-chip';
+    btn.textContent = '🕐 ' + h;
+    btn.setAttribute('aria-label', 'Cerca di nuovo: ' + h);
+    btn.onclick = () => doSearch(h);
+    frag.appendChild(btn);
   });
-  list.innerHTML = '';
-  list.appendChild(frag);
+  row.innerHTML = '';
+  row.appendChild(frag);
 }
 
-// â”€â”€ DETAIL MODAL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-function showDetail(placeId) {
-  const v = App.venues.find(x => x.id === placeId);
-  if (!v || !App.placesService) return;
-  App.placesService.getDetails({
-    placeId,
-    fields: ['name','rating','user_ratings_total','formatted_phone_number','website','opening_hours','photos','formatted_address','price_level']
-  }, (place, st) => {
-    if (st === 'OVER_QUERY_LIMIT') { toast('âš ï¸ Limite API raggiunto'); return; }
-    if (st !== 'OK') return;
-
-    $('modal-img').src = place.photos?.[0]?.getUrl({maxWidth: 900}) || v.photo || '';
-    const price = 'â‚¬'.repeat(Math.max(1, place.price_level || 1));
-    const todayIdx = new Date().getDay();
-
-    const hours = place.opening_hours?.weekday_text
-      ?.map((h, i) => `<div class="hours-row ${i===(todayIdx===0?6:todayIdx-1)?'today':''}">${esc(h)}</div>`)
-      .join('') || '<div class="hours-row" style="opacity:.45">Orari non disponibili</div>';
-
-    const totalReviews = place.user_ratings_total || 0;
-    const reviewsBlock = totalReviews > 0 ? `
-      <div class="reviews-cta">
-        <div class="reviews-cta-text">
-          <strong>${totalReviews.toLocaleString('it-IT')} recensioni</strong> verificate su Google
-        </div>
-        <a class="reviews-cta-btn" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.name + ' ' + (place.formatted_address || ''))}&query_place_id=${placeId}" target="_blank" rel="noopener">
-          ðŸ“– Leggi tutte le recensioni
-        </a>
-      </div>` : '<div style="opacity:.5;font-size:14px">Nessuna recensione disponibile</div>';
-
-    const isFav = App.state.favs.includes(placeId);
-    const ratingDisplay = place.rating != null ? place.rating.toFixed(1) : '-';
-
-    $('modal-body').innerHTML = `
-      <div class="modal-title" id="modal-title-text">${esc(place.name)}</div>
-      <div class="modal-rating">
-        <span class="modal-stars" aria-hidden="true">${'â˜…'.repeat(Math.round(place.rating || 0) || 4)}</span>
-        <span>${ratingDisplay} Â· ${esc(price)}${totalReviews ? ' Â· ' + totalReviews.toLocaleString('it-IT') + ' rec.' : ''}</span>
-        <span class="modal-score">â­ Orbo ${v.score}</span>
-      </div>
-      <div class="modal-actions">
-        <a class="ma-btn primary" href="https://www.google.com/maps/dir/?api=1&destination=${v.lat},${v.lng}" target="_blank" rel="noopener noreferrer">ðŸ—ºï¸ Indicazioni</a>
-        ${place.formatted_phone_number ? `<a class="ma-btn secondary" href="tel:${esc(place.formatted_phone_number)}">ðŸ“ž Chiama</a>` : ''}
-        ${place.website ? `<a class="ma-btn secondary" href="${esc(place.website)}" target="_blank" rel="noopener noreferrer">ðŸŒ Sito</a>` : ''}
-        <button class="ma-btn secondary${isFav?' active':''}" id="modal-fav" aria-pressed="${isFav}" data-fav-id="${esc(placeId)}">${isFav ? 'â¤ï¸ Salvato' : 'ðŸ¤ Salva'}</button>
-      </div>
-      <div class="modal-section"><div class="modal-section-title">ðŸ“ Indirizzo</div><p>${esc(place.formatted_address || v.address)}</p></div>
-      <div class="modal-section"><div class="modal-section-title">ðŸ• Orari</div>${hours}</div>
-      <div class="modal-section"><div class="modal-section-title">ðŸ’¬ Recensioni</div>${reviewsBlock}</div>`;
-
-    $('detail-modal').classList.add('open');
-    document.body.style.overflow = 'hidden';
-    setTimeout(() => $('modal-close-btn')?.focus(), 50);
-  });
+// ── HAVERSINE ─────────────────────────────────────
+function distanza(la1, lo1, la2, lo2) {
+  const R = 6371, dLa = (la2-la1)*Math.PI/180, dLo = (lo2-lo1)*Math.PI/180;
+  const a = Math.sin(dLa/2)**2 + Math.cos(la1*Math.PI/180)*Math.cos(la2*Math.PI/180)*Math.sin(dLo/2)**2;
+  return +(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))).toFixed(1);
 }
 
-function closeModal() {
-  $('detail-modal').classList.remove('open');
-  document.body.style.overflow = '';
+function openMaps(lat, lng) {
+  window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank', 'noopener');
 }
 
-// modal-fav usa data-fav-id, zero onclick inline
-$('modal-body').addEventListener('click', e => {
-  if (e.target.id === 'modal-fav') toggleFavModal(e.target.dataset.favId);
+// ── EVENTI GLOBALI ────────────────────────────────
+$('menu-btn').addEventListener('click', () => {
+  const n = $('mobile-nav'), open = n.classList.toggle('open');
+  n.style.display = open ? 'flex' : 'none';
+  $('menu-btn').setAttribute('aria-expanded', String(open));
 });
-
-// focus trap modale
-$('detail-modal').addEventListener('keydown', e => {
-  if (e.key !== 'Tab') return;
-  const focusable = [...$('detail-modal').querySelectorAll('button,a,[tabindex]:not([tabindex="-1"])')]
-    .filter(el => !el.disabled && el.offsetParent !== null);
-  if (!focusable.length) return;
-  const first = focusable[0], last = focusable[focusable.length - 1];
-  if (e.shiftKey) { if (document.activeElement===first) { e.preventDefault(); last.focus(); } }
-  else            { if (document.activeElement===last)  { e.preventDefault(); first.focus(); } }
-});
-
-// â”€â”€ PREFERITI â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-function toggleFav(id, btn) {
-  const idx = App.state.favs.indexOf(id);
-  if (idx > -1) {
-    App.state.favs.splice(idx, 1);
-    btn.textContent = 'ðŸ¤'; btn.classList.remove('active');
-    btn.setAttribute('aria-pressed', 'false');
-    btn.setAttribute('aria-label', 'Aggiungi ai preferiti');
-    toast('ðŸ’” Rimosso dai preferiti');
-  } else {
-    App.state.favs.push(id);
-    btn.textContent = 'â¤ï¸'; btn.classList.add('active');
-    btn.setAttribute('aria-pressed', 'true');
-    btn.setAttribute('aria-label', 'Rimuovi dai preferiti');
-    toast('â¤ï¸ Salvato nei preferiti!');
+$('logo-btn').addEventListener('click', () => navigate('home'));
+$('logo-btn').addEventListener('keydown', e => { if (e.key==='Enter'||e.key===' ') { e.preventDefault(); navigate('home'); } });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    if ($('detail-modal').classList.contains('open')) closeModal();
+    else closeMobileNav();
   }
-  saveFavs();
-}
-
-function toggleFavModal(id) {
-  const idx = App.state.favs.indexOf(id);
-  idx > -1 ? App.state.favs.splice(idx, 1) : App.state.favs.push(id);
-  saveFavs();
-  const btn = $('modal-fav');
-  if (btn) {
-    const now = App.state.favs.includes(id);
-    btn.textContent = now ? 'â¤ï¸ Salvato' : 'ðŸ¤ Salva';
-    btn.setAttribute('aria-pressed', String(now));
-  }
-  toast(idx > -1 ? 'ðŸ’” Rimosso' : 'â¤ï¸ Salvato!');
-  const card = document.querySelector(`.result-card[data-id="${CSS.escape(id)}"]`);
-  if (card) {
-    const fb = card.querySelector('.fav-btn'), now = App.state.favs.includes(id);
-    if (fb) {
-      fb.textContent = now ? 'â¤ï¸' : 'ðŸ¤';
-      fb.classList.toggle('active', now);
-      fb.setAttribute('aria-pressed', String(now));
-      fb.setAttribute('aria-label', (now ? 'Rimuovi dai' : 'Aggiungi ai') + ' preferiti');
-    }
-  }
-}
-
-// â”€â”€ SKELETON / EMPTY / CLEAR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-function showSkeleton() {
-  $('results-list').innerHTML = Array.from({length: 4}, () => `
-    <div class="skeleton-card" aria-hidden="true">
-      <div class="sk-img"></div>
-      <div class="sk-body">
-        <div class="sk-line" style="width:70%;height:14px"></div>
-        <div class="sk-line" style="width:50%;height:11px"></div>
-        <div class="sk-line" style="width:40%;height:11px"></div>
-      </div>
-    </div>`).join('');
-  $('empty-state').style.display = 'none';
-  $('results-count').textContent = '';
-  App.lastRenderKey = '';
-}
-
-function hideSkeleton() {
-  $('results-list').querySelectorAll('.skeleton-card').forEach(s => s.remove());
-}
-
-function showEmpty() { $('empty-state').style.display = 'block'; }
-
-function clearSearch() {
-  clearTimeout(App.debT);
-  $('search-input').value = '';
-  $('search-clear').style.display = 'none';
-  $('results-list').innerHTML = '';
-  $('results-count').textContent = '';
-  App.lastRenderKey = '';
-  showEmpty();
-}
-
-// â”€â”€ SEARCH INPUT EVENTS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-$('search-input').addEventListener('input', e => {
-  const q = e.target.value.trim();
-  $('search-clear').style.display = q ? 'block' : 'none';
-  if (q.length >= 3) searchAPI(q);
-  else if (!q) { clearTimeout(App.debT); $('results-list').innerHTML=''; $('results-count').textContent=''; App.lastRenderKey=''; showEmpty(); }
 });
-
-$('search-input').addEventListener('keydown', e => {
-  if (e.key !== 'Enter') return;
-  const q = $('search-input').value.trim();
-  if (q.length < 2) return;
-  clearTimeout(App.debT);
-  saveHistory(q);
-  searchAPI(q);
-});
-
-// â”€â”€ NUOVI PULSANTI FILTRO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-document.addEventListener('DOMContentLoaded', () => {
-  const searchInput = $('search-input');
-  if (!searchInput) return;
-
-  const searchBox = searchInput.parentElement;
-  // evita duplicati se ricarichi
-  if (document.querySelector('.search-tools')) return;
-
-  searchBox.insertAdjacentHTML('afterend', `
-    <div class="search-tools">
-      <button id="btn-filtro" class="tool-btn filtro">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M3 5h18l-7 8v6l-4 2v-8L3 5z" stroke="currentColor" stroke-width="2"/></svg>
-        Filtra
-      </button>
-      <button id="btn-extra" class="tool-btn ghost">ðŸŽ²</button>
-    </div>
-  `);
-
-  $('btn-extra').onclick = () => {
-    const random = CATS[Math.floor(Math.random()*CATS.length)];
-    App.state.activeCat = random.id;
-    renderChips();
-    searchAPI(random.query);
-    toast(`ðŸŽ² ${random.label}!`);
-  };
-
-  $('btn-filtro').onclick = () => {
-    $('chips').classList.toggle('chips-open');
-    toast('ðŸŽ›ï¸ Filtri vibe');
-  };
-});
+addEventListener('offline', () => toast('📡 Connessione persa'));
+addEventListener('online',  () => toast('🚀 Connessione ristabilita'));
