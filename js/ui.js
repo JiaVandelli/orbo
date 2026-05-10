@@ -53,14 +53,14 @@ function setCat(id, el) {
 function getVibeTag() {
   const map = {
     date: '💕 Romantico',
-    chill: '🌙 Tranquillo',
+    chill: '🌙 Tranquillo', 
     insta: '📸 Instagrammabile',
     cheap: '💸 Economico',
     laptop: '💻 WiFi',
     late: '🌃 Aperto tardi'
   };
   const tag = map[App.state.activeCat];
-  return tag ? `<div class="rc-vibe">${tag}</div>` : '';
+  return tag ? <div class="rc-vibe">${tag}</div> : '';
 }
 // ── RENDER CARDS ──────────────────────────────────
 function renderResults() {
@@ -309,17 +309,15 @@ document.addEventListener('DOMContentLoaded', () => {
     </div>
   `);
 
-  $('btn-filtro').onclick = () => {
-    // per ora apre/chiude i chip vecchi
-    const chips = $('chips');
-    chips.style.display = chips.style.display === 'none' ? 'flex' : 'none';
-    toast('🎛️ Filtri vibe');
-  };
-  
   $('btn-extra').onclick = () => {
-    const random = CATS[Math.floor(Math.random()*CATS.length)];
-    App.state.activeCat = random.id;
-    searchAPI(random.query);
-    toast(`🎲 ${random.label}!`);
-  };
-});
+  const random = CATS[Math.floor(Math.random()*CATS.length)];
+  App.state.activeCat = random.id;
+  renderChips();  // <─ QUESTA RIGA È NUOVA
+  searchAPI(random.query);
+  toast(🎲 ${random.label}!);
+};
+  
+ $('btn-filtro').onclick = () => {
+  $('chips').classList.toggle('chips-open');
+  toast('🎛️ Filtri vibe');
+};
