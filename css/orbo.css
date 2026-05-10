@@ -248,4 +248,4 @@ button.quick-card{width:100%;text-align:left}
 .tool-btn:active{transform:scale(.97)}
 .tool-btn.filtro{background:linear-gradient(135deg,#7c3aed,#3b82f6);color:#fff;border:none;box-shadow:0 4px 14px rgba(124,58,237,.3)}
 .tool-btn.ghost{background:transparent;color:#ffb347;border:1.5px solid rgba(255,179,71,.3);flex:0 0 56px}
-#chips{transition:all .3s}
+#chips{transition:all .3s;display:none;flex-wrap:wrap;gap:8px;margin:14px 0}
