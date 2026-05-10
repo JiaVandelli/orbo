@@ -2,7 +2,7 @@ name: Aggiorna Orbo News
 
 on:
   schedule:
-    - cron: '0 7 * * *'
+    - cron: '0 7 * * *'   # 9:00 Italia
   workflow_dispatch:
 
 jobs:
@@ -13,20 +13,50 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Crea news.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Installa parser RSS
+        run: npm install rss-parser
+
+      - name: Genera news.json da fonti reali
         run: |
           mkdir -p data
-          node -e "
-          const news = [
-            {title: 'Pizza gourmet: la tendenza del 2026 spacca', link: 'https://jiavandelli.github.io/orbo/', source: 'Orbo', date: new Date().toISOString()},
-            {title: 'Sushi delivery +40% a Milano', link: 'https://jiavandelli.github.io/orbo/', source: 'Orbo', date: new Date().toISOString()},
-            {title: 'Aperitivo: torna lo spritz gourmet', link: 'https://jiavandelli.github.io/orbo/', source: 'Orbo', date: new Date().toISOString()}
+          node <<'EOF'
+          const Parser = require('rss-parser');
+          const fs = require('fs');
+          const parser = new Parser();
+          
+          const feeds = [
+            'https://www.gamberorosso.it/feed/',
+            'https://www.identitagolose.it/site/it/IT/rss.xml',
+            'https://www.ansa.it/sito/notizie/cucina/ricette_rss.xml'
           ];
-          require('fs').writeFileSync('data/news.json', JSON.stringify(news, null, 2));
-          "
+
+          (async () => {
+            let items = [];
+            for (const url of feeds) {
+              try {
+                const feed = await parser.parseURL(url);
+                const source = feed.title?.replace(' - Feed','') || 'Food';
+                feed.items.slice(0,5).forEach(i => {
+                  items.push({
+                    title: i.title,
+                    link: i.link,
+                    source,
+                    date: i.isoDate ? new Date(i.isoDate).toISOString() : new Date().toISOString()
+                  });
+                });
+              } catch(e) { console.log('skip', url) }
+            }
+            items.sort((a,b) => new Date(b.date) - new Date(a.date));
+            fs.writeFileSync('data/news.json', JSON.stringify(items.slice(0,6), null, 2));
+          })();
+          EOF
 
       - name: Commit
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: 'Aggiorna news.json'
+          commit_message: 'Aggiorna news.json automatiche'
           file_pattern: data/news.json
