@@ -290,4 +290,36 @@ $('search-input').addEventListener('keydown', e => {
   clearTimeout(App.debT);
   saveHistory(q);
   searchAPI(q);
+});// ── NUOVI PULSANTI FILTRO ───────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  const searchInput = $('search-input');
+  if (!searchInput) return;
+  
+  const searchBox = searchInput.parentElement;
+  // evita duplicati se ricarichi
+  if (document.querySelector('.search-tools')) return;
+  
+  searchBox.insertAdjacentHTML('afterend', `
+    <div class="search-tools">
+      <button id="btn-filtro" class="tool-btn filtro">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M3 5h18l-7 8v6l-4 2v-8L3 5z" stroke="currentColor" stroke-width="2"/></svg>
+        Filtra
+      </button>
+      <button id="btn-extra" class="tool-btn ghost">🎲</button>
+    </div>
+  `);
+
+  $('btn-filtro').onclick = () => {
+    // per ora apre/chiude i chip vecchi
+    const chips = $('chips');
+    chips.style.display = chips.style.display === 'none' ? 'flex' : 'none';
+    toast('🎛️ Filtri vibe');
+  };
+  
+  $('btn-extra').onclick = () => {
+    const random = CATS[Math.floor(Math.random()*CATS.length)];
+    App.state.activeCat = random.id;
+    searchAPI(random.query);
+    toast(`🎲 ${random.label}!`);
+  };
 });
