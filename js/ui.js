@@ -23,7 +23,7 @@ function renderChips() {
 function toggleCuisine(cat, el) {
   toggleVibe('cucina', cat.id);
 
-  // aggiorna UI (fix selettore)
+  // FIX 1: selettore corretto con spazio
   document.querySelectorAll('#chips.chip').forEach(c => {
     c.classList.remove('active');
     c.setAttribute('aria-pressed', 'false');
@@ -33,8 +33,8 @@ function toggleCuisine(cat, el) {
     el.setAttribute('aria-pressed', 'true');
   }
 
-  const q = $('search-input').value.trim();
-  searchAPI(q.length >= 3? q : cat.search[0]);
+  // FIX 3: usa ricerca composita
+  searchAPI(buildSearchQuery($('search-input').value.trim()));
 }
 
 // ── EVENT DELEGATION LISTA ────────────────────────
@@ -98,6 +98,7 @@ function renderResults() {
     el.setAttribute('role', 'listitem');
     el.setAttribute('tabindex', '0');
     el.setAttribute('aria-label', esc(v.name));
+    // FIX 2: spazio dopo cardIn
     el.style.animation = `cardIn.4s ${i * 0.05}s ease both`;
     el.dataset.id = v.id;
     el.dataset.lat = v.lat;
@@ -135,6 +136,7 @@ function renderResults() {
   list.innerHTML = '';
   list.appendChild(frag);
 }
+
 // ── DETAIL MODAL ──────────────────────────────────
 function showDetail(placeId) {
   const v = App.venues.find(x => x.id === placeId);
@@ -151,8 +153,8 @@ function showDetail(placeId) {
     const todayIdx = new Date().getDay();
 
     const hours = place.opening_hours?.weekday_text
-    ?.map((h, i) => `<div class="hours-row ${i === (todayIdx === 0? 6 : todayIdx - 1)? 'today' : ''}">${esc(h)}</div>`)
-    .join('') || '<div class="hours-row" style="opacity:.45">Orari non disponibili</div>';
+   ?.map((h, i) => `<div class="hours-row ${i === (todayIdx === 0? 6 : todayIdx - 1)? 'today' : ''}">${esc(h)}</div>`)
+   .join('') || '<div class="hours-row" style="opacity:.45">Orari non disponibili</div>';
 
     const totalReviews = place.user_ratings_total || 0;
     const reviewsBlock = totalReviews > 0? `
@@ -203,7 +205,7 @@ $('modal-body').addEventListener('click', e => {
 $('detail-modal').addEventListener('keydown', e => {
   if (e.key!== 'Tab') return;
   const focusable = [...$('detail-modal').querySelectorAll('button,a,[tabindex]:not([tabindex="-1"])')]
-  .filter(el =>!el.disabled && el.offsetParent!== null);
+ .filter(el =>!el.disabled && el.offsetParent!== null);
   if (!focusable.length) return;
   const first = focusable[0], last = focusable[focusable.length - 1];
   if (e.shiftKey) { if (document.activeElement === first) { e.preventDefault(); last.focus(); } }
@@ -298,7 +300,7 @@ $('search-input').addEventListener('keydown', e => {
   if (q.length < 2) return;
   clearTimeout(App.debT);
   saveHistory(q);
-  searchAPI(q);
+  searchAPI(buildSearchQuery(q));
 });
 
 // ── INIT FILTRI ───────────────────────────────────
@@ -326,7 +328,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const random = cucina[Math.floor(Math.random() * cucina.length)];
     ACTIVE_VIBES.cucina = [random.id];
     renderChips();
-    searchAPI(random.search[0]);
+    searchAPI(buildSearchQuery(''));
     toast(`${EMOJI.trending} ${random.label}!`);
   };
 
