@@ -325,7 +325,7 @@ searchBox.insertAdjacentHTML('afterend',
     const cucina = ORBO_VIBES.cucina.items;
     const random = cucina[Math.floor(Math.random() * cucina.length)];
     ACTIVE_VIBES.cucina = [random.id];
-    renderChips();
+    renderC
     searchAPI(buildSearchQuery(''));
     toast(`${EMOJI.trending} ${random.label}!`);
   };
