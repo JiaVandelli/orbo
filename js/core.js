@@ -1,27 +1,16 @@
 // ─────────────────────────────────────────────
 // ORBO VIBES SYSTEM
-// Discovery > semplice ricerca
 // ─────────────────────────────────────────────
-
 const EMOJI = {
-  // Cucina
   pizza: '🍕', sushi: '🍣', burger: '🍔', pasta: '🍝',
   ethnic: '🌮', pub: '🍺', sweet: '🍰',
-  // Vibe & Servizi
   wifi: '📶', outside: '🏝️', music: '🎵', live: '🎸',
-  // Prezzo
   cheap: '💸', mid: '€€', luxury: '💎',
-  // Discovery
   trending: '🔥', featured: '⭐',
-  // Stato
   online: '🚀', offline: '📴',
-  // UI
   food: '🍽️', sparkle: '✨', money: '💰', planet: '🪐'
 };
 
-// ─────────────────────────────────────────────
-// DEFINIZIONE VIBES
-// ─────────────────────────────────────────────
 const ORBO_VIBES = {
   cucina: {
     label: 'Cucina', type: 'multi', icon: EMOJI.food,
@@ -41,7 +30,7 @@ const ORBO_VIBES = {
       { id: 'wifi', label: 'WiFi', emoji: EMOJI.wifi },
       { id: 'outside', label: 'Al Fresco', emoji: EMOJI.outside },
       { id: 'music', label: 'Musica', emoji: EMOJI.music },
-      { id: 'live', label: 'Live', emoji: EMOJI.live, featured: true }
+      { id: 'live', label: 'Live', emoji: EMOJI.live }
     ]
   },
   prezzo: {
@@ -55,26 +44,17 @@ const ORBO_VIBES = {
   discover: {
     label: 'Scopri', type: 'toggle', icon: EMOJI.planet,
     items: [
-      { id: 'trending', label: 'Trending', emoji: EMOJI.trending, glow: true },
-      { id: 'featured', label: 'Orbo Pick', emoji: EMOJI.featured, premium: true }
+      { id: 'trending', label: 'Trending', emoji: EMOJI.trending },
+      { id: 'featured', label: 'Orbo Pick', emoji: EMOJI.featured }
     ]
   }
 };
 
-// ─────────────────────────────────────────────
-// STATO ATTIVO
-// ─────────────────────────────────────────────
-const ACTIVE_VIBES = {
-  cucina: [], vibe: [], prezzo: null, discover: []
-};
+const ACTIVE_VIBES = { cucina: [], vibe: [], prezzo: null, discover: [] };
 
-// ─────────────────────────────────────────────
-// GESTIONE FILTRI — FIXATO
-// ─────────────────────────────────────────────
 function toggleVibe(category, id) {
   const cat = ORBO_VIBES[category];
   if (!cat) return;
-
   if (cat.type === 'single') {
     ACTIVE_VIBES[category] = ACTIVE_VIBES[category] === id? null : id;
   } else {
@@ -82,80 +62,76 @@ function toggleVibe(category, id) {
     const idx = arr.indexOf(id);
     idx > -1? arr.splice(idx,1) : arr.push(id);
   }
-
-  // FIX: niente più filterPlaces() che non esiste
   renderVibeChips();
   if (typeof renderChips === 'function') renderChips();
+  if (typeof searchAPI === 'function') {
+    searchAPI(buildSearchQuery(document.getElementById('search-input')?.value.trim() || ''));
+  }
 }
 
-function getVibeLabel(item) {
-  return `${item.emoji} ${item.label}`;
+function buildSearchQuery(userText = '') {
+  const terms = [];
+  ACTIVE_VIBES.cucina.forEach(id => {
+    const item = ORBO_VIBES.cucina.items.find(i => i.id === id);
+    if (item) terms.push(item.search[0]);
+  });
+  if (ACTIVE_VIBES.vibe.includes('outside')) terms.push('dehors giardino');
+  if (ACTIVE_VIBES.vibe.includes('live')) terms.push('musica live');
+  if (ACTIVE_VIBES.vibe.includes('wifi')) terms.push('wifi');
+  if (ACTIVE_VIBES.vibe.includes('music')) terms.push('cocktail bar');
+  if (ACTIVE_VIBES.prezzo === 'cheap') terms.push('economico');
+  if (ACTIVE_VIBES.prezzo === 'luxury') terms.push('gourmet');
+  if (ACTIVE_VIBES.discover.includes('trending')) terms.push('popolare');
+  return userText.length >= 3? userText : (terms.join(' ') || 'ristorante');
 }
 
-// ─────────────────────────────────────────────
-// RENDER UI CHIPS
-// ─────────────────────────────────────────────
+function getVibeLabel(item) { return `${item.emoji} ${item.label}`; }
+
 function renderVibeChips(containerId = 'vibe-filters') {
   const container = document.getElementById(containerId);
   if (!container) return;
   container.innerHTML = '';
-
   Object.entries(ORBO_VIBES).forEach(([key, group]) => {
+    if (key === 'cucina') return; // cucina resta fuori
     const wrap = document.createElement('div');
     wrap.className = 'vibe-group';
     wrap.innerHTML = `<div class="vibe-title">${group.icon} ${group.label}</div>`;
-
     const chips = document.createElement('div');
     chips.className = 'vibe-chips';
-
     group.items.forEach(item => {
-      const isActive = group.type === 'single'
-       ? ACTIVE_VIBES[key] === item.id
-        : ACTIVE_VIBES[key].includes(item.id);
-
+      const isActive = group.type === 'single'? ACTIVE_VIBES[key] === item.id : ACTIVE_VIBES[key].includes(item.id);
       const btn = document.createElement('button');
-      btn.className = `vibe-chip ${isActive? 'active' : ''} ${item.glow? 'glow' : ''} ${item.premium? 'premium' : ''}`;
+      btn.className = `vibe-chip ${isActive? 'active' : ''}`;
       btn.innerHTML = getVibeLabel(item);
       btn.onclick = () => toggleVibe(key, item.id);
       chips.appendChild(btn);
     });
-
     wrap.appendChild(chips);
     container.appendChild(wrap);
   });
 }
 
-// ─────────────────────────────────────────────
-// MATCH SCORE
-// ─────────────────────────────────────────────
 function calculateOrboMatch(place) {
   let score = 0;
   if (place.rating) score += place.rating * 12;
   if (place.user_ratings_total) score += Math.min(place.user_ratings_total, 2000) / 2000 * 20;
   if (place.opening_hours?.open_now) score += 10;
-
-  const activeCuisine = ACTIVE_VIBES.cucina;
-  if (activeCuisine.length) {
+  if (ACTIVE_VIBES.cucina.length) {
     const match = ORBO_VIBES.cucina.items.find(i =>
-      activeCuisine.includes(i.id) &&
+      ACTIVE_VIBES.cucina.includes(i.id) &&
       i.search.some(s => place.types?.includes(s) || place.name?.toLowerCase().includes(s))
     );
     if (match) score += 15;
   }
-
   if (ACTIVE_VIBES.discover.includes('featured')) score += 15;
-  if (ACTIVE_VIBES.discover.includes('trending')) score += (place.popularity || 5);
-
+  if (ACTIVE_VIBES.discover.includes('trending')) score += 5;
   return Math.round(score);
 }
 
-// ─────────────────────────────────────────────
-// TOAST STATO RETE
-// ─────────────────────────────────────────────
+// Collega il nuovo score a maps.js senza toccarlo
+window.orboScore = calculateOrboMatch;
+
 addEventListener('online', () => toast(`${EMOJI.online} Connessione ristabilita`));
 addEventListener('offline', () => toast(`${EMOJI.offline} Sei offline`));
 
-// ─────────────────────────────────────────────
-// INIT
-// ─────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => renderVibeChips());
