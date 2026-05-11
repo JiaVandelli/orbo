@@ -24,7 +24,7 @@ function toggleCuisine(cat, el) {
   toggleVibe('cucina', cat.id);
 
   // FIX 1: selettore corretto con spazio
-  document.querySelectorAll('#chips.chip').forEach(c => {
+  document.querySelectorAll('#chips .chip').forEach(c => {
     c.classList.remove('active');
     c.setAttribute('aria-pressed', 'false');
   });
@@ -99,7 +99,7 @@ function renderResults() {
     el.setAttribute('tabindex', '0');
     el.setAttribute('aria-label', esc(v.name));
     // FIX 2: spazio dopo cardIn
-    el.style.animation = `cardIn.4s ${i * 0.05}s ease both`;
+    el.style.animation = `cardIn .4s ${i * 0.05}s ease both`;
     el.dataset.id = v.id;
     el.dataset.lat = v.lat;
     el.dataset.lng = v.lng;
