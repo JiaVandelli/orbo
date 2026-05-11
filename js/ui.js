@@ -310,10 +310,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const searchInput = $('search-input');
   if (!searchInput) return;
-  const searchBox = searchInput.parentElement;
-  if (document.querySelector('.search-tools')) return;
-
-  searchBox.insertAdjacentHTML('afterend', `
+  const searchBox = searchInput.closest('.search-bar-wrap');
+searchBox.insertAdjacentHTML('afterend', 
     <div class="search-tools">
       <button id="btn-filtro" class="tool-btn filtro">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M3 5h18l-7 8v6l-4 2v-8L3 5z" stroke="currentColor" stroke-width="2"/></svg>
