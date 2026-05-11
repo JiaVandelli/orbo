@@ -16,6 +16,7 @@ function renderChips() {
   });
 
   const el = $('chips');
+  el.classList.add('chips-open'); // 👈 PUNTO 3: mostra i chip
   el.innerHTML = '';
   el.appendChild(frag);
 }
@@ -23,8 +24,8 @@ function renderChips() {
 function toggleCuisine(cat, el) {
   toggleVibe('cucina', cat.id);
 
-  // FIX 1: selettore corretto con spazio
-  document.querySelectorAll('#chips .chip').forEach(c => {
+  // PUNTO 2: selettore corretto con spazio
+  document.querySelectorAll('#chips.chip').forEach(c => {
     c.classList.remove('active');
     c.setAttribute('aria-pressed', 'false');
   });
@@ -33,7 +34,6 @@ function toggleCuisine(cat, el) {
     el.setAttribute('aria-pressed', 'true');
   }
 
-  // FIX 3: usa ricerca composita
   searchAPI(buildSearchQuery($('search-input').value.trim()));
 }
 
@@ -98,8 +98,8 @@ function renderResults() {
     el.setAttribute('role', 'listitem');
     el.setAttribute('tabindex', '0');
     el.setAttribute('aria-label', esc(v.name));
-    // FIX 2: spazio dopo cardIn
-    el.style.animation = `cardIn .4s ${i * 0.05}s ease both`;
+    // PUNTO 1: spazio dopo cardIn
+    el.style.animation = `cardIn.4s ${i * 0.05}s ease both`;
     el.dataset.id = v.id;
     el.dataset.lat = v.lat;
     el.dataset.lng = v.lng;
@@ -153,8 +153,8 @@ function showDetail(placeId) {
     const todayIdx = new Date().getDay();
 
     const hours = place.opening_hours?.weekday_text
-   ?.map((h, i) => `<div class="hours-row ${i === (todayIdx === 0? 6 : todayIdx - 1)? 'today' : ''}">${esc(h)}</div>`)
-   .join('') || '<div class="hours-row" style="opacity:.45">Orari non disponibili</div>';
+  ?.map((h, i) => `<div class="hours-row ${i === (todayIdx === 0? 6 : todayIdx - 1)? 'today' : ''}">${esc(h)}</div>`)
+  .join('') || '<div class="hours-row" style="opacity:.45">Orari non disponibili</div>';
 
     const totalReviews = place.user_ratings_total || 0;
     const reviewsBlock = totalReviews > 0? `
@@ -205,7 +205,7 @@ $('modal-body').addEventListener('click', e => {
 $('detail-modal').addEventListener('keydown', e => {
   if (e.key!== 'Tab') return;
   const focusable = [...$('detail-modal').querySelectorAll('button,a,[tabindex]:not([tabindex="-1"])')]
- .filter(el =>!el.disabled && el.offsetParent!== null);
+.filter(el =>!el.disabled && el.offsetParent!== null);
   if (!focusable.length) return;
   const first = focusable[0], last = focusable[focusable.length - 1];
   if (e.shiftKey) { if (document.activeElement === first) { e.preventDefault(); last.focus(); } }
@@ -311,7 +311,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const searchInput = $('search-input');
   if (!searchInput) return;
   const searchBox = searchInput.closest('.search-bar-wrap');
-searchBox.insertAdjacentHTML('afterend', 
+  searchBox.insertAdjacentHTML('afterend', `
     <div class="search-tools">
       <button id="btn-filtro" class="tool-btn filtro">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M3 5h18l-7 8v6l-4 2v-8L3 5z" stroke="currentColor" stroke-width="2"/></svg>
@@ -332,6 +332,7 @@ searchBox.insertAdjacentHTML('afterend',
 
   $('btn-filtro').onclick = () => {
     $('vibe-filters').classList.toggle('open');
+    $('chips').classList.toggle('chips-open');
     toast(`${EMOJI.sparkle} Filtri vibe`);
   };
 });
