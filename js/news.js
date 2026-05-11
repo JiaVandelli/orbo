@@ -6,39 +6,48 @@
     if (!news?.length) return;
 
     const item = news[0];
-    const a = document.createElement('a');
-    a.href = item.link || '#';
-    a.target = '_blank';
-    a.rel = 'noopener';
-    a.textContent = `[NEWS] ${item.title}`;
+    const today = new Date().toDateString();
+    if(localStorage.getItem('trend-dismissed') === today) return;
 
-    Object.assign(a.style, {
+    const pill = document.createElement('a');
+    pill.href = item.link || '#';
+    pill.target = '_blank';
+    pill.rel = 'noopener';
+    pill.className = 'trend-pill';
+    pill.innerHTML = `<span>🔥</span><span>Oggi</span>`;
+    pill.title = item.title; // tooltip col trend
+
+    Object.assign(pill.style, {
       position: 'absolute',
-      top: '62px', // <-- PIÙ IN BASSO, non copre il titolo
-      left: '12px',
+      top: '56px', // sotto i 9 puntini
       right: '12px',
-      display: 'block',
-      background: 'rgba(255,140,0,0.15)',
-      color: '#ffb86b',
-      padding: '8px 12px',
-      borderRadius: '12px',
-      fontSize: '13px',
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '4px',
+      background: 'rgba(255,140,0,0.12)',
+      color: '#ffb347',
+      padding: '4px 10px',
+      borderRadius: '20px',
+      fontSize: '11px',
       fontWeight: '600',
-      textAlign: 'center',
       textDecoration: 'none',
-      border: '1px solid rgba(255,140,0,0.3)',
-      whiteSpace: 'nowrap',
-      overflow: 'hidden',
-      textOverflow: 'ellipsis',
+      border: '1px solid rgba(255,140,0,0.25)',
+      backdropFilter: 'blur(8px)',
       zIndex: '999',
-      backdropFilter: 'blur(4px)'
+      transition: 'transform.15s'
     });
 
-    document.body.appendChild(a);
+    pill.onmouseenter = () => pill.style.transform = 'scale(1.05)';
+    pill.onmouseleave = () => pill.style.transform = 'scale(1)';
 
-    // sposta un po' giù il contenuto per non sovrapporre
-    const main = document.querySelector('main');
-    if (main) main.style.marginTop = '28px';
+    // Click lungo o dx = dismiss fino a domani
+    pill.oncontextmenu = (e) => {
+      e.preventDefault();
+      pill.remove();
+      localStorage.setItem('trend-dismissed', today);
+    };
+
+    document.body.appendChild(pill);
 
   } catch(e) {}
 })();
