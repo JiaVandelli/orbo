@@ -289,3 +289,66 @@ button.quick-card{width:100%;text-align:left}
   gap: 8px;
   margin-top: 12px;
 }
+
+/* ── ORBO VIBES ───────────────────────────── */
+.vibe-panel {
+  display: none;
+  margin: 12px 0 16px;
+  padding: 14px;
+  background: rgba(255,179,71,.06);
+  border: 1px solid rgba(255,179,71,.15);
+  border-radius: 16px;
+  backdrop-filter: blur(10px);
+}
+.vibe-panel.open { display: block; animation: fadeIn .2s ease; }
+
+.vibe-group { margin-bottom: 14px; }
+.vibe-group:last-child { margin-bottom: 0; }
+
+.vibe-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #FFB347;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+
+.vibe-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.vibe-chip {
+  padding: 8px 14px;
+  border-radius: 20px;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.12);
+  color: #ddd;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .2s;
+}
+.vibe-chip:hover { background: rgba(255,179,71,.15); border-color: #FFB347; }
+.vibe-chip.active {
+  background: linear-gradient(135deg, #FFB347, #ff8c00);
+  color: #000;
+  border-color: #FFB347;
+  box-shadow: 0 4px 12px rgba(255,140,0,.3);
+}
+
+/* tag vibe sulle card */
+.rc-vibe {
+  font-size: 12px;
+  color: #FFB347;
+  margin: 4px 0 6px;
+  font-weight: 600;
+}
+
+/* animazione fix */
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
