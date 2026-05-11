@@ -69,7 +69,7 @@ const ACTIVE_VIBES = {
 };
 
 // ─────────────────────────────────────────────
-// GESTIONE FILTRI
+// GESTIONE FILTRI — FIXATO
 // ─────────────────────────────────────────────
 function toggleVibe(category, id) {
   const cat = ORBO_VIBES[category];
@@ -82,8 +82,10 @@ function toggleVibe(category, id) {
     const idx = arr.indexOf(id);
     idx > -1? arr.splice(idx,1) : arr.push(id);
   }
-  renderVibeChips(); // re-render
-  filterPlaces(); // la tua funzione di ricerca
+
+  // FIX: niente più filterPlaces() che non esiste
+  renderVibeChips();
+  if (typeof renderChips === 'function') renderChips();
 }
 
 function getVibeLabel(item) {
@@ -124,23 +126,23 @@ function renderVibeChips(containerId = 'vibe-filters') {
 }
 
 // ─────────────────────────────────────────────
-// MATCH SCORE MIGLIORATO
+// MATCH SCORE
 // ─────────────────────────────────────────────
 function calculateOrboMatch(place) {
   let score = 0;
-  // base rating (max 60)
   if (place.rating) score += place.rating * 12;
-  // popolarità (max 20)
   if (place.user_ratings_total) score += Math.min(place.user_ratings_total, 2000) / 2000 * 20;
-  // aperto ora
   if (place.opening_hours?.open_now) score += 10;
-  // match cucina
+
   const activeCuisine = ACTIVE_VIBES.cucina;
   if (activeCuisine.length) {
-    const match = ORBO_VIBES.cucina.items.find(i => activeCuisine.includes(i.id) && i.search.some(s => place.types?.includes(s) || place.name?.toLowerCase().includes(s)));
+    const match = ORBO_VIBES.cucina.items.find(i =>
+      activeCuisine.includes(i.id) &&
+      i.search.some(s => place.types?.includes(s) || place.name?.toLowerCase().includes(s))
+    );
     if (match) score += 15;
   }
-  // discover boost
+
   if (ACTIVE_VIBES.discover.includes('featured')) score += 15;
   if (ACTIVE_VIBES.discover.includes('trending')) score += (place.popularity || 5);
 
