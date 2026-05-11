@@ -1,20 +1,15 @@
 name: Aggiorna Orbo News
-
 on:
-  schedule:
-    - cron: '0 7 * * *'
+  schedule: [{cron: '0 7 * * *'}]
   workflow_dispatch:
-
 jobs:
   build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
+    permissions: {contents: write}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
+        with: {node-version: '20'}
       - run: npm install rss-parser
       - name: Genera news.json
         run: |
@@ -22,29 +17,12 @@ jobs:
           node --input-type=module <<'EOF'
           import Parser from 'rss-parser';
           import fs from 'fs';
-          const parser = new Parser();
-          const feeds = [
-            'https://www.gamberorosso.it/feed/',
-            'https://www.identitagolose.it/site/it/IT/rss.xml',
-            'https://www.ansa.it/sito/notizie/cucina/ricette_rss.xml'
-          ];
-          const items = [];
-          for (const url of feeds) {
-            try {
-              const feed = await parser.parseURL(url);
-              const source = feed.title?.replace(' - Feed','') || 'Food';
-              feed.items.slice(0,5).forEach(i => items.push({
-                title: i.title,
-                link: i.link,
-                source,
-                date: i.isoDate? new Date(i.isoDate).toISOString() : new Date().toISOString()
-              }));
-            } catch {}
-          }
-          items.sort((a,b) => new Date(b.date) - new Date(a.date));
-          fs.writeFileSync('data/news.json', JSON.stringify(items.slice(0,6), null, 2));
+          const parser = new Parser({headers:{'User-Agent':'Mozilla/5.0 OrboBot'}});
+          const feeds=['https://www.gamberorosso.it/feed/','https://www.ansa.it/sito/notizie/cucina/cucina_rss.xml','https://www.identitagolose.it/site/it/IT/rss.xml'];
+          const items=[];
+          for(const url of feeds){try{const f=await parser.parseURL(url);f.items.slice(0,5).forEach(i=>items.push({title:i.title,link:i.link,date:i.isoDate||new Date().toISOString()}));console.log('OK',url)}catch(e){console.log('FAIL',url)}}
+          items.sort((a,b)=>new Date(b.date)-new Date(a.date));
+          fs.writeFileSync('data/news.json',JSON.stringify(items.slice(0,6),null,2));
           EOF
       - uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: 'Aggiorna news.json automatiche'
-          file_pattern: data/news.json
+        with: {commit_message: 'Aggiorna news', file_pattern: data/news.json}
