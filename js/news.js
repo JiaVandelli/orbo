@@ -5,21 +5,24 @@
     const news = await res.json();
     if (!news?.length) return;
 
-    const item = news[0];
+    // ruota ogni ora invece di stare sempre sulla [0]
+    const item = news[Math.floor(Date.now() / 3_600_000) % news.length];
+
     const today = new Date().toDateString();
-    if(localStorage.getItem('trend-dismissed') === today) return;
+    if (localStorage.getItem('trend-dismissed') === today) return;
 
     const pill = document.createElement('a');
     pill.href = item.link || '#';
     pill.target = '_blank';
     pill.rel = 'noopener';
-    pill.className = 'trend-pill';
-    pill.innerHTML = `<span>🔥</span><span>Oggi</span>`;
-    pill.title = item.title; // tooltip col trend
+    pill.title = item.title;
+
+    // MOSTRA IL TITOLO TRONCATO (mobile friendly)
+    pill.innerHTML = `<span>🔥</span><span>${item.title.slice(0,32)}…</span>`;
 
     Object.assign(pill.style, {
       position: 'absolute',
-      top: '56px', // sotto i 9 puntini
+      top: '56px',
       right: '12px',
       display: 'inline-flex',
       alignItems: 'center',
@@ -34,13 +37,15 @@
       border: '1px solid rgba(255,140,0,0.25)',
       backdropFilter: 'blur(8px)',
       zIndex: '999',
-      transition: 'transform.15s'
+      transition: 'transform.15s', // FIX typo
+      maxWidth: '70vw',
+      whiteSpace: 'nowrap',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis'
     });
 
     pill.onmouseenter = () => pill.style.transform = 'scale(1.05)';
     pill.onmouseleave = () => pill.style.transform = 'scale(1)';
-
-    // Click lungo o dx = dismiss fino a domani
     pill.oncontextmenu = (e) => {
       e.preventDefault();
       pill.remove();
@@ -48,6 +53,5 @@
     };
 
     document.body.appendChild(pill);
-
   } catch(e) {}
 })();
