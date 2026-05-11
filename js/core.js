@@ -1,234 +1,159 @@
-'use strict';
+// ─────────────────────────────────────────────
+// ORBO VIBES SYSTEM
+// Discovery > semplice ricerca
+// ─────────────────────────────────────────────
 
-const App = {
-  venues: [],
-  userLoc: null,
-  map: null,
-  placesService: null,
-  debT: null,
-  lastRenderKey: '',
-  lastQuery: '',
-  searchCache: new Map(),
-  state: {
-    favs: (()=>{ try{ return JSON.parse(localStorage.getItem('orbo_favs')||'[]') }catch{ return [] } })(),
-    history: (()=>{ try{ return JSON.parse(localStorage.getItem('orbo_history')||'[]') }catch{ return [] } })(),
-    activeCat: 'all'
+const EMOJI = {
+  // Cucina
+  pizza: '🍕', sushi: '🍣', burger: '🍔', pasta: '🍝',
+  ethnic: '🌮', pub: '🍺', sweet: '🍰',
+  // Vibe & Servizi
+  wifi: '📶', outside: '🏝️', music: '🎵', live: '🎸',
+  // Prezzo
+  cheap: '💸', mid: '€€', luxury: '💎',
+  // Discovery
+  trending: '🔥', featured: '⭐',
+  // Stato
+  online: '🚀', offline: '📴',
+  // UI
+  food: '🍽️', sparkle: '✨', money: '💰', planet: '🪐'
+};
+
+// ─────────────────────────────────────────────
+// DEFINIZIONE VIBES
+// ─────────────────────────────────────────────
+const ORBO_VIBES = {
+  cucina: {
+    label: 'Cucina', type: 'multi', icon: EMOJI.food,
+    items: [
+      { id: 'pizza', label: 'Pizza', emoji: EMOJI.pizza, search: ['pizza','pizzeria'] },
+      { id: 'sushi', label: 'Sushi', emoji: EMOJI.sushi, search: ['sushi','giapponese'] },
+      { id: 'burger', label: 'Burger', emoji: EMOJI.burger, search: ['burger','hamburger'] },
+      { id: 'tradizionale', label: 'Tradizionale', emoji: EMOJI.pasta, search: ['trattoria','italiano','osteria'] },
+      { id: 'etnico', label: 'Etnico', emoji: EMOJI.ethnic, search: ['messicano','indiano','thai','etnico'] },
+      { id: 'pub', label: 'Pub', emoji: EMOJI.pub, search: ['pub','birreria'] },
+      { id: 'dolci', label: 'Dolci', emoji: EMOJI.sweet, search: ['gelato','dessert','pasticceria'] }
+    ]
+  },
+  vibe: {
+    label: 'Atmosfera', type: 'toggle', icon: EMOJI.sparkle,
+    items: [
+      { id: 'wifi', label: 'WiFi', emoji: EMOJI.wifi },
+      { id: 'outside', label: 'Al Fresco', emoji: EMOJI.outside },
+      { id: 'music', label: 'Musica', emoji: EMOJI.music },
+      { id: 'live', label: 'Live', emoji: EMOJI.live, featured: true }
+    ]
+  },
+  prezzo: {
+    label: 'Prezzo', type: 'single', icon: EMOJI.money,
+    items: [
+      { id: 'cheap', label: 'Economico', emoji: EMOJI.cheap, desc: '<15€', levels: [0,1] },
+      { id: 'mid', label: 'Medio', emoji: EMOJI.mid, desc: '15-30€', levels: [2] },
+      { id: 'luxury', label: 'Lusso', emoji: EMOJI.luxury, desc: '>30€', levels: [3,4] }
+    ]
+  },
+  discover: {
+    label: 'Scopri', type: 'toggle', icon: EMOJI.planet,
+    items: [
+      { id: 'trending', label: 'Trending', emoji: EMOJI.trending, glow: true },
+      { id: 'featured', label: 'Orbo Pick', emoji: EMOJI.featured, premium: true }
+    ]
   }
 };
 
-const CACHE_MAX  = 40;
-const FOOD_TYPES = ['restaurant','cafe','bakery','meal_takeaway','bar','food'];
-const CATS = [
-  {id:'all',          label:'Tutti',      icon:'🔥', query:'ristorante'},
-  {id:'pizza',        label:'Pizza',      icon:'🍕', query:'pizzeria'},
-  {id:'sushi',        label:'Sushi',      icon:'🍣', query:'sushi'},
-  {id:'burger',       label:'Burger',     icon:'🍔', query:'hamburger'},
-  {id:'date',         label:'Date night', icon:'💕', query:'ristorante romantico'},
-  {id:'chill',        label:'Chill',      icon:'🌙', query:'locale tranquillo'},
-  {id:'insta',        label:'Instagram',  icon:'📸', query:'ristorante design'},
-  {id:'cheap',        label:'Economico',  icon:'💸', query:'ristorante economico'},
-  {id:'laptop',       label:'Studio',     icon:'💻', query:'cafe wifi'},
-  {id:'late',         label:'Notturno',   icon:'🌃', query:'aperto fino tardi'}
-];
+// ─────────────────────────────────────────────
+// STATO ATTIVO
+// ─────────────────────────────────────────────
+const ACTIVE_VIBES = {
+  cucina: [], vibe: [], prezzo: null, discover: []
+};
 
-// ── UTILS ─────────────────────────────────────────
-const $ = id => document.getElementById(id);
+// ─────────────────────────────────────────────
+// GESTIONE FILTRI
+// ─────────────────────────────────────────────
+function toggleVibe(category, id) {
+  const cat = ORBO_VIBES[category];
+  if (!cat) return;
 
-function esc(s = '') {
-  return String(s).replace(/[&<>"'`]/g, m => (
-    {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','`':'&#96;'}[m]
-  ));
-}
-
-function saveFavs() { try{ localStorage.setItem('orbo_favs',    JSON.stringify(App.state.favs))    }catch{} }
-function saveHist() { try{ localStorage.setItem('orbo_history', JSON.stringify(App.state.history)) }catch{} }
-
-// ── GEO CACHE (1 ora) ─────────────────────────────
-function getCachedGeo() {
-  try {
-    const raw = sessionStorage.getItem('orbo_geo');
-    if (!raw) return null;
-    const {lat, lng, ts} = JSON.parse(raw);
-    if (Date.now() - ts < 3_600_000) return {lat, lng};
-    sessionStorage.removeItem('orbo_geo');
-  } catch {}
-  return null;
-}
-function setCachedGeo(lat, lng) {
-  try { sessionStorage.setItem('orbo_geo', JSON.stringify({lat, lng, ts: Date.now()})) } catch {}
-}
-
-// ── CANVAS STELLE ─────────────────────────────────
-const canvasCtrl = (() => {
-  const c = $('bg-canvas');
-  if (!c) return { setActive: () => {} };
-  const ctx = c.getContext('2d');
-  let W, H, stars = [], rafId = null, active = true;
-
-  function resize() {
-    W = c.width  = innerWidth;
-    H = c.height = innerHeight;
-    const n = window.innerWidth < 768 ? 15 : 60;
-    stars = Array.from({length: n}, () => ({
-      x: Math.random() * W, y: Math.random() * H,
-      r: Math.random() * 1.2 + .2,
-      a: Math.random(), speed: Math.random() * .004 + .001
-    }));
+  if (cat.type === 'single') {
+    ACTIVE_VIBES[category] = ACTIVE_VIBES[category] === id? null : id;
+  } else {
+    const arr = ACTIVE_VIBES[category];
+    const idx = arr.indexOf(id);
+    idx > -1? arr.splice(idx,1) : arr.push(id);
   }
+  renderVibeChips(); // re-render
+  filterPlaces(); // la tua funzione di ricerca
+}
 
-  function draw() {
-    ctx.clearRect(0, 0, W, H);
-    stars.forEach(s => {
-      s.a += s.speed;
-      if (s.a > 1) s.a = 0;
-      ctx.beginPath();
-      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(255,200,120,${s.a * .7})`;
-      ctx.fill();
+function getVibeLabel(item) {
+  return `${item.emoji} ${item.label}`;
+}
+
+// ─────────────────────────────────────────────
+// RENDER UI CHIPS
+// ─────────────────────────────────────────────
+function renderVibeChips(containerId = 'vibe-filters') {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = '';
+
+  Object.entries(ORBO_VIBES).forEach(([key, group]) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'vibe-group';
+    wrap.innerHTML = `<div class="vibe-title">${group.icon} ${group.label}</div>`;
+
+    const chips = document.createElement('div');
+    chips.className = 'vibe-chips';
+
+    group.items.forEach(item => {
+      const isActive = group.type === 'single'
+       ? ACTIVE_VIBES[key] === item.id
+        : ACTIVE_VIBES[key].includes(item.id);
+
+      const btn = document.createElement('button');
+      btn.className = `vibe-chip ${isActive? 'active' : ''} ${item.glow? 'glow' : ''} ${item.premium? 'premium' : ''}`;
+      btn.innerHTML = getVibeLabel(item);
+      btn.onclick = () => toggleVibe(key, item.id);
+      chips.appendChild(btn);
     });
-    if (active) rafId = requestAnimationFrame(draw);
+
+    wrap.appendChild(chips);
+    container.appendChild(wrap);
+  });
+}
+
+// ─────────────────────────────────────────────
+// MATCH SCORE MIGLIORATO
+// ─────────────────────────────────────────────
+function calculateOrboMatch(place) {
+  let score = 0;
+  // base rating (max 60)
+  if (place.rating) score += place.rating * 12;
+  // popolarità (max 20)
+  if (place.user_ratings_total) score += Math.min(place.user_ratings_total, 2000) / 2000 * 20;
+  // aperto ora
+  if (place.opening_hours?.open_now) score += 10;
+  // match cucina
+  const activeCuisine = ACTIVE_VIBES.cucina;
+  if (activeCuisine.length) {
+    const match = ORBO_VIBES.cucina.items.find(i => activeCuisine.includes(i.id) && i.search.some(s => place.types?.includes(s) || place.name?.toLowerCase().includes(s)));
+    if (match) score += 15;
   }
+  // discover boost
+  if (ACTIVE_VIBES.discover.includes('featured')) score += 15;
+  if (ACTIVE_VIBES.discover.includes('trending')) score += (place.popularity || 5);
 
-  function start() { if (!rafId && active) draw(); }
-  function stop()  { if (rafId) { cancelAnimationFrame(rafId); rafId = null; } }
-  function setActive(v) { active = v; v ? start() : stop(); }
-
-  resize();
-  addEventListener('resize', resize);
-  document.addEventListener('visibilitychange', () => setActive(!document.hidden));
-  start();
-  return { setActive };
-})();
-
-// ── CURSOR GLOW ───────────────────────────────────
-if (window.innerWidth >= 768) {
-  const glow = $('cursor-glow');
-  Object.assign(glow.style, {
-    width:'260px', height:'260px', borderRadius:'50%',
-    background:'radial-gradient(circle,rgba(255,140,0,.15),transparent 70%)',
-    filter:'blur(28px)', transform:'translate(-50%,-50%)',
-    opacity:'0', transition:'opacity .3s',
-    position:'fixed', pointerEvents:'none', left:'0', top:'0', zIndex:'-1'
-  });
-  
-  let rafId = null;
-  let mouseX = 0, mouseY = 0;
-  
-  addEventListener('mousemove', e => {
-    mouseX = e.clientX;
-    mouseY = e.clientY;
-    glow.style.opacity = '.9';
-    
-    if (rafId) return;
-    rafId = requestAnimationFrame(() => {
-      glow.style.transform = `translate(${mouseX - 130}px, ${mouseY - 130}px)`;
-      rafId = null;
-    });
-  });
-  
-  addEventListener('mouseout', () => { glow.style.opacity = '0'; });
+  return Math.round(score);
 }
 
-// ── PARTICELLE ────────────────────────────────────
-(() => {
-  const c = $('particles'), frag = document.createDocumentFragment();
-  Array.from({length: 28}, () => {
-    const s = document.createElement('span');
-    s.style.cssText = `left:${Math.random()*100}%;bottom:0;animation-delay:${Math.random()*10}s;animation-duration:${7+Math.random()*8}s`;
-    frag.appendChild(s);
-  });
-  c.appendChild(frag);
-})();
+// ─────────────────────────────────────────────
+// TOAST STATO RETE
+// ─────────────────────────────────────────────
+addEventListener('online', () => toast(`${EMOJI.online} Connessione ristabilita`));
+addEventListener('offline', () => toast(`${EMOJI.offline} Sei offline`));
 
-// ── COUNTER STATS ─────────────────────────────────
-function animateStats() {
-  document.querySelectorAll('.stat-num').forEach(el => {
-    const tgt = +el.dataset.count, suf = tgt === 15 ? 'k' : '';
-    let n = 0;
-    const step = () => {
-      n = Math.min(n + Math.max(1, tgt / 50), tgt);
-      el.textContent = Math.ceil(n) + suf;
-      if (n < tgt) requestAnimationFrame(step);
-    };
-    step();
-  });
-}
-const statsObs = new IntersectionObserver(entries => {
-  if (entries[0].isIntersecting) { animateStats(); statsObs.disconnect(); }
-}, {threshold: .2});
-statsObs.observe($('stats-row'));
-
-// ── TOAST ─────────────────────────────────────────
-let toastTimer;
-function toast(msg) {
-  const el = $('toast');
-  clearTimeout(toastTimer);
-  el.textContent = msg;
-  el.classList.add('show');
-  toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
-}
-
-// ── NAVIGATE ──────────────────────────────────────
-function navigate(v) {
-  document.querySelectorAll('.view').forEach(s => s.classList.toggle('active', s.id === 'view-' + v));
-  canvasCtrl.setActive(v === 'home' && !document.hidden);
-  if (v === 'search') { renderHistory(); setTimeout(() => $('search-input')?.focus(), 300); }
-}
-
-function closeMobileNav() {
-  const n = $('mobile-nav');
-  n.classList.remove('open');
-  n.style.display = 'none';
-  $('menu-btn').setAttribute('aria-expanded', 'false');
-}
-
-// ── STORIA RICERCHE ───────────────────────────────
-function saveHistory(q) {
-  if (!q || q.length < 2) return;
-  App.state.history = [q, ...App.state.history.filter(x => x !== q)].slice(0, 5);
-  saveHist();
-}
-
-function renderHistory() {
-  const row = $('history-row');
-  if (!row || !App.state.history.length) { if (row) row.innerHTML = ''; return; }
-  const frag = document.createDocumentFragment();
-  App.state.history.forEach(h => {
-    const btn = document.createElement('button');
-    btn.className = 'history-chip';
-    btn.textContent = '🕐 ' + h;
-    btn.setAttribute('aria-label', 'Cerca di nuovo: ' + h);
-    btn.onclick = () => doSearch(h);
-    frag.appendChild(btn);
-  });
-  row.innerHTML = '';
-  row.appendChild(frag);
-}
-
-// ── HAVERSINE ─────────────────────────────────────
-function distanza(la1, lo1, la2, lo2) {
-  const R = 6371, dLa = (la2-la1)*Math.PI/180, dLo = (lo2-lo1)*Math.PI/180;
-  const a = Math.sin(dLa/2)**2 + Math.cos(la1*Math.PI/180)*Math.cos(la2*Math.PI/180)*Math.sin(dLo/2)**2;
-  return +(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))).toFixed(1);
-}
-
-function openMaps(lat, lng) {
-  window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank', 'noopener');
-}
-
-// ── EVENTI GLOBALI ────────────────────────────────
-$('menu-btn').addEventListener('click', () => {
-  const n = $('mobile-nav'), open = n.classList.toggle('open');
-  n.style.display = open ? 'flex' : 'none';
-  $('menu-btn').setAttribute('aria-expanded', String(open));
-});
-$('logo-btn').addEventListener('click', () => navigate('home'));
-$('logo-btn').addEventListener('keydown', e => { if (e.key==='Enter'||e.key===' ') { e.preventDefault(); navigate('home'); } });
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') {
-    if ($('detail-modal').classList.contains('open')) closeModal();
-    else closeMobileNav();
-  }
-});
-addEventListener('offline', () => toast('📡 Connessione persa'));
-addEventListener('online',  () => toast('🚀 Connessione ristabilita'));
+// ─────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => renderVibeChips());
