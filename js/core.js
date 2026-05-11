@@ -1,5 +1,44 @@
+'use strict';
+
+// ── HELPERS BASE ─────────────────────────────────
+const $ = id => document.getElementById(id);
+const App = {
+  venues: [],
+  userLoc: null,
+  state: { favs: JSON.parse(localStorage.getItem('orbo_favs') || '[]') },
+  placesService: null,
+  debT: null,
+  lastRenderKey: ''
+};
+function esc(s){ return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+function toast(msg){ const t=$('toast'); if(!t) return; t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2000); }
+function saveFavs(){ localStorage.setItem('orbo_favs', JSON.stringify(App.state.favs)); }
+function saveHistory(q){ let h=JSON.parse(localStorage.getItem('orbo_history')||'[]'); h=[q,...h.filter(x=>x!==q)].slice(0,5); localStorage.setItem('orbo_history',JSON.stringify(h)); }
+function distanza(lat1,lng1,lat2,lng2){ const R=6371; const d=a=>a*Math.PI/180; const dLa=d(lat2-lat1),dLo=d(lng2-lng1); const a=Math.sin(dLa/2)**2+Math.cos(d(lat1))*Math.cos(d(lat2))*Math.sin(dLo/2)**2; return (2*R*Math.asin(Math.sqrt(a))).toFixed(1); }
+function openMaps(lat,lng){ window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`,'_blank'); }
+
+// ── NAVIGAZIONE HOME ─────────────────────────────
+function navigate(view){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  $(`view-${view}`)?.classList.add('active');
+  window.scrollTo(0,0);
+  if(view==='search') setTimeout(()=>$('search-input')?.focus(),150);
+  closeMobileNav();
+}
+function closeMobileNav(){ $('mobile-nav')?.classList.remove('open'); $('menu-btn')?.setAttribute('aria-expanded','false'); }
+$('menu-btn')?.addEventListener('click',()=>{ $('mobile-nav').classList.toggle('open'); });
+
+// ── AZIONI HOME ──────────────────────────────────
+function doMood(q){ navigate('search'); $('search-input').value=q; if(typeof searchAPI==='function') searchAPI(buildSearchQuery(q)); }
+function doNearby(){ navigate('search'); if(navigator.geolocation){ navigator.geolocation.getCurrentPosition(p=>{App.userLoc={lat:p.coords.latitude,lng:p.coords.longitude}; searchAPI('ristoranti');},()=>searchAPI('ristoranti')); } else { searchAPI('ristoranti'); } }
+function surpriseMe(){ const c=['pizza','sushi','hamburger','gelato','ramen','tacos']; doMood(c[Math.floor(Math.random()*c.length)]); }
+function openNews(){ toast('📰 News in arrivo'); }
+function openCorsi(){ toast('👨‍🍳 Corsi in arrivo'); }
+function openClassifica(){ toast('🏆 Classifica in arrivo'); }
+function openEventi(){ toast('🎟️ Eventi in arrivo'); }
+
 // ─────────────────────────────────────────────
-// ORBO VIBES SYSTEM
+// ORBO VIBES SYSTEM (IL TUO CODICE ORIGINALE)
 // ─────────────────────────────────────────────
 const EMOJI = {
   pizza: '🍕', sushi: '🍣', burger: '🍔', pasta: '🍝',
@@ -92,7 +131,7 @@ function renderVibeChips(containerId = 'vibe-filters') {
   if (!container) return;
   container.innerHTML = '';
   Object.entries(ORBO_VIBES).forEach(([key, group]) => {
-    if (key === 'cucina') return; // cucina resta fuori
+    if (key === 'cucina') return;
     const wrap = document.createElement('div');
     wrap.className = 'vibe-group';
     wrap.innerHTML = `<div class="vibe-title">${group.icon} ${group.label}</div>`;
@@ -127,8 +166,6 @@ function calculateOrboMatch(place) {
   if (ACTIVE_VIBES.discover.includes('trending')) score += 5;
   return Math.round(score);
 }
-
-// Collega il nuovo score a maps.js senza toccarlo
 window.orboScore = calculateOrboMatch;
 
 addEventListener('online', () => toast(`${EMOJI.online} Connessione ristabilita`));
