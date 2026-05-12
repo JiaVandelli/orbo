@@ -286,47 +286,7 @@ function clearSearch() {
   showEmpty();
 }
 
-// ── SEARCH INPUT ──────────────────────────────────
-$('search-input').addEventListener('input', e => {
-  const q = e.target.value.trim();
-  $('search-clear').style.display = q? 'block' : 'none';
-  if (q.length >= 3) searchAPI(q);
-  else if (!q) { clearTimeout(App.debT); $('results-list').innerHTML=''; $('results-count').textContent=''; App.lastRenderKey=''; showEmpty(); }
-});
 
-$('search-input').addEventListener('keydown', e => {
-  if (e.key!== 'Enter') return;
-  const q = $('search-input').value.trim();
-  if (q.length < 2) return;
-  clearTimeout(App.debT);
-  saveHistory(q);
-  searchAPI(buildSearchQuery(q));
-});
-
-// ── INIT FILTRI ───────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
-  renderChips();
-  renderVibeChips('vibe-filters');
-
-  const searchInput = $('search-input');
-  if (!searchInput) return;
-  const searchBox = searchInput.closest('.search-bar-wrap');
-  searchBox.insertAdjacentHTML('afterend', `
-    <div class="search-tools">
-      <button id="btn-filtro" class="tool-btn filtro">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M3 5h18l-7 8v6l-4 2v-8L3 5z" stroke="currentColor" stroke-width="2"/></svg>
-        Filtra
-      </button>
-      <button id="btn-extra" class="tool-btn ghost">🎲</button>
-    </div>
-  `);
-
-  $('btn-extra').onclick = () => {
-    const cucina = ORBO_VIBES.cucina.items;
-    const random = cucina[Math.floor(Math.random() * cucina.length)];
-    ACTIVE_VIBES.cucina = [random.id];
-    renderChips();
-    searchAPI(buildSearchQuery(''));
     toast(`${EMOJI.trending} ${random.label}!`);
   };
 
