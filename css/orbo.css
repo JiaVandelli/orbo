@@ -352,3 +352,145 @@ button.quick-card{width:100%;text-align:left}
   from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
 }
+/* ══ SEARCH TOOLS ══════════════════════════════════ */
+.search-tools {
+  display: flex;
+  gap: 10px;
+  padding: 10px 18px 0;
+  max-width: 800px;
+  margin: 0 auto;
+}
+.tool-btn {
+  flex: 1;
+  padding: 11px 14px;
+  border-radius: 14px;
+  font-weight: 700;
+  font-size: .88rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  transition: transform .15s, box-shadow .15s;
+  cursor: pointer;
+}
+.tool-btn:hover { transform: translateY(-2px); }
+.tool-btn:active { transform: scale(.97); }
+.tool-btn.filtro {
+  background: linear-gradient(135deg, #7c3aed, #3b82f6);
+  color: #fff;
+  border: none;
+  box-shadow: 0 4px 14px rgba(124,58,237,.3);
+}
+.tool-btn.filtro[aria-expanded="true"] {
+  background: linear-gradient(135deg, #5b21b6, #1d4ed8);
+  box-shadow: 0 4px 18px rgba(124,58,237,.5);
+}
+.tool-btn.ghost {
+  background: transparent;
+  color: #ffb347;
+  border: 1.5px solid rgba(255,179,71,.3);
+  flex: 0 0 52px;
+}
+.tool-btn.ghost:hover { background: rgba(255,179,71,.08); }
+
+/* ══ CHIP CUCINA ════════════════════════════════════ */
+#chips { display: none; }
+#chips.chips-open {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  gap: 8px;
+  padding: 10px 18px 2px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+#chips.chips-open::-webkit-scrollbar { display: none; }
+
+/* ══ VIBE PANEL ═════════════════════════════════════ */
+.vibe-panel {
+  display: none;
+  margin: 10px auto 0;
+  padding: 16px 18px;
+  background: rgba(255,179,71,.05);
+  border: 1px solid rgba(255,179,71,.18);
+  border-radius: 18px;
+  max-width: calc(800px - 36px);
+  animation: fadeUp .2s ease;
+}
+.vibe-panel.open { display: block; }
+
+.vibe-group { margin-bottom: 16px; }
+.vibe-group:last-child { margin-bottom: 0; }
+
+.vibe-title {
+  font-size: 10px;
+  font-weight: 800;
+  color: #FFB347;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.vibe-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.vibe-chip {
+  padding: 8px 14px;
+  border-radius: 20px;
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.12);
+  color: rgba(255,220,190,.8);
+  font-size: .83rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .18s;
+}
+.vibe-chip:hover {
+  background: rgba(255,179,71,.15);
+  border-color: #FFB347;
+  color: #FFE0A0;
+  transform: translateY(-1px);
+}
+.vibe-chip.active {
+  background: linear-gradient(135deg, #FF6B00, #FFB347);
+  color: #1a0b2e;
+  border-color: transparent;
+  box-shadow: 0 4px 12px rgba(255,140,0,.35);
+  font-weight: 800;
+}
+
+/* tag vibe sulle card */
+.rc-vibe {
+  font-size: .72rem;
+  color: #FFB347;
+  font-weight: 700;
+  margin: 3px 0 5px;
+  letter-spacing: .3px;
+}
+
+/* score inline accanto al nome */
+.rc-score { display: none; }
+.rc-score-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: 6px;
+  padding: 2px 8px;
+  border-radius: 8px;
+  font-size: .7rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #FF6B00, #FFB347);
+  color: #1a0b2e;
+  vertical-align: middle;
+  box-shadow: 0 2px 8px rgba(255,107,0,.25);
+}
+.rc-name {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  font-size: 1rem;
+  font-weight: 800;
+  color: #FFE0A0;
+  line-height: 1.2;
+}
