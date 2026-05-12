@@ -5,14 +5,14 @@ const mapsCallbacks = [];
 
 function showMapsLoader(v) {
   const el = $('maps-loading');
-  el.classList.toggle('show', v);
-  el.setAttribute('aria-hidden', String(!v));
+  el?.classList.toggle('show', v);
+  el?.setAttribute('aria-hidden', String(!v));
 }
 
 function loadGoogleMaps() {
   return new Promise((resolve, reject) => {
     if (mapsLoaded) { resolve(); return; }
-    if (typeof resolve === 'function') { mapsCallbacks.push(resolve); }
+    mapsCallbacks.push(resolve);
     if (mapsLoading) return;
     mapsLoading = true;
     showMapsLoader(true);
@@ -41,7 +41,7 @@ let autocompleteSession = null;
 function initMap() {
   App.map = new google.maps.Map($('gmap'), {center: {lat: 44.4949, lng: 11.3426}, zoom: 15});
   App.placesService = new google.maps.places.PlacesService(App.map);
-  renderChips();
+  if(typeof renderChips === 'function') renderChips();
 
   const cached = getCachedGeo();
   if (cached) {
@@ -96,43 +96,47 @@ async function getNearby() {
   const loc = App.userLoc || App.map?.getCenter();
   if (!loc) { toast('⚠️ Posizione non disponibile'); return; }
   showSkeleton();
-  const types = App.state.activeCat === 'all'? ['restaurant','cafe','bakery'] : [App.state.activeCat];
-  let all = [], done = 0;
-  types.forEach(type => {
-    App.placesService.nearbySearch({location: loc, radius: 2000, type}, (r, s) => {
-      if (s === 'OK') all.push(...r);
-      else if (s === 'OVER_QUERY_LIMIT') toast('⚠️ Limite richieste raggiunto, riprova tra poco');
-      if (++done === types.length) {
-        hideSkeleton();
-        if (!all.length) { showEmpty(); toast('📍 Nessun locale trovato vicino a te'); return; }
-        const seen = new Set();
-        updateVenues(all.filter(v => { if (seen.has(v.place_id)) return false; seen.add(v.place_id); return true; }));
-      }
-    });
+
+  // FIX: usa sempre 'restaurant', il vibe lo gestisce la query
+  App.placesService.nearbySearch({location: loc, radius: 2000, type: 'restaurant'}, (r, s) => {
+    hideSkeleton();
+    if (s === 'OK' && r.length) {
+      const seen = new Set();
+      updateVenues(r.filter(v => { if (seen.has(v.place_id)) return false; seen.add(v.place_id); return true; }));
+    } else if (s === 'OVER_QUERY_LIMIT') {
+      toast('⚠️ Limite richieste raggiunto, riprova tra poco');
+      showEmpty();
+    } else {
+      showEmpty();
+      toast('📍 Nessun locale trovato vicino a te');
+    }
   });
 }
 
 async function searchAPI(q) {
-  if (!q || q.length < 3) return;
+  if (!q || q.length < 2) return;
   try { await loadGoogleMaps(); } catch { return; }
   clearTimeout(App.debT);
-  App.debT = setTimeout(() => {
-    const typeMap = {restaurant:'ristoranti',cafe:'bar caffè',bakery:'pasticcerie',meal_takeaway:'take away',all:'ristoranti'};
-    const cat = typeMap[App.state.activeCat] || 'ristoranti';
-    const lower = q.toLowerCase();
-    const alreadyFood = /ristor|pizza|sushi|bar|caff|gelato|food|tratt|osteria|bistrot|ramen|burger|pasta/.test(lower);
-    const smartQ = alreadyFood? q : `${cat} a ${q}`;
-    const cacheKey = smartQ + '|' + App.state.activeCat;
 
-    if (App.searchCache.has(cacheKey)) { updateVenues(App.searchCache.get(cacheKey)); return; }
+  App.debT = setTimeout(() => {
+    // FIX CHIAVE: usa buildSearchQuery dal core, niente più typeMap
+    const smartQ = buildSearchQuery(q);
+    const cacheKey = smartQ;
+
+    if (App.searchCache.has(cacheKey)) {
+      updateVenues(App.searchCache.get(cacheKey));
+      return;
+    }
+
     showSkeleton();
 
     const req = {
       query: smartQ,
       location: App.userLoc || App.map.getCenter(),
-      radius: 12000,
-      type: App.state.activeCat === 'all'? 'restaurant' : App.state.activeCat
+      radius: 12000
+      // NO 'type' - Google capisce tutto dalla query emozionale
     };
+
     const tok = getSessionToken();
     if (tok) req.sessionToken = tok;
 
@@ -150,14 +154,14 @@ async function searchAPI(q) {
         hideSkeleton(); showEmpty();
       }
     });
-  }, 500);
+  }, 400);
 }
 
 function updateVenues(places) {
   App.venues = places
-   .filter(v => v.business_status === 'OPERATIONAL' && v.types?.some(t => FOOD_TYPES.includes(t)))
-   .slice(0, 20)
-   .map(v => ({
+  .filter(v => v.business_status!== 'CLOSED_PERMANENTLY' && v.types?.some(t => FOOD_TYPES.includes(t)))
+  .slice(0, 20)
+  .map(v => ({
       id: v.place_id,
       name: v.name,
       address: v.vicinity || v.formatted_address || '',
@@ -194,7 +198,7 @@ function doMood(q) { navigate('search'); doSearch(q); }
 async function filterAndGo(type) {
   App.state.activeCat = type;
   navigate('search');
-  renderChips();
+  if(typeof renderChips === 'function') renderChips();
   try { await loadGoogleMaps(); } catch { return; }
   getNearby();
 }
@@ -206,21 +210,11 @@ function surpriseMe() {
   doSearch(q);
 }
 
-function openNews() {
-  toast('📰 News Food — presto disponibile!');
-  try { playablesSDK.sendEvent('tap_news', {}); } catch {}
-}
-
-function openCorsi() {
-  doSearch('corsi cucina');
-  toast('👨‍🍳 Cerco corsi vicino a te...');
-}
-
+function openNews() { toast('📰 News Food — presto disponibile!'); }
+function openCorsi() { doSearch('corsi cucina'); toast('👨‍🍳 Cerco corsi vicino a te...'); }
 function openClassifica() {
-  navigate('search');
-  toast('🏆 Carico la Top 10...');
-  App.state.activeCat = 'all';
-  renderChips();
+  navigate('search'); toast('🏆 Carico la Top 10...'); App.state.activeCat = 'all';
+  if(typeof renderChips === 'function') renderChips();
   loadGoogleMaps().then(() => {
     const loc = App.userLoc || {lat: 44.4949, lng: 11.3426};
     showSkeleton();
@@ -233,15 +227,11 @@ function openClassifica() {
     });
   }).catch(() => {});
 }
-
-function openEventi() {
-  doSearch('degustazione evento cena');
-  toast('🎟️ Cerco eventi food...');
-}
+function openEventi() { doSearch('degustazione evento cena'); toast('🎟️ Cerco eventi food...'); }
 
 function startVoice() {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) { toast('⚠️ Voce non supportata su questo browser'); return; }
+  if (!SR) { toast('⚠️ Voce non supportata'); return; }
   const rec = new SR(); rec.lang = 'it-IT'; rec.interimResults = false;
   const btn = $('voice-btn');
   btn.classList.add('recording'); btn.textContent = '🔴';
