@@ -9,10 +9,11 @@ function showMapsLoader(v) {
   el?.setAttribute('aria-hidden', String(!v));
 }
 
+// FIX 2: evita callback infiniti
 function loadGoogleMaps() {
   return new Promise((resolve, reject) => {
     if (mapsLoaded) { resolve(); return; }
-    mapsCallbacks.push(resolve);
+    if (typeof resolve === 'function') mapsCallbacks.push(resolve);
     if (mapsLoading) return;
     mapsLoading = true;
     showMapsLoader(true);
@@ -65,6 +66,14 @@ function initMap() {
   setTimeout(() => toast(msgs[h<10?0:h<12?1:h<15?2:h<20?3:4]), 900);
 }
 
+// FIX 1: helper location pulita
+function getSearchLocation() {
+  if (App.userLoc) return App.userLoc;
+  const c = App.map?.getCenter();
+  if (!c) return {lat:44.4949,lng:11.3426};
+  return { lat: c.lat(), lng: c.lng() };
+}
+
 function getSessionToken() {
   if (!autocompleteSession && window.google)
     autocompleteSession = new google.maps.places.AutocompleteSessionToken();
@@ -78,49 +87,56 @@ function cacheSet(key, val) {
   App.searchCache.set(key, val);
 }
 
+// FIX 4: score molto più smart
 function orboScore(v) {
   let s = 0;
-  if (v.rating) s += v.rating * 14;
-  if (v.reviews) s += Math.min(v.reviews, 1000) / 1000 * 18;
-  if (v.openNow === true) s += 10;
-  if (v.price==='€'||v.price==='€€') s += 4;
+  const rating = v.rating || 0;
+  const reviews = v.reviews || 0;
+
+  s += rating * 10; // rating pesato
+  s += Math.min(reviews, 2000) / 2000 * 25; // affidabilità
+  if (v.openNow) s += 8;
+  if (v.price === '€' || v.price === '€€') s += 5;
+
   if (App.userLoc && v.lat!= null) {
     const d = distanza(App.userLoc.lat, App.userLoc.lng, v.lat, v.lng);
-    s += Math.max(0, (3 - d) * 6);
+    s += Math.max(0, (4 - d) * 5);
   }
+
+  if (reviews > 500 && rating >= 4.4) s += 10; // trending naturale
+
   return Math.round(s);
 }
 
 async function getNearby() {
   try { await loadGoogleMaps(); } catch { return; }
-  const loc = App.userLoc || App.map?.getCenter();
+  const loc = getSearchLocation();
   if (!loc) { toast('⚠️ Posizione non disponibile'); return; }
   showSkeleton();
 
-  // FIX: usa sempre 'restaurant', il vibe lo gestisce la query
   App.placesService.nearbySearch({location: loc, radius: 2000, type: 'restaurant'}, (r, s) => {
     hideSkeleton();
     if (s === 'OK' && r.length) {
       const seen = new Set();
       updateVenues(r.filter(v => { if (seen.has(v.place_id)) return false; seen.add(v.place_id); return true; }));
     } else if (s === 'OVER_QUERY_LIMIT') {
-      toast('⚠️ Limite richieste raggiunto, riprova tra poco');
+      toast('⚠️ Limite richieste raggiunto');
       showEmpty();
     } else {
-      showEmpty();
-      toast('📍 Nessun locale trovato vicino a te');
+      showEmpty(); toast('📍 Nessun locale trovato');
     }
   });
 }
 
 async function searchAPI(q) {
-  if (!q || q.length < 2) return;
+  // FIX 3: permetti ricerca solo con vibe
+  if ((!q || q.length < 1) &&!ACTIVE_VIBES.cucina.length &&!ACTIVE_VIBES.vibe.length) return;
+
   try { await loadGoogleMaps(); } catch { return; }
   clearTimeout(App.debT);
 
   App.debT = setTimeout(() => {
-    // FIX CHIAVE: usa buildSearchQuery dal core, niente più typeMap
-    const smartQ = buildSearchQuery(q);
+    const smartQ = buildSearchQuery(q || '');
     const cacheKey = smartQ;
 
     if (App.searchCache.has(cacheKey)) {
@@ -132,9 +148,8 @@ async function searchAPI(q) {
 
     const req = {
       query: smartQ,
-      location: App.userLoc || App.map.getCenter(),
+      location: getSearchLocation(), // FIX 1
       radius: 12000
-      // NO 'type' - Google capisce tutto dalla query emozionale
     };
 
     const tok = getSessionToken();
@@ -147,9 +162,9 @@ async function searchAPI(q) {
         cacheSet(cacheKey, filtered);
         updateVenues(filtered);
       } else if (status === 'ZERO_RESULTS') {
-        hideSkeleton(); showEmpty(); toast('🔍 Nessun risultato per "' + q + '"');
+        hideSkeleton(); showEmpty(); toast('🔍 Nessun risultato per "' + (q||smartQ) + '"');
       } else if (status === 'OVER_QUERY_LIMIT') {
-        hideSkeleton(); toast('⚠️ Limite API raggiunto, riprova tra poco');
+        hideSkeleton(); toast('⚠️ Limite API raggiunto');
       } else {
         hideSkeleton(); showEmpty();
       }
@@ -159,9 +174,9 @@ async function searchAPI(q) {
 
 function updateVenues(places) {
   App.venues = places
-  .filter(v => v.business_status!== 'CLOSED_PERMANENTLY' && v.types?.some(t => FOOD_TYPES.includes(t)))
-  .slice(0, 20)
-  .map(v => ({
+ .filter(v => v.business_status!== 'CLOSED_PERMANENTLY' && v.types?.some(t => FOOD_TYPES.includes(t)))
+ .slice(0, 20)
+ .map(v => ({
       id: v.place_id,
       name: v.name,
       address: v.vicinity || v.formatted_address || '',
@@ -179,8 +194,8 @@ function updateVenues(places) {
 }
 
 function doSearch(q) {
-  $('search-input').value = q;
-  $('search-clear').style.display = 'block';
+  $('search-input').value = q || '';
+  $('search-clear').style.display = q? 'block' : 'none';
   saveHistory(q);
   searchAPI(q);
   navigate('search');
@@ -210,13 +225,12 @@ function surpriseMe() {
   doSearch(q);
 }
 
-function openNews() { toast('📰 News Food — presto disponibile!'); }
-function openCorsi() { doSearch('corsi cucina'); toast('👨‍🍳 Cerco corsi vicino a te...'); }
+function openNews() { toast('📰 News Food — presto!'); }
+function openCorsi() { doSearch('corsi cucina'); toast('👨‍🍳 Cerco corsi...'); }
 function openClassifica() {
-  navigate('search'); toast('🏆 Carico la Top 10...'); App.state.activeCat = 'all';
-  if(typeof renderChips === 'function') renderChips();
+  navigate('search'); toast('🏆 Top 10...');
   loadGoogleMaps().then(() => {
-    const loc = App.userLoc || {lat: 44.4949, lng: 11.3426};
+    const loc = getSearchLocation();
     showSkeleton();
     App.placesService.nearbySearch({location: loc, radius: 4000, type: 'restaurant'}, (r, s) => {
       hideSkeleton();
@@ -227,23 +241,15 @@ function openClassifica() {
     });
   }).catch(() => {});
 }
-function openEventi() { doSearch('degustazione evento cena'); toast('🎟️ Cerco eventi food...'); }
+function openEventi() { doSearch('degustazione'); toast('🎟️ Cerco eventi...'); }
 
 function startVoice() {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) { toast('⚠️ Voce non supportata'); return; }
-  const rec = new SR(); rec.lang = 'it-IT'; rec.interimResults = false;
+  const rec = new SR(); rec.lang = 'it-IT';
   const btn = $('voice-btn');
   btn.classList.add('recording'); btn.textContent = '🔴';
-  toast('🎤 Parla ora...');
-  rec.onresult = e => {
-    const q = e.results[0][0].transcript;
-    $('search-input').value = q;
-    $('search-clear').style.display = 'block';
-    toast('🎤 "' + esc(q) + '"');
-    doSearch(q);
-  };
-  rec.onerror = () => toast('⚠️ Errore microfono');
+  rec.onresult = e => { const q = e.results[0][0].transcript; doSearch(q); };
   rec.onend = () => { btn.classList.remove('recording'); btn.textContent = '🎤'; };
   rec.start();
 }
